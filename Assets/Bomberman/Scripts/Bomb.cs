@@ -7,15 +7,24 @@ public class Bomb : MonoBehaviour {
     public GameObject explosionPrefab;
     public LayerMask levelMask;
     public bool exploded = false;
+    public int bombId;
+    public float timer = 0;
 
     public GameObject bomberman;
 
 	// Use this for initialization
 	void Start () {
+        timer = 0;
         Invoke("Explode", 3f);
 	}
-	
-	void Explode()
+
+    private void Update()
+    {
+        if (!exploded)
+            timer = timer + Time.deltaTime;
+    }
+
+    void Explode()
     {
         Instantiate(explosionPrefab, transform.position, Quaternion.identity);
 
@@ -32,6 +41,8 @@ public class Bomb : MonoBehaviour {
         {
             bomberman.GetComponent<Player>().canDropBombs = true;
         }
+
+        ServiceLocator.GetBombManager().removeBomb(bombId);
 
         Destroy(gameObject, .3f);
     }

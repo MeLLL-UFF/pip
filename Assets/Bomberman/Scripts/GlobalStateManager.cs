@@ -43,6 +43,8 @@ public class GlobalStateManager : MonoBehaviour
 
     public Text txtRef;
     public Button btnRef;
+    public float xMax = 9.0f/2.0f;
+    public float zMax = 8.0f/2.0f;
 
     private void Start()
     {
