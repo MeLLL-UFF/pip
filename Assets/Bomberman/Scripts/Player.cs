@@ -73,44 +73,12 @@ public class Player : Agent
         this.transform.position = initialPosition;
         this.rigidBody.angularVelocity = Vector3.zero;
         this.rigidBody.velocity = Vector3.zero;
-        canDropBombs = true;
-        dead = false;
+        
         canMove = true;
-}
-
-    // Use this for initialization
-    /*void Start ()
-    {
-        //Cache the attached components for better performance and less typing
-        rigidBody = GetComponent<Rigidbody> ();
-        myTransform = transform;
-        animator = myTransform.Find ("PlayerModel").GetComponent<Animator> ();
-    }*/
-
-    // Update is called once per frame
-    /*void Update ()
-    {
-        UpdateMovement ();
-    }*/
-
-    /*private void UpdateMovement ()
-    {
-        animator.SetBool ("Walking", false);
-
-        if (!canMove)
-        { //Return if player can't move
-            return;
-        }
-
-        //Depending on the player number, use different input for moving
-        if (playerNumber == 1)
-        {
-            UpdatePlayer1Movement ();
-        } else
-        {
-            UpdatePlayer2Movement ();
-        }
-    }*/
+        hasPlacedBomb = false;
+        //canDropBombs = true;
+        dead = false;
+    }
 
     public override void CollectObservations()
     {
@@ -120,22 +88,17 @@ public class Player : Agent
         AddVectorObs(relativePosition.x / globalManager.xMax);
         AddVectorObs(relativePosition.z / globalManager.zMax);
 
-        //distancia para cada borda da plataforma
-        /*AddVectorObs((this.transform.position.x + globalManager.xMax) / globalManager.xMax);
-        AddVectorObs((this.transform.position.x - globalManager.xMax) / globalManager.xMax);
-        AddVectorObs((this.transform.position.z + globalManager.zMax) / globalManager.zMax);
-        AddVectorObs((this.transform.position.z - globalManager.zMax) / globalManager.zMax);*/
-
         //velocidade do agente
-        AddVectorObs(rigidBody.velocity.x / globalManager.xMax);
-        AddVectorObs(rigidBody.velocity.z / globalManager.zMax);
+        AddVectorObs(rigidBody.velocity.x / moveSpeed);
+        AddVectorObs(rigidBody.velocity.z / moveSpeed);
 
         AddVectorObs(System.Convert.ToInt32(hasPlacedBomb));
 
-
         //colocar por enquanto apenas as 3 bombas mais próximas
         Vector3 agentPosition = myTransform.position;
-        List<Bomb> bombsList = ServiceLocator.GetBombManager().getBombs(2);
+        List<Bomb> bombsList = ServiceLocator.GetBombManager().getBombs(1);
+
+        Debug.Log("Bombas: " + bombsList.Count);
 
         for (int i = 0; i < bombsList.Count; i++)
         {
@@ -149,140 +112,145 @@ public class Player : Agent
             }
             else
             {
-                Vector3 relativePositionToBomb = (new Vector3(9999999,1,99999999)) - agentPosition;
-                AddVectorObs(relativePositionToBomb.x / globalManager.xMax);
-                AddVectorObs(relativePositionToBomb.z / globalManager.zMax);
                 AddVectorObs(1.0f);
+                AddVectorObs(1.0f);
+                AddVectorObs(0.0f);
             }
         }
     }
 
     private void penaltyNearbyBombs()
     {
-        List<Bomb> bombsList = ServiceLocator.GetBombManager().getBombs(6);
+        List<Bomb> bombsList = ServiceLocator.GetBombManager().getBombs(1);
         bool penalize = false;
+        float distance = 1;
 
         for (int i = 0; i < bombsList.Count; i++)
         {
-            if (bombsList[i] != null && Vector3.Distance(myTransform.position, bombsList[i].transform.position) <= 4)
+            if (bombsList[i] != null)
             {
-                penalize = true;
-                break;
+                distance = Vector3.Distance(myTransform.position, bombsList[i].transform.position);
+
+                if (distance <= 4)
+                {
+                    penalize = true;
+                    break;
+                }
             }
         }
 
         if (penalize)
         {
-            AddReward(-1.0f);
+            distance = distance + 1;
+            AddReward(-0.1f * (4.0f/distance));
         }
         else
         {
-            AddReward(0.02f);
+            AddReward(0.1f);
         }
     }
 
     public override void AgentAction(float[] vectorAction, string textAction)
     {
-        hasPlacedBomb = false;
-        bool putBomb = false;
-
-        animator.SetBool("Walking", false);
-        float vertical = Mathf.Clamp(vectorAction[0], -1, 1);
-        float horizontal = Mathf.Clamp(vectorAction[1], -1, 1);
-        float bombVal = Mathf.Clamp(vectorAction[2], 0, 1);
-        putBomb = bombVal > 0.5f;
-        bool stopped = (vertical > -0.5f && vertical < 0.5f) && (horizontal > -0.5f && horizontal < 0.5f);
-
-        //recompensas
-        float distanceToTarget = Vector3.Distance(this.transform.position, Target.position);
-
-        //alcançou o objetivo
-        if (distanceToTarget < 1.42f)
+        if (!dead)
         {
-            Done();
-            AddReward(1.0f);
-        }
+            hasPlacedBomb = false;
+            bool putBomb = false;
 
-        //se aproximando
-        if (distanceToTarget < previousDistance)
-        {
-            AddReward(0.2f);
-        }
+            animator.SetBool("Walking", false);
+            float vertical = Mathf.Clamp(vectorAction[0], -1, 1);
+            float horizontal = Mathf.Clamp(vectorAction[1], -1, 1);
+            float bombVal = Mathf.Clamp(vectorAction[2], 0, 1);
+            putBomb = bombVal > 0.99f;
+            bool stopped = (vertical > -0.5f && vertical < 0.5f) && (horizontal > -0.5f && horizontal < 0.5f);
 
-        //Adicionar penalidade por estar próximo demais de uma bomba
-        penaltyNearbyBombs();
+            //recompensas
+            float distanceToTarget = Vector3.Distance(this.transform.position, Target.position);
 
-        //penalidade de tempo
-        AddReward(-0.05f);
-
-        previousDistance = distanceToTarget;
-
-        if (!stopped)
-        {
-            //cima
-            if (vertical > 0.5f)
+            //alcançou o objetivo
+            if (distanceToTarget < 1.12f)
             {
-                rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, moveSpeed);
-                //myTransform.rotation = Quaternion.Euler(0, 0, 0);
-                animator.SetBool("Walking", true);
-            } 
-            //baixo
-            else if (vertical < -0.5f)
-            {
-                rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, -moveSpeed);
-                //myTransform.rotation = Quaternion.Euler(0, 180, 0);
-                animator.SetBool("Walking", true);
-            }
-            
-            //direita
-            if (horizontal > 0.5f)
-            {
-                rigidBody.velocity = new Vector3(moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
-                //myTransform.rotation = Quaternion.Euler(0, 90, 0);
-                animator.SetBool("Walking", true);
-            }
-            //esquerda
-            else if (horizontal < -0.5f)
-            {
-                rigidBody.velocity = new Vector3(-moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
-                //myTransform.rotation = Quaternion.Euler(0, 270, 0);
-                animator.SetBool("Walking", true);
+                Done();
+                AddReward(1.0f);
             }
 
-            float dirX = this.transform.position.x - oldPosition.x;
-            float dirZ = this.transform.position.z - oldPosition.z;
-
-            if (Mathf.Abs(dirX) > Mathf.Abs(dirZ))
+            //se aproximando
+            if (distanceToTarget < previousDistance)
             {
-                if (dirX >= 0)
+                AddReward(0.2f);
+            }
+
+            //Adicionar penalidade por estar próximo demais de uma bomba
+            penaltyNearbyBombs();
+
+            //penalidade de tempo
+            AddReward(-0.05f);
+
+            previousDistance = distanceToTarget;
+
+            if (!stopped)
+            {
+                //cima
+                if (vertical > 0.5f)
                 {
-                    myTransform.rotation = Quaternion.Euler(0, 90, 0);
+                    rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, moveSpeed);
+                    animator.SetBool("Walking", true);
+                }
+                //baixo
+                else if (vertical < -0.5f)
+                {
+                    rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, -moveSpeed);
+                    animator.SetBool("Walking", true);
+                }
+
+                //direita
+                if (horizontal > 0.5f)
+                {
+                    rigidBody.velocity = new Vector3(moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
+                    animator.SetBool("Walking", true);
+                }
+                //esquerda
+                else if (horizontal < -0.5f)
+                {
+                    rigidBody.velocity = new Vector3(-moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
+                    animator.SetBool("Walking", true);
+                }
+
+                float dirX = this.transform.position.x - oldPosition.x;
+                float dirZ = this.transform.position.z - oldPosition.z;
+
+                if (Mathf.Abs(dirX) > Mathf.Abs(dirZ))
+                {
+                    if (dirX >= 0)
+                    {
+                        myTransform.rotation = Quaternion.Euler(0, 90, 0);
+                    }
+                    else
+                    {
+                        myTransform.rotation = Quaternion.Euler(0, 270, 0);
+                    }
                 }
                 else
                 {
-                    myTransform.rotation = Quaternion.Euler(0, 270, 0);
+                    if (dirZ >= 0)
+                    {
+                        myTransform.rotation = Quaternion.Euler(0, 0, 0);
+                    }
+                    else
+                    {
+                        myTransform.rotation = Quaternion.Euler(0, 180, 0);
+                    }
                 }
             }
-            else
-            {
-                if (dirZ >= 0)
-                {
-                    myTransform.rotation = Quaternion.Euler(0, 0, 0);
-                }
-                else
-                {
-                    myTransform.rotation = Quaternion.Euler(0, 180, 0);
-                }
+
+            if (canDropBombs && putBomb)
+            { //Drop bomb
+                hasPlacedBomb = true;
+                DropBomb();
             }
-        }
 
-        if (canDropBombs && putBomb)
-        { //Drop bomb
-            hasPlacedBomb = true;
-            //DropBomb();
+            oldPosition = this.transform.position;
         }
-
-        oldPosition = this.transform.position;
     }
 
     /// <summary>
@@ -391,18 +359,24 @@ public class Player : Agent
     {
         if (other.CompareTag ("Explosion"))
         {
-            Debug.Log ("P" + playerNumber + " hit by explosion!");
-            dead = true;
-            AddReward(-1.0f);
-            globalManager.PlayerDied(playerNumber);
-            //Destroy(gameObject);
+            if (!dead)
+            {
+                Debug.Log("P" + playerNumber + " hit by explosion!");
+                dead = true;
+                AddReward(-1.0f);
+                globalManager.PlayerDied(playerNumber);
+                //Destroy(gameObject);
+                myTransform.position = new Vector3(99999, 1, 99999);
 
-            Invoke("DoneWithDelay", .5f);
+                Invoke("DoneWithDelay", 3.0f);
+            }
+           
         }
     }
 
     private void DoneWithDelay()
     {
         Done();
+        AddReward(-1.0f);
     }
 }

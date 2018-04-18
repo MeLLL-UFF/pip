@@ -86,8 +86,8 @@ public class GlobalStateManager : MonoBehaviour
         }
 
         Debug.Log(temp);
-        txtRef.text = temp;
-        btnRef.gameObject.SetActive(true);
+        //txtRef.text = temp;
+        //btnRef.gameObject.SetActive(true);
     }
 
     public void RestartGame()

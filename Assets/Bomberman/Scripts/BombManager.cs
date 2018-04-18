@@ -32,6 +32,11 @@ public class BombManager {
         }
     }
 
+    public void clearBombs()
+    {
+        bombs.Clear();
+    }
+
     public List<Bomb> getBombs(int maxBombs)
     {
         List<Bomb> list = new List<Bomb>();
