@@ -96,7 +96,7 @@ public class Player : Agent
 
         //colocar por enquanto apenas as 3 bombas mais próximas
         Vector3 agentPosition = myTransform.position;
-        List<Bomb> bombsList = ServiceLocator.GetBombManager().getBombs(1);
+        List<Bomb> bombsList = ServiceLocator.GetBombManager().getBombs(2);
 
         Debug.Log("Bombas: " + bombsList.Count);
 
@@ -121,7 +121,7 @@ public class Player : Agent
 
     private void penaltyNearbyBombs()
     {
-        List<Bomb> bombsList = ServiceLocator.GetBombManager().getBombs(1);
+        List<Bomb> bombsList = ServiceLocator.GetBombManager().getBombs(2);
         bool penalize = false;
         float distance = 1;
 
@@ -142,11 +142,11 @@ public class Player : Agent
         if (penalize)
         {
             distance = distance + 1;
-            AddReward(-0.1f * (4.0f/distance));
+            AddReward(-0.01f * (4.0f/distance));
         }
         else
         {
-            AddReward(0.1f);
+            AddReward(0.01f);
         }
     }
 
@@ -170,14 +170,14 @@ public class Player : Agent
             //alcançou o objetivo
             if (distanceToTarget < 1.12f)
             {
-                Done();
                 AddReward(1.0f);
+                Done();
             }
 
             //se aproximando
             if (distanceToTarget < previousDistance)
             {
-                AddReward(0.2f);
+                AddReward(0.02f);
             }
 
             //Adicionar penalidade por estar próximo demais de uma bomba
