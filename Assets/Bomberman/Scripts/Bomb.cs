@@ -5,6 +5,7 @@ using UnityEngine;
 public class Bomb : MonoBehaviour {
 
     public GameObject explosionPrefab;
+    public GameObject explosionPrefabSecondary;
     public LayerMask levelMask;
     public bool exploded = false;
     public int bombId;
@@ -26,7 +27,8 @@ public class Bomb : MonoBehaviour {
 
     void Explode()
     {
-        Instantiate(explosionPrefab, transform.position, Quaternion.identity);
+        GameObject explosionObject = Instantiate(explosionPrefab, transform.position, Quaternion.identity);
+        explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
 
         StartCoroutine(CreateExplosions(Vector3.forward));
         StartCoroutine(CreateExplosions(Vector3.right));
@@ -56,10 +58,17 @@ public class Bomb : MonoBehaviour {
 
             if (!hit.collider)
             {
-                Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation);
+                GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation);
+                explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
             }
             else
             {
+                if (hit.collider.CompareTag("Destructable"))
+                {
+                    GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation);
+                    explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
+                }
+
                 break;
             }
         }

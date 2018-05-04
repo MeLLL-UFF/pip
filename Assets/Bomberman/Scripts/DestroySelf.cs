@@ -37,6 +37,8 @@ using System.Collections;
 /// </summary>
 public class DestroySelf : MonoBehaviour
 {
+    public Bomb myBomb = null;
+
     public float Delay = 3f;
     //Delay in seconds before destroying the gameobject
 

@@ -3653,7 +3653,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   explosionPrefab: {fileID: 177540, guid: 69dfce71c987ee94ebd40421847e3c8e, type: 2}
+  explosionPrefabSecondary: {fileID: 177540, guid: 8b3440e283a89e04c8c531de4eadbcd6,
+    type: 2}
   levelMask:
     serializedVersion: 2
     m_Bits: 256
   exploded: 0
+  bombId: 0
+  timer: 0
+  bomberman: {fileID: 0}

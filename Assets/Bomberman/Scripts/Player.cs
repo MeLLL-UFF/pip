@@ -78,6 +78,9 @@ public class Player : Agent
         hasPlacedBomb = false;
         //canDropBombs = true;
         dead = false;
+
+        ServiceLocator.GetBlocksManager().resetBlocks();
+        Debug.Log("Entrei aqui");
     }
 
     public override void CollectObservations()
@@ -98,7 +101,7 @@ public class Player : Agent
         Vector3 agentPosition = myTransform.position;
         List<Bomb> bombsList = ServiceLocator.GetBombManager().getBombs(2);
 
-        Debug.Log("Bombas: " + bombsList.Count);
+        //Debug.Log("Bombas: " + bombsList.Count);
 
         for (int i = 0; i < bombsList.Count; i++)
         {

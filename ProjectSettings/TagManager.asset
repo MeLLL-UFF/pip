@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Explosion
   - Block
+  - Destructable
   layers:
   - Default
   - TransparentFX
