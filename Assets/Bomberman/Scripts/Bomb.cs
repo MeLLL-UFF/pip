@@ -35,6 +35,7 @@ public class Bomb : MonoBehaviour {
     {
         GameObject explosionObject = Instantiate(explosionPrefab, transform.position, Quaternion.identity);
         explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
+        ServiceLocator.GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
 
         StartCoroutine(CreateExplosions(Vector3.forward));
         StartCoroutine(CreateExplosions(Vector3.right));
@@ -55,6 +56,11 @@ public class Bomb : MonoBehaviour {
         Destroy(gameObject, .3f);
     }
 
+    public void autoDestroy()
+    {
+        Destroy(gameObject);
+    }
+
     private IEnumerator CreateExplosions(Vector3 direction)
     {
         for(int i = 1; i < 3; i++)
@@ -66,6 +72,7 @@ public class Bomb : MonoBehaviour {
             {
                 GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation);
                 explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
+                ServiceLocator.GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
             }
             else
             {
@@ -73,6 +80,7 @@ public class Bomb : MonoBehaviour {
                 {
                     GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation);
                     explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
+                    ServiceLocator.GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
                 }
 
                 break;

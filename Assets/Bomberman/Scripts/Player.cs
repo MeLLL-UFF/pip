@@ -59,15 +59,17 @@ public class Player : Agent
     private bool hasPlacedBomb = false;
     private Vector2 targetGridPosition = new Vector2(7, 0);
 
+    private int localEpisode = 1;
+
     public Vector2 GetGridPosition()
     {
-        Vector2 myPos = new Vector2(transform.localPosition.x, transform.localPosition.z) - Vector2.one;
+        Vector2 myPos = new Vector2(Mathf.RoundToInt(transform.localPosition.x), Mathf.RoundToInt(transform.localPosition.z)) - Vector2.one;
         return myPos;
     }
 
     public Vector2 GetOldGridPosition()
     {
-        Vector2 myPos = new Vector2(oldLocalPosition.x, oldLocalPosition.z) - Vector2.one;
+        Vector2 myPos = new Vector2(Mathf.RoundToInt(oldLocalPosition.x), Mathf.RoundToInt(oldLocalPosition.z)) - Vector2.one;
         return myPos;
     }
 
@@ -83,7 +85,7 @@ public class Player : Agent
         oldLocalPosition = myTransform.localPosition;
 
         Vector3 gridTarget3d = Target.transform.localPosition - Vector3.one;
-        targetGridPosition = new Vector2(gridTarget3d.x, gridTarget3d.z);
+        targetGridPosition = new Vector2(Mathf.RoundToInt(gridTarget3d.x), Mathf.RoundToInt(gridTarget3d.z));
 
         ServiceLocator.GetPlayersManager().updatePlayerOnGrid(this);
     }
@@ -99,9 +101,16 @@ public class Player : Agent
         //canDropBombs = true;
         dead = false;
 
-        ServiceLocator.GetBlocksManager().resetBlocks();
+        ServiceLocator.GetBombManager().clearBombs();
         ServiceLocator.GetPlayersManager().updatePlayerOnGrid(this);
-        ServiceLocator.GetLogManager().print("Agente foi resetado");
+        ServiceLocator.GetLogManager().localEpisodePrint(localEpisode++);
+
+        Invoke("delayReset", 0.0f);
+    }
+
+    void delayReset()
+    {
+        ServiceLocator.GetBlocksManager().resetBlocks();
     }
 
     public override void CollectObservations()
@@ -225,7 +234,9 @@ public class Player : Agent
 
     public override void AgentAction(float[] vectorAction, string textAction)
     {
-        if (!dead)
+        ServiceLocator.GetLogManager().localStepPrint(this);
+
+        //if (!dead)
         {
             hasPlacedBomb = false;
             bool putBomb = false;
@@ -332,6 +343,7 @@ public class Player : Agent
                 DropBomb();
             }
 
+            ServiceLocator.GetLogManager().rewardResumePrint(GetReward(), GetCumulativeReward());
             ServiceLocator.GetLogManager().actionPrint("Agent" + playerNumber, key_W, key_S, key_D, key_A, putBomb, canDropBombs, stopped);
 
             ServiceLocator.GetPlayersManager().updatePlayerOnGrid(this);
@@ -384,7 +396,8 @@ public class Player : Agent
                 //Destroy(gameObject);
                 myTransform.position = new Vector3(99999, 1, 99999);
 
-                Invoke("DoneWithDelay", 3.0f);
+                //Invoke("DoneWithDelay", 3.0f);
+                Done();
             }
            
         }

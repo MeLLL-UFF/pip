@@ -11,6 +11,9 @@ public class BombManager {
 
     int[,] grid = new int[8, 7];
 
+    public Dictionary<int, DestroySelf> explosions = new Dictionary<int, DestroySelf>();
+    private static int explosionCount = 1;
+
     internal BombManager()
     {
         if (!initialized)
@@ -32,7 +35,7 @@ public class BombManager {
         return grid;
     }
 
-    public void updatePlayerOnGrid(Bomb bomb, bool enable)
+    public void updateBombOnGrid(Bomb bomb, bool enable)
     {
         Vector2 pos = bomb.GetGridPosition();
         int x = (int)pos.x;
@@ -47,20 +50,46 @@ public class BombManager {
         bombs.Add(count, bomb);
         count++;
 
-        updatePlayerOnGrid(bomb.GetComponent<Bomb>(), true);
+        updateBombOnGrid(bomb.GetComponent<Bomb>(), true);
     }
 
     public void removeBomb(int bombId)
     {
         if (bombs.ContainsKey(bombId))
         {
-            updatePlayerOnGrid(bombs[bombId].GetComponent<Bomb>(), false);
+            updateBombOnGrid(bombs[bombId].GetComponent<Bomb>(), false);
             bombs.Remove(bombId);
+        }
+    }
+
+    public void addExplosion(DestroySelf explosion)
+    {
+        explosion.id = explosionCount;
+        explosions.Add(explosionCount, explosion);
+        explosionCount++;
+    }
+
+    public void removeExplosion(int exId)
+    {
+        if (explosions.ContainsKey(exId))
+        {
+            explosions.Remove(exId);
         }
     }
 
     public void clearBombs()
     {
+        foreach (KeyValuePair<int, DestroySelf> entry in explosions)
+        {
+            entry.Value.forceDestroy();
+        }
+        explosions.Clear();
+
+        foreach (KeyValuePair<int, GameObject> entry in bombs)
+        {
+            entry.Value.GetComponent<Bomb>().autoDestroy();
+        }
+
         bombs.Clear();
         clearGrid();
     }

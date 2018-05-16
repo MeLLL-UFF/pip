@@ -35,14 +35,14 @@ public class PlayersManager {
     public void updatePlayerOnGrid(Player player)
     {
         Vector2 pos = player.GetOldGridPosition();
-        int x = (int)pos.x;
-        int z = (int)pos.y;
+        int x = Mathf.RoundToInt(pos.x);
+        int z = Mathf.RoundToInt(pos.y);
         if (x >= 0 && x < 8 && z >= 0 && z < 7)
             grid[x, z] = 0;
 
         pos = player.GetGridPosition();
-        x = (int)pos.x;
-        z = (int)pos.y;
+        x = Mathf.RoundToInt(pos.x);
+        z = Mathf.RoundToInt(pos.y);
         if (x >= 0 && x < 8 && z >= 0 && z < 7)
             grid[x, z] = 1;
     }

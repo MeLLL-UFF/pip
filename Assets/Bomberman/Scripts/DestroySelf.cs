@@ -38,12 +38,24 @@ using System.Collections;
 public class DestroySelf : MonoBehaviour
 {
     public Bomb myBomb = null;
+    public int id;
 
     public float Delay = 3f;
     //Delay in seconds before destroying the gameobject
 
+    public void forceDestroy()
+    {
+        Destroy(gameObject);
+    }
+
     void Start ()
     {
-        Destroy (gameObject, Delay);
+        Invoke("myDestroy", Delay);
+    }
+
+    void myDestroy()
+    {
+        ServiceLocator.GetBombManager().removeExplosion(this.id);
+        forceDestroy();
     }
 }

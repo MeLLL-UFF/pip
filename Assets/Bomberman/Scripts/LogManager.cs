@@ -28,9 +28,24 @@ public class LogManager {
         }
     }
 
+    public void separator()
+    {
+        sw.WriteLine("-------------------------------------------------------------------------------------");
+    }
+
+    public void simplePrint(string message)
+    {
+        sw.WriteLine(message);
+    }
+
     public void print(string message)
     {
         sw.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + message);
+    }
+
+    public void print(string message, string prefix)
+    {
+        sw.WriteLine(DateTime.Now.ToString(prefix + "yyyy-MM-dd HH:mm:ss.fff") + " " + message);
     }
 
     public void rewardPrint(string message, float reward)
@@ -39,7 +54,12 @@ public class LogManager {
         print(result);
     }
 
-    public void stepPrint()
+    public void rewardResumePrint(float stepReward, float episodeReward)
+    {
+        simplePrint("\t\t stepReward: " + stepReward + " episodeReward: " + episodeReward);
+    }
+
+    public void globalStepPrint(int academyStep)
     {
         if (countStep != 0 && countStep % 10000 == 0)
         {
@@ -47,8 +67,25 @@ public class LogManager {
             sw = new StreamWriter(fileName + DateTime.Now.ToString("_yyyy_MM_dd_HH_mm_ss_fff") + ".txt", true);
         }
 
-        print("Step " + countStep);
+        print("Global Step " + countStep);
+        print("Academy Step " + academyStep);
         ++countStep;
+    }
+
+    public void localStepPrint(Player player)
+    {
+        print("Agent Step " + player.GetStepCount());
+        print("Recompensas:", "\n");
+    }
+
+    public void episodePrint(int epCount)
+    {
+        print("Global Episode " + epCount, "\n");
+    }
+
+    public void localEpisodePrint(int epCount)
+    {
+        print("Local Episode " + epCount);
     }
 
     public void statePrint(string agentName, Vector2 agentGridPos, Vector2 targetGridPos, Vector2 velocity, string playerGrid, string blocksGrid, string bombsGrid)
@@ -61,6 +98,7 @@ public class LogManager {
         result += tabFormat + "blocks grid:" + "\n" + blocksGrid;
         result += tabFormat + "bombs grid:" + "\n" + bombsGrid;
 
+        separator();
         print(result);
     }
 
@@ -71,7 +109,7 @@ public class LogManager {
         result += tabFormat + "W: " + key_W + " S: " + key_S + " D: " + key_D + " A: " + key_A + "\n";
         result += tabFormat + "canDropBombs: " + canDropBombs + " putBomb: " + putBomb;
 
-        print(result);
+        print(result, "\n");
     }
 
     public void finish()
