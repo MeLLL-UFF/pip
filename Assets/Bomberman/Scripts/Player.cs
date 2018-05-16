@@ -54,8 +54,22 @@ public class Player : Agent
     private int bombs = 2;
     private Vector3 initialPosition;
     private Vector3 oldPosition;
+    private Vector3 oldLocalPosition;
     private float previousDistance = float.MaxValue;
     private bool hasPlacedBomb = false;
+    private Vector2 targetGridPosition = new Vector2(7, 0);
+
+    public Vector2 GetGridPosition()
+    {
+        Vector2 myPos = new Vector2(transform.localPosition.x, transform.localPosition.z) - Vector2.one;
+        return myPos;
+    }
+
+    public Vector2 GetOldGridPosition()
+    {
+        Vector2 myPos = new Vector2(oldLocalPosition.x, oldLocalPosition.z) - Vector2.one;
+        return myPos;
+    }
 
     public override void InitializeAgent()
     {
@@ -66,6 +80,12 @@ public class Player : Agent
 
         initialPosition = myTransform.position;
         oldPosition = myTransform.position;
+        oldLocalPosition = myTransform.localPosition;
+
+        Vector3 gridTarget3d = Target.transform.localPosition - Vector3.one;
+        targetGridPosition = new Vector2(gridTarget3d.x, gridTarget3d.z);
+
+        ServiceLocator.GetPlayersManager().updatePlayerOnGrid(this);
     }
 
     public override void AgentReset()
@@ -80,30 +100,39 @@ public class Player : Agent
         dead = false;
 
         ServiceLocator.GetBlocksManager().resetBlocks();
-        Debug.Log("Entrei aqui");
+        ServiceLocator.GetPlayersManager().updatePlayerOnGrid(this);
+        ServiceLocator.GetLogManager().print("Agente foi resetado");
     }
 
     public override void CollectObservations()
     {
-        Vector3 relativePosition = Target.position - this.transform.position;
+        //Vector3 relativePosition = Target.position - this.transform.position;
 
         //posição relativa
-        AddVectorObs(relativePosition.x / globalManager.xMax);
-        AddVectorObs(relativePosition.z / globalManager.zMax);
+        //AddVectorObs(relativePosition.x / globalManager.xMax);
+        //AddVectorObs(relativePosition.z / globalManager.zMax);
+        Vector2 gridPos = GetGridPosition();
+        AddVectorObs(gridPos); //add +2
+
+        //adicionando posição do objetivo
+        AddVectorObs(targetGridPosition); //add +2
 
         //velocidade do agente
-        AddVectorObs(rigidBody.velocity.x / moveSpeed);
-        AddVectorObs(rigidBody.velocity.z / moveSpeed);
+        float velX = rigidBody.velocity.x / moveSpeed;
+        float velZ = rigidBody.velocity.z / moveSpeed;
+        AddVectorObs(velX);
+        AddVectorObs(velZ);
 
-        AddVectorObs(System.Convert.ToInt32(hasPlacedBomb));
+        //AddVectorObs(System.Convert.ToInt32(hasPlacedBomb));
+
 
         //colocar por enquanto apenas as 3 bombas mais próximas
-        Vector3 agentPosition = myTransform.position;
-        List<Bomb> bombsList = ServiceLocator.GetBombManager().getBombs(2);
+        //Vector3 agentPosition = myTransform.position;
+        // List<Bomb> bombsList = ServiceLocator.GetBombManager().getBombs(2);
 
         //Debug.Log("Bombas: " + bombsList.Count);
 
-        for (int i = 0; i < bombsList.Count; i++)
+        /*for (int i = 0; i < bombsList.Count; i++)
         {
             if (bombsList[i] != null)
             {
@@ -119,7 +148,43 @@ public class Player : Agent
                 AddVectorObs(1.0f);
                 AddVectorObs(0.0f);
             }
+        }*/
+
+        //adicionando grid de observação da posição dos agentes
+        int[,] playerGrid = ServiceLocator.GetPlayersManager().getGrid();
+        for (int x = 0; x < 8; ++x)
+        {
+            for (int y = 0; y < 7; ++y)
+            {
+                AddVectorObs(playerGrid[x, y]);
+            }
         }
+
+        int[,] blocksGrid = ServiceLocator.GetBlocksManager().getGrid();
+        for (int x = 0; x < 8; ++x)
+        {
+            for (int y = 0; y < 7; ++y)
+            {
+                AddVectorObs(blocksGrid[x, y]);
+            }
+        }
+
+        int[,] bombsGrid = ServiceLocator.GetBombManager().getGrid();
+        for (int x = 0; x < 8; ++x)
+        {
+            for (int y = 0; y < 7; ++y)
+            {
+                AddVectorObs(bombsGrid[x, y]);
+            }
+        }
+
+        ServiceLocator.GetLogManager().statePrint("Agent"+playerNumber,
+                                                  gridPos,
+                                                  targetGridPosition,
+                                                  new Vector2(velX, velZ),
+                                                  ServiceLocator.GetPlayersManager().gridToString(),
+                                                  ServiceLocator.GetBlocksManager().gridToString(),
+                                                  ServiceLocator.GetBombManager().gridToString());
     }
 
     private void penaltyNearbyBombs()
@@ -145,12 +210,17 @@ public class Player : Agent
         if (penalize)
         {
             distance = distance + 1;
-            AddReward(-0.01f * (4.0f/distance));
+            float result = -0.1f * (4.0f / distance);
+            AddReward(result);
+            ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " proximo da bomba", result);
         }
-        else
-        {
-            AddReward(0.01f);
+
+        if (bombsList.Count > 0 && !penalize)
+        { 
+            AddReward(0.05f);
+            ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " longe da bomba", 0.05f);
         }
+        
     }
 
     public override void AgentAction(float[] vectorAction, string textAction)
@@ -167,6 +237,13 @@ public class Player : Agent
             putBomb = bombVal > 0.99f;
             bool stopped = (vertical > -0.5f && vertical < 0.5f) && (horizontal > -0.5f && horizontal < 0.5f);
 
+            //variáveis de controle para o log
+            bool key_W = vertical > 0.5f;
+            bool key_S = vertical < -0.5f;
+            bool key_D = horizontal > 0.5f;
+            bool key_A = horizontal < -0.5f;
+            //--------------------------------
+
             //recompensas
             float distanceToTarget = Vector3.Distance(this.transform.position, Target.position);
 
@@ -174,20 +251,23 @@ public class Player : Agent
             if (distanceToTarget < 1.12f)
             {
                 AddReward(1.0f);
+                ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou o objetivo", 1.0f);
                 Done();
             }
 
             //se aproximando
-            if (distanceToTarget < previousDistance)
+            if (distanceToTarget < previousDistance + 1)
             {
                 AddReward(0.02f);
+                ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " se aproximou do objetivo", 0.02f);
             }
 
             //Adicionar penalidade por estar próximo demais de uma bomba
-            penaltyNearbyBombs();
+            //penaltyNearbyBombs();
 
             //penalidade de tempo
             AddReward(-0.05f);
+            ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " sofreu penalidade de tempo", -0.05f);
 
             previousDistance = distanceToTarget;
 
@@ -252,88 +332,14 @@ public class Player : Agent
                 DropBomb();
             }
 
+            ServiceLocator.GetLogManager().actionPrint("Agent" + playerNumber, key_W, key_S, key_D, key_A, putBomb, canDropBombs, stopped);
+
+            ServiceLocator.GetPlayersManager().updatePlayerOnGrid(this);
+
             oldPosition = this.transform.position;
+            oldLocalPosition = myTransform.localPosition;
         }
     }
-
-    /// <summary>
-    /// Updates Player 1's movement and facing rotation using the WASD keys and drops bombs using Space
-    /// </summary>
-    /*private void UpdatePlayer1Movement ()
-    {
-        if (Input.GetKey (KeyCode.W))
-        { //Up movement
-            rigidBody.velocity = new Vector3 (rigidBody.velocity.x, rigidBody.velocity.y, moveSpeed);
-            myTransform.rotation = Quaternion.Euler (0, 0, 0);
-            animator.SetBool ("Walking", true);
-        }
-
-        if (Input.GetKey (KeyCode.A))
-        { //Left movement
-            rigidBody.velocity = new Vector3 (-moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
-            myTransform.rotation = Quaternion.Euler (0, 270, 0);
-            animator.SetBool ("Walking", true);
-        }
-
-        if (Input.GetKey (KeyCode.S))
-        { //Down movement
-            rigidBody.velocity = new Vector3 (rigidBody.velocity.x, rigidBody.velocity.y, -moveSpeed);
-            myTransform.rotation = Quaternion.Euler (0, 180, 0);
-            animator.SetBool ("Walking", true);
-        }
-
-        if (Input.GetKey (KeyCode.D))
-        { //Right movement
-            rigidBody.velocity = new Vector3 (moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
-            myTransform.rotation = Quaternion.Euler (0, 90, 0);
-            animator.SetBool ("Walking", true);
-        }
-
-        if (canDropBombs && Input.GetKeyDown (KeyCode.Space))
-        { //Drop bomb
-            DropBomb ();
-        }
-    }*/
-
-    /// <summary>
-    /// Updates Player 2's movement and facing rotation using the arrow keys and drops bombs using Enter or Return
-    /// </summary>
-    /*private void UpdatePlayer2Movement ()
-    {
-        if (Input.GetKey (KeyCode.UpArrow))
-        { //Up movement
-            rigidBody.velocity = new Vector3 (rigidBody.velocity.x, rigidBody.velocity.y, moveSpeed);
-            myTransform.rotation = Quaternion.Euler (0, 0, 0);
-            animator.SetBool ("Walking", true);
-        }
-
-        if (Input.GetKey (KeyCode.LeftArrow))
-        { //Left movement
-            rigidBody.velocity = new Vector3 (-moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
-            myTransform.rotation = Quaternion.Euler (0, 270, 0);
-            animator.SetBool ("Walking", true);
-        }
-
-        if (Input.GetKey (KeyCode.DownArrow))
-        { //Down movement
-            rigidBody.velocity = new Vector3 (rigidBody.velocity.x, rigidBody.velocity.y, -moveSpeed);
-            myTransform.rotation = Quaternion.Euler (0, 180, 0);
-            animator.SetBool ("Walking", true);
-        }
-
-        if (Input.GetKey (KeyCode.RightArrow))
-        { //Right movement
-            rigidBody.velocity = new Vector3 (moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
-            myTransform.rotation = Quaternion.Euler (0, 90, 0);
-            animator.SetBool ("Walking", true);
-        }
-
-        if (canDropBombs && (Input.GetKeyDown (KeyCode.KeypadEnter) || Input.GetKeyDown (KeyCode.Return)))
-        { //Drop Bomb. For Player 2's bombs, allow both the numeric enter as the return key or players 
-            //without a numpad will be unable to drop bombs
-            DropBomb ();
-        }
-    }*/
 
     /// <summary>
     /// Drops a bomb beneath the player
@@ -349,10 +355,14 @@ public class Player : Agent
                                         new Vector3(Mathf.RoundToInt(myTransform.position.x) + temp,
                                                     Mathf.RoundToInt(myTransform.position.y),
                                                     Mathf.RoundToInt(myTransform.position.z)),
-                                          bombPrefab.transform.rotation);
+                                          bombPrefab.transform.rotation,
+                                          myTransform.parent);
             bomb.GetComponent<Bomb>().bomberman = gameObject;
 
             ServiceLocator.GetBombManager().addBomb(bomb);
+
+            AddReward(0.05f);
+            ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " colocou uma bomba", 0.05f);
 
             canDropBombs = false;
         }
@@ -364,10 +374,13 @@ public class Player : Agent
         {
             if (!dead)
             {
-                Debug.Log("P" + playerNumber + " hit by explosion!");
                 dead = true;
                 AddReward(-1.0f);
+                ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " atingido por explosao", -1.0f);
                 globalManager.PlayerDied(playerNumber);
+
+                ServiceLocator.GetPlayersManager().clearPlayerOnGrid(this);
+
                 //Destroy(gameObject);
                 myTransform.position = new Vector3(99999, 1, 99999);
 
@@ -380,6 +393,5 @@ public class Player : Agent
     private void DoneWithDelay()
     {
         Done();
-        AddReward(-1.0f);
     }
 }

@@ -14,6 +14,12 @@ public class Destructable : MonoBehaviour {
         ServiceLocator.GetBlocksManager().addBlock(this);
     }
 
+    public Vector2 GetGridPosition()
+    {
+        Vector2 myPos = new Vector2(transform.localPosition.x, transform.localPosition.z) - Vector2.one;
+        return myPos;
+    }
+
     public void reset()
     {
         gameObject.SetActive(true);
@@ -28,19 +34,19 @@ public class Destructable : MonoBehaviour {
             if (!wasDestroy)
             {
                 wasDestroy = true;
-                Debug.Log("Bomba destruida");
                 Bomb bomb = other.gameObject.GetComponent<DestroySelf>().myBomb;
                 if (bomb != null)
                 {
-                    bomb.bomberman.GetComponent<Player>().AddReward(0.02f);
-                    Debug.Log("Ganhou recompensa por ter destruído o bloco");
+                    bomb.bomberman.GetComponent<Player>().AddReward(0.1f);
+                    ServiceLocator.GetLogManager().rewardPrint("Agente" + bomb.bomberman.GetComponent<Player>().playerNumber + " destruiu um bloco", 0.1f);
                 }
                 else
                 {
-                    Debug.Log("Bomba nula");
+                    ServiceLocator.GetLogManager().print("Bomba nula");
                 }
 
                 gameObject.SetActive(false);
+                ServiceLocator.GetBlocksManager().disableBlockOnGrid(this);
                 //Destroy(gameObject, 0.1f);
             }
 

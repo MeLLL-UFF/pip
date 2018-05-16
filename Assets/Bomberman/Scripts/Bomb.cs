@@ -25,6 +25,12 @@ public class Bomb : MonoBehaviour {
             timer = timer + Time.deltaTime;
     }
 
+    public Vector2 GetGridPosition()
+    {
+        Vector2 myPos = new Vector2(transform.localPosition.x, transform.localPosition.z) - Vector2.one;
+        return myPos;
+    }
+
     void Explode()
     {
         GameObject explosionObject = Instantiate(explosionPrefab, transform.position, Quaternion.identity);

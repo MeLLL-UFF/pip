@@ -2,15 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BlocksManager {
+public class PlayersManager {
 
     static bool initialized = false;
 
-    private List<Destructable> blocks = new List<Destructable>();
+    private List<Player> players = new List<Player>();
 
     int[,] grid = new int[8, 7];
 
-    internal BlocksManager()
+    internal PlayersManager()
     {
         if (!initialized)
         {
@@ -27,43 +27,39 @@ public class BlocksManager {
                 grid[x, y] = 0;
     }
 
-    public void enableBlockOnGrid(Destructable block)
+    public int[,] getGrid()
     {
-        Vector2 pos = block.GetGridPosition();
+        return grid;
+    }
+
+    public void updatePlayerOnGrid(Player player)
+    {
+        Vector2 pos = player.GetOldGridPosition();
         int x = (int)pos.x;
         int z = (int)pos.y;
-        grid[x, z] = 1;
+        if (x >= 0 && x < 8 && z >= 0 && z < 7)
+            grid[x, z] = 0;
+
+        pos = player.GetGridPosition();
+        x = (int)pos.x;
+        z = (int)pos.y;
+        if (x >= 0 && x < 8 && z >= 0 && z < 7)
+            grid[x, z] = 1;
     }
 
-    public void disableBlockOnGrid(Destructable block)
+    public void clearPlayerOnGrid(Player player)
     {
-        Vector2 pos = block.GetGridPosition();
+        Vector2 pos = player.GetOldGridPosition();
         int x = (int)pos.x;
         int z = (int)pos.y;
-        grid[x, z] = 0;
-    }
+        if (x >= 0 && x < 8 && z >= 0 && z < 7)
+            grid[x, z] = 0;
 
-    public void addBlock(Destructable block)
-    {
-        blocks.Add(block);
-
-        enableBlockOnGrid(block);
-    }
-
-    public void resetBlocks()
-    {
-        clearGrid();
-
-        for (int i = 0; i < blocks.Count; i++)
-        {
-            blocks[i].reset();
-            enableBlockOnGrid(blocks[i]);
-        }
-    }
-
-    public void clear()
-    {
-        blocks.Clear();
+        pos = player.GetGridPosition();
+        x = (int)pos.x;
+        z = (int)pos.y;
+        if (x >= 0 && x < 8 && z >= 0 && z < 7)
+            grid[x, z] = 0;
     }
 
     public void print()
@@ -79,11 +75,6 @@ public class BlocksManager {
         }
 
         ServiceLocator.GetLogManager().print(saida);
-    }
-
-    public int[,] getGrid()
-    {
-        return grid;
     }
 
     public string gridToString()

@@ -6,7 +6,12 @@ public class BombermanAcademy : Academy {
 
     public override void AcademyReset()
     {
-        Debug.Log("Academia foi resetada");
+        ServiceLocator.GetLogManager().print("Academia foi resetada");
     }
 
+    public override void AcademyStep()
+    {
+        base.AcademyStep();
+        ServiceLocator.GetLogManager().stepPrint();
+    }
 }

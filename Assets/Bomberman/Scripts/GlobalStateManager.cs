@@ -43,17 +43,17 @@ public class GlobalStateManager : MonoBehaviour
 
     public Text txtRef;
     public Button btnRef;
-    public float xMax = 9.0f/2.0f;
-    public float zMax = 8.0f/2.0f;
+    public float xMax = 9.0f / 2.0f;
+    public float zMax = 8.0f / 2.0f;
 
     private void Start()
     {
         btnRef.gameObject.SetActive(false);
     }
 
-    public void PlayerDied (int playerNumber)
+    public void PlayerDied(int playerNumber)
     {
-        if (!deadPlayersControl[playerNumber-1])
+        if (!deadPlayersControl[playerNumber - 1])
         {
             deadPlayers++;
             deadPlayersControl[playerNumber - 1] = true;
@@ -85,7 +85,7 @@ public class GlobalStateManager : MonoBehaviour
             temp = "The game ended in a draw!";
         }
 
-        Debug.Log(temp);
+        ServiceLocator.GetLogManager().print(temp);
         //txtRef.text = temp;
         //btnRef.gameObject.SetActive(true);
     }
@@ -93,5 +93,10 @@ public class GlobalStateManager : MonoBehaviour
     public void RestartGame()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    void OnApplicationQuit()
+    {
+        ServiceLocator.GetLogManager().finish();
     }
 }
