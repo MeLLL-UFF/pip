@@ -86,7 +86,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   myBomb: {fileID: 0}
+  id: 0
   Delay: 0.55
+  grid: {fileID: 0}
 --- !u!198 &19825392
 ParticleSystem:
   m_ObjectHideFlags: 1

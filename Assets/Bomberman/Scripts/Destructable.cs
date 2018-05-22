@@ -7,17 +7,23 @@ public class Destructable : MonoBehaviour {
     bool wasDestroy = false;
     Vector3 initPos;
 
+    private Grid grid;
+    private StateType stateType;
+
 	// Use this for initialization
 	void Start () {
+        stateType = StateType.ST_Block;
+        grid = GameObject.Find("GridSystem").GetComponent<Grid>();
         wasDestroy = false;
         initPos = transform.position;
         ServiceLocator.GetBlocksManager().addBlock(this);
+        grid.enableObjectOnGrid(stateType, GetGridPosition());
     }
 
     public Vector2 GetGridPosition()
     {
-        Vector2 myPos = new Vector2(transform.localPosition.x, transform.localPosition.z) - Vector2.one;
-        return myPos;
+        Node n = grid.NodeFromWorldPoint(transform.localPosition);
+        return new Vector2(n.gridX, n.gridY);
     }
 
     public void reset()
@@ -46,7 +52,7 @@ public class Destructable : MonoBehaviour {
                 }
 
                 gameObject.SetActive(false);
-                ServiceLocator.GetBlocksManager().disableBlockOnGrid(this);
+                grid.disableObjectOnGrid(GetGridPosition());
                 //Destroy(gameObject, 0.1f);
             }
 

@@ -88,26 +88,24 @@ public class LogManager {
         print("Local Episode " + epCount);
     }
 
-    public void statePrint(string agentName, Vector2 agentGridPos, Vector2 targetGridPos, Vector2 velocity, string playerGrid, string blocksGrid, string bombsGrid)
+    public void statePrint(string agentName, Vector2 agentGridPos, Vector2 targetGridPos, Vector2 velocity, string grid)
     {
         string result = "Estado Atual - " + agentName + "\n";
         result += tabFormat + "pos: " + agentGridPos + "\n";
         result += tabFormat + "tar: " + targetGridPos + "\n";
         result += tabFormat + "vel: " + velocity + "\n";
-        result += tabFormat + "player grid:" + "\n" + playerGrid;
-        result += tabFormat + "blocks grid:" + "\n" + blocksGrid;
-        result += tabFormat + "bombs grid:" + "\n" + bombsGrid;
+        result += tabFormat + "grid:" + "\n" + grid;
+
 
         separator();
         print(result);
     }
 
-    public void actionPrint(string agentName, bool key_W, bool key_S, bool key_D, bool key_A, bool putBomb, bool canDropBombs, bool stopped)
+    public void actionPrint(string agentName, ActionType action, bool canDropBombs)
     {
         string result = "Acoes Atuais - " + agentName + "\n";
-        result += tabFormat + "Parado: " + stopped + "\n";
-        result += tabFormat + "W: " + key_W + " S: " + key_S + " D: " + key_D + " A: " + key_A + "\n";
-        result += tabFormat + "canDropBombs: " + canDropBombs + " putBomb: " + putBomb;
+        result += tabFormat + "Acao: " + action.ToString() + "\n";
+        result += tabFormat + "canDropBombs: " + canDropBombs;
 
         print(result, "\n");
     }

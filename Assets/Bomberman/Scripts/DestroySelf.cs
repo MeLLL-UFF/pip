@@ -43,13 +43,23 @@ public class DestroySelf : MonoBehaviour
     public float Delay = 3f;
     //Delay in seconds before destroying the gameobject
 
+    public Grid grid;
+
+    public Vector2 GetGridPosition()
+    {
+        Node n = grid.NodeFromWorldPoint(transform.localPosition);
+        return new Vector2(n.gridX, n.gridY);
+    }
+
     public void forceDestroy()
     {
+        grid.disableObjectOnGrid(GetGridPosition());
         Destroy(gameObject);
     }
 
     void Start ()
     {
+        //Debug.Log(Delay);
         Invoke("myDestroy", Delay);
     }
 

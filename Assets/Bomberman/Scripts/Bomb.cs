@@ -12,9 +12,15 @@ public class Bomb : MonoBehaviour {
     public float timer = 0;
 
     public GameObject bomberman;
+    public Grid grid;
 
-	// Use this for initialization
-	void Start () {
+    private void Awake()
+    {
+        grid = GameObject.Find("GridSystem").GetComponent<Grid>();
+    }
+
+    // Use this for initialization
+    void Start () {
         timer = 0;
         Invoke("Explode", 3f);
 	}
@@ -27,15 +33,18 @@ public class Bomb : MonoBehaviour {
 
     public Vector2 GetGridPosition()
     {
-        Vector2 myPos = new Vector2(transform.localPosition.x, transform.localPosition.z) - Vector2.one;
-        return myPos;
+        Node n = grid.NodeFromWorldPoint(transform.localPosition);
+        return new Vector2(n.gridX, n.gridY);
     }
 
     void Explode()
     {
-        GameObject explosionObject = Instantiate(explosionPrefab, transform.position, Quaternion.identity);
+        GameObject explosionObject = Instantiate(explosionPrefab, transform.position, Quaternion.identity, transform.parent);
         explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
+        explosionObject.GetComponent<DestroySelf>().grid = grid;
+
         ServiceLocator.GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
+        grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
 
         StartCoroutine(CreateExplosions(Vector3.forward));
         StartCoroutine(CreateExplosions(Vector3.right));
@@ -51,6 +60,7 @@ public class Bomb : MonoBehaviour {
             bomberman.GetComponent<Player>().canDropBombs = true;
         }
 
+        grid.disableObjectOnGrid(GetGridPosition());
         ServiceLocator.GetBombManager().removeBomb(bombId);
 
         Destroy(gameObject, .3f);
@@ -70,17 +80,23 @@ public class Bomb : MonoBehaviour {
 
             if (!hit.collider)
             {
-                GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation);
+                GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation, transform.parent);
                 explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
+                explosionObject.GetComponent<DestroySelf>().grid = grid;
+
                 ServiceLocator.GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
+                grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
             }
             else
             {
                 if (hit.collider.CompareTag("Destructable"))
                 {
-                    GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation);
+                    GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation, transform.parent);
                     explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
+                    explosionObject.GetComponent<DestroySelf>().grid = grid;
+
                     ServiceLocator.GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
+                    grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
                 }
 
                 break;

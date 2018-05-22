@@ -7,6 +7,9 @@ TagManager:
   - Explosion
   - Block
   - Destructable
+  - Bomb
+  - Danger
+  - Target
   layers:
   - Default
   - TransparentFX

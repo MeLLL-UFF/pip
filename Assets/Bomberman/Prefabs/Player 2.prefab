@@ -598,11 +598,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8bd8ffa16d817be4bad533723d48a0b2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  brain: {fileID: 0}
+  agentParameters:
+    agentCameras: []
+    maxStep: 0
+    resetOnDone: 1
+    onDemandDecision: 0
+    numberOfActionsBetweenDecisions: 1
+  globalManager: {fileID: 0}
   playerNumber: 2
   moveSpeed: 4
   canDropBombs: 1
+  dead: 0
   canMove: 1
   bombPrefab: {fileID: 124052, guid: 6291891f72f724c4eae6be6052e78735, type: 2}
+  Target: {fileID: 0}
 --- !u!136 &13614668
 CapsuleCollider:
   m_ObjectHideFlags: 1
