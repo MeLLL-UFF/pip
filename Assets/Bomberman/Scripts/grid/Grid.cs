@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System;
 
 public class Grid : MonoBehaviour {
 
@@ -14,6 +15,7 @@ public class Grid : MonoBehaviour {
 
     public LayerMask blockLayer;
     public LayerMask defaultLayer;
+    public LayerMask noCollisionLayer;
 
     Node[,] grid;
 
@@ -35,7 +37,7 @@ public class Grid : MonoBehaviour {
         gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);
         gridSizeY = Mathf.RoundToInt(gridWorldSize.y / nodeDiameter);
 
-        foreach(TerrainType region in walkableRegions)
+        foreach (TerrainType region in walkableRegions)
         {
             walkableMask.value |= region.terrainMask.value;
 
@@ -64,6 +66,29 @@ public class Grid : MonoBehaviour {
     public int GetGridSizeY()
     {
         return gridSizeY;
+    }
+
+    private bool isOnGrid(int x, int y)
+    {
+        if (x >= 0 && x < gridSizeX && y >= 0 && y < gridSizeY)
+            return true;
+
+        return false;
+    }
+
+    public bool checkFreePosition(Vector2 pos)
+    {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+
+        if (!isOnGrid(x, y))
+            return false;
+
+        StateType stateType = STFromPos(x, y);
+        if (stateType == StateType.ST_Block || stateType == StateType.ST_Wall || stateType == StateType.ST_Bomb)
+            return false;
+
+        return true;
     }
 
     StateType getStateTypeFromHit(RaycastHit hit)
@@ -96,19 +121,26 @@ public class Grid : MonoBehaviour {
             {
                 nodeStateType = StateType.ST_Bomb;
             }
-            else if (hit.collider.CompareTag("Danger"))
-            {
-                nodeStateType = StateType.ST_Danger;
-            }
             else if (hit.collider.CompareTag("Target"))
             {
                 nodeStateType = StateType.ST_Target;
+            }
+            else if (hit.collider.CompareTag("Danger"))
+            {
+                nodeStateType = StateType.ST_Danger;
             }
             else
             {
                 nodeStateType = StateType.ST_Empty;
             }
         }
+        /*else if ((1 << hit.collider.gameObject.layer & noCollisionLayer) != 0)
+        {
+            if (hit.collider.CompareTag("Danger"))
+            {
+                nodeStateType = StateType.ST_Danger;
+            }
+        }*/
 
         return nodeStateType;
     }
@@ -375,11 +407,13 @@ public class Grid : MonoBehaviour {
         grid[x, z].stateType = stateType;
     }
 
-    public void disableObjectOnGrid(Vector2 gridPos)
+    public void disableObjectOnGrid(StateType stateType, Vector2 gridPos)
     {
         int x = (int)gridPos.x;
         int z = (int)gridPos.y;
-        grid[x, z].stateType = StateType.ST_Empty;
+
+        if (stateType == grid[x, z].stateType)
+            grid[x, z].stateType = StateType.ST_Empty;
     }
 
     public void updateAgentOnGrid(Player player)

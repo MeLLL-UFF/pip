@@ -88,12 +88,13 @@ public class LogManager {
         print("Local Episode " + epCount);
     }
 
-    public void statePrint(string agentName, Vector2 agentGridPos, Vector2 targetGridPos, Vector2 velocity, string grid)
+    public void statePrint(string agentName, Vector2 agentGridPos, Vector2 targetGridPos, Vector2 velocity, string grid, bool canDropBombs)
     {
         string result = "Estado Atual - " + agentName + "\n";
         result += tabFormat + "pos: " + agentGridPos + "\n";
         result += tabFormat + "tar: " + targetGridPos + "\n";
         result += tabFormat + "vel: " + velocity + "\n";
+        result += tabFormat + "canDropBombs: " + canDropBombs + "\n";
         result += tabFormat + "grid:" + "\n" + grid;
 
 
@@ -101,11 +102,10 @@ public class LogManager {
         print(result);
     }
 
-    public void actionPrint(string agentName, ActionType action, bool canDropBombs)
+    public void actionPrint(string agentName, ActionType action)
     {
         string result = "Acoes Atuais - " + agentName + "\n";
         result += tabFormat + "Acao: " + action.ToString() + "\n";
-        result += tabFormat + "canDropBombs: " + canDropBombs;
 
         print(result, "\n");
     }

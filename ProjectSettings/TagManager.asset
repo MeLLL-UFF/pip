@@ -10,6 +10,23 @@ TagManager:
   - Bomb
   - Danger
   - Target
+  - banana
+  - badBanana
+  - agent
+  - wall
+  - goal
+  - pit
+  - redGoal
+  - ground
+  - orangeGoal
+  - redBlock
+  - orangeBlock
+  - block
+  - ball
+  - blueAgent
+  - blueGoal
+  - iWall
+  - walkableSurface
   layers:
   - Default
   - TransparentFX
@@ -20,8 +37,8 @@ TagManager:
   - 
   - 
   - Blocks
-  - teacher
-  - student
+  - NoCollision
+  - 
   - 
   - 
   - 

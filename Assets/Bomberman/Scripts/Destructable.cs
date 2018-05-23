@@ -43,8 +43,8 @@ public class Destructable : MonoBehaviour {
                 Bomb bomb = other.gameObject.GetComponent<DestroySelf>().myBomb;
                 if (bomb != null)
                 {
-                    bomb.bomberman.GetComponent<Player>().AddReward(0.1f);
-                    ServiceLocator.GetLogManager().rewardPrint("Agente" + bomb.bomberman.GetComponent<Player>().playerNumber + " destruiu um bloco", 0.1f);
+                    bomb.bomberman.AddReward(0.5f);
+                    ServiceLocator.GetLogManager().rewardPrint("Agente" + bomb.bomberman.playerNumber + " destruiu um bloco", 0.5f);
                 }
                 else
                 {
@@ -52,7 +52,7 @@ public class Destructable : MonoBehaviour {
                 }
 
                 gameObject.SetActive(false);
-                grid.disableObjectOnGrid(GetGridPosition());
+                grid.disableObjectOnGrid(stateType, GetGridPosition());
                 //Destroy(gameObject, 0.1f);
             }
 

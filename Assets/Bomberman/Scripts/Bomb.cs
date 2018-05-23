@@ -5,18 +5,21 @@ using UnityEngine;
 public class Bomb : MonoBehaviour {
 
     public GameObject explosionPrefab;
-    public GameObject explosionPrefabSecondary;
+    public GameObject dangerPrefab;
     public LayerMask levelMask;
     public bool exploded = false;
     public int bombId;
     public float timer = 0;
 
-    public GameObject bomberman;
+    public Player bomberman;
     public Grid grid;
+
+    private StateType stateType;
 
     private void Awake()
     {
         grid = GameObject.Find("GridSystem").GetComponent<Grid>();
+        stateType = StateType.ST_Bomb;
     }
 
     // Use this for initialization
@@ -25,7 +28,7 @@ public class Bomb : MonoBehaviour {
         Invoke("Explode", 3f);
 	}
 
-    private void Update()
+    private void FixedUpdate()
     {
         if (!exploded)
             timer = timer + Time.deltaTime;
@@ -35,6 +38,22 @@ public class Bomb : MonoBehaviour {
     {
         Node n = grid.NodeFromWorldPoint(transform.localPosition);
         return new Vector2(n.gridX, n.gridY);
+    }
+
+    public void CreateDangerZone()
+    {
+        GameObject dangerObject = Instantiate(dangerPrefab, transform.position, Quaternion.identity, transform.parent);
+        dangerObject.GetComponent<Danger>().myBomb = this;
+        dangerObject.GetComponent<Danger>().grid = grid;
+
+        ServiceLocator.GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
+        //comentado porque senão vai sobrescrever a bomba no mapa
+        //grid.enableObjectOnGrid(StateType.ST_Danger, dangerObject.GetComponent<DestroySelf>().GetGridPosition());
+
+        StartCoroutine(CreateDangers(Vector3.forward));
+        StartCoroutine(CreateDangers(Vector3.right));
+        StartCoroutine(CreateDangers(Vector3.back));
+        StartCoroutine(CreateDangers(Vector3.left));
     }
 
     void Explode()
@@ -57,10 +76,10 @@ public class Bomb : MonoBehaviour {
 
         if (bomberman != null)
         {
-            bomberman.GetComponent<Player>().canDropBombs = true;
+            bomberman.canDropBombs = true;
         }
 
-        grid.disableObjectOnGrid(GetGridPosition());
+        grid.disableObjectOnGrid(stateType, GetGridPosition());
         ServiceLocator.GetBombManager().removeBomb(bombId);
 
         Destroy(gameObject, .3f);
@@ -104,6 +123,41 @@ public class Bomb : MonoBehaviour {
         }
 
         yield return new WaitForSeconds(.05f);
+    }
+
+    private IEnumerator CreateDangers(Vector3 direction)
+    {
+        for (int i = 1; i < 3; i++)
+        {
+            RaycastHit hit;
+            Physics.Raycast(transform.position + new Vector3(0, .5f, 0), direction, out hit, i, levelMask);
+
+            if (!hit.collider)
+            {
+                GameObject dangerObject = Instantiate(dangerPrefab, transform.position + (i * direction), dangerPrefab.transform.rotation, transform.parent);
+                dangerObject.GetComponent<Danger>().myBomb = gameObject.GetComponent<Bomb>();
+                dangerObject.GetComponent<Danger>().grid = grid;
+
+                ServiceLocator.GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
+                grid.enableObjectOnGrid(StateType.ST_Danger, dangerObject.GetComponent<Danger>().GetGridPosition());
+            }
+            else
+            {
+                if (hit.collider.CompareTag("Destructable"))
+                {
+                    GameObject dangerObject = Instantiate(dangerPrefab, transform.position + (i * direction), dangerPrefab.transform.rotation, transform.parent);
+                    dangerObject.GetComponent<Danger>().myBomb = gameObject.GetComponent<Bomb>();
+                    dangerObject.GetComponent<Danger>().grid = grid;
+
+                    ServiceLocator.GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
+                    grid.enableObjectOnGrid(StateType.ST_Danger, dangerObject.GetComponent<Danger>().GetGridPosition());
+                }
+
+                break;
+            }
+        }
+
+        yield return null;
     }
 
     public void OnTriggerEnter(Collider other)

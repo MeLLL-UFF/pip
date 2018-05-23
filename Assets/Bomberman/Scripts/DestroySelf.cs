@@ -40,10 +40,17 @@ public class DestroySelf : MonoBehaviour
     public Bomb myBomb = null;
     public int id;
 
-    public float Delay = 3f;
+    public float Delay = 0.55f;
     //Delay in seconds before destroying the gameobject
 
     public Grid grid;
+
+    private StateType stateType;
+
+    private void Awake()
+    {
+        stateType = StateType.ST_Fire;
+    }
 
     public Vector2 GetGridPosition()
     {
@@ -53,7 +60,7 @@ public class DestroySelf : MonoBehaviour
 
     public void forceDestroy()
     {
-        grid.disableObjectOnGrid(GetGridPosition());
+        grid.disableObjectOnGrid(stateType, GetGridPosition());
         Destroy(gameObject);
     }
 

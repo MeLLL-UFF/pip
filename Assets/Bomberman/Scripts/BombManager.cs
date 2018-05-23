@@ -9,9 +9,11 @@ public class BombManager {
     private Dictionary<int, GameObject> bombs = new Dictionary<int, GameObject>();
     private static int count = 1;
 
-
     public Dictionary<int, DestroySelf> explosions = new Dictionary<int, DestroySelf>();
     private static int explosionCount = 1;
+
+    public Dictionary<int, Danger> dangerZone = new Dictionary<int, Danger>();
+    private static int dangerCount = 1;
 
     internal BombManager()
     {
@@ -51,6 +53,21 @@ public class BombManager {
         }
     }
 
+    public void addDanger(Danger danger)
+    {
+        danger.id = dangerCount;
+        dangerZone.Add(dangerCount, danger);
+        dangerCount++;
+    }
+
+    public void removeDanger(int dId)
+    {
+        if (dangerZone.ContainsKey(dId))
+        {
+            dangerZone.Remove(dId);
+        }
+    }
+
     public void clearBombs()
     {
         foreach (KeyValuePair<int, DestroySelf> entry in explosions)
@@ -58,6 +75,12 @@ public class BombManager {
             entry.Value.forceDestroy();
         }
         explosions.Clear();
+
+        foreach (KeyValuePair<int, Danger> entry in dangerZone)
+        {
+            entry.Value.forceDestroy();
+        }
+        dangerZone.Clear();
 
         foreach (KeyValuePair<int, GameObject> entry in bombs)
         {
