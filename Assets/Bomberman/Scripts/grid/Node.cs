@@ -38,6 +38,53 @@ public class Node : IHeapItem<Node> {
     //public Node bestNextNode;
     int heapIndex;
 
+    //[0,0,0,1,0,1] Testar se a representação das celulas podem ser feitas com números binários também
+    private float[] binaryArray = new float[(int)StateType.ST_Size];
+
+    public void addFlag(StateType stateType)
+    {
+        if (stateType != StateType.ST_Empty && stateType < StateType.ST_Size)
+        {
+            binaryArray[(int)stateType] = 1;
+        }
+    }
+
+    public void removeFlag(StateType stateType)
+    {
+        if (stateType != StateType.ST_Empty && stateType < StateType.ST_Size)
+        {
+            binaryArray[(int)stateType] = 0;
+        }
+    }
+
+    public void clearAllFlags()
+    {
+        for(int i = 0; i < (int)StateType.ST_Size; i++)
+        {
+            binaryArray[i] = 0;
+        }
+    }
+
+    public bool hasFlag(StateType stateType)
+    {
+        if (stateType < StateType.ST_Size)
+        {
+            if (stateType != StateType.ST_Empty)
+                return (binaryArray[(int)stateType] == 1 ? true : false);
+            else
+            {
+                for (int i = 0; i < (int)StateType.ST_Size; i++)
+                {
+                    if (binaryArray[i] == 1)
+                        return false;
+                }
+
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void InitDStarParams(double _rhs, double _g)
     {
         rhs = _rhs;

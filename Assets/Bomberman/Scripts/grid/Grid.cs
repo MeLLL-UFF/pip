@@ -373,9 +373,9 @@ public class Grid : MonoBehaviour {
     public void printGrid()
     {
         string saida = "";
-        for (int x = 0; x < gridSizeX; ++x)
+        for (int y = gridSizeY - 1; y >= 0; --y)
         {
-            for (int y = 0; y < gridSizeY; ++y)
+            for (int x = 0; x < gridSizeX; ++x)
             {
                 saida += (int)grid[x, y].stateType + " | ";
             }
@@ -388,9 +388,9 @@ public class Grid : MonoBehaviour {
     public string gridToString()
     {
         string saida = "";
-        for (int x = 0; x < gridSizeX; ++x)
+        for (int y = gridSizeY - 1; y >= 0; --y)
         {
-            for (int y = 0; y < gridSizeY; ++y)
+            for (int x = 0; x < gridSizeX; ++x)
             {
                 saida += (int)grid[x, y].stateType + " | ";
             }
@@ -404,7 +404,9 @@ public class Grid : MonoBehaviour {
     {
         int x = (int)gridPos.x;
         int z = (int)gridPos.y;
-        grid[x, z].stateType = stateType;
+
+        if (StateType.ST_Empty == grid[x, z].stateType)
+            grid[x, z].stateType = stateType;
     }
 
     public void disableObjectOnGrid(StateType stateType, Vector2 gridPos)

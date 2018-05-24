@@ -23,6 +23,14 @@ public class BombManager {
         }
     }
 
+    public bool existsBombOrDanger()
+    {
+        if (bombs.Count > 0 || dangerZone.Count > 0)
+            return true;
+
+        return false;
+    }
+
     public void addBomb(GameObject bomb)
     {
         bomb.GetComponent<Bomb>().bombId = count;

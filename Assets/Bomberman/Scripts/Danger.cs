@@ -35,6 +35,11 @@ public class Danger : MonoBehaviour
     {
         timePassed += Time.fixedDeltaTime;
         dangerLevelOfPosition = timePassed / Delay;
+
+        if (timePassed > Delay)
+        {
+            timePassed = Delay;
+        }
     }
 
     public float GetDangerLevelOfPosition(Player player)

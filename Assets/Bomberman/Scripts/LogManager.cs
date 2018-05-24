@@ -61,14 +61,14 @@ public class LogManager {
 
     public void globalStepPrint(int academyStep)
     {
-        if (countStep != 0 && countStep % 10000 == 0)
+        if (countStep != 0 && countStep % 50000 == 0)
         {
             sw.Close();
             sw = new StreamWriter(fileName + DateTime.Now.ToString("_yyyy_MM_dd_HH_mm_ss_fff") + ".txt", true);
         }
 
-        print("Global Step " + countStep);
-        print("Academy Step " + academyStep);
+        /*print("Global Step " + countStep);
+        print("Academy Step " + academyStep);*/
         ++countStep;
     }
 
@@ -88,13 +88,15 @@ public class LogManager {
         print("Local Episode " + epCount);
     }
 
-    public void statePrint(string agentName, Vector2 agentGridPos, Vector2 targetGridPos, Vector2 velocity, string grid, bool canDropBombs)
+    public void statePrint(string agentName, Vector2 agentGridPos, Vector2 targetGridPos, /*Vector2 velocity,*/ string grid, bool canDropBombs, bool isInDanger, bool existBombs)
     {
         string result = "Estado Atual - " + agentName + "\n";
         result += tabFormat + "pos: " + agentGridPos + "\n";
         result += tabFormat + "tar: " + targetGridPos + "\n";
-        result += tabFormat + "vel: " + velocity + "\n";
+        //result += tabFormat + "vel: " + velocity + "\n";
         result += tabFormat + "canDropBombs: " + canDropBombs + "\n";
+        result += tabFormat + "isInDanger: " + isInDanger + "\n";
+        result += tabFormat + "existBombs: " + existBombs + "\n";
         result += tabFormat + "grid:" + "\n" + grid;
 
 
