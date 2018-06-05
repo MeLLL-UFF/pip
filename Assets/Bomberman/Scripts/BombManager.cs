@@ -76,6 +76,18 @@ public class BombManager {
         }
     }
 
+    public Danger getDanger(int x, int y)
+    {
+        foreach (KeyValuePair<int, Danger> entry in dangerZone)
+        {
+            Vector2 pos = entry.Value.GetGridPosition();
+            if (pos.x == x && pos.y == y)
+                return entry.Value;
+        }
+
+        return null;
+    }
+
     public void clearBombs()
     {
         foreach (KeyValuePair<int, DestroySelf> entry in explosions)

@@ -54,7 +54,7 @@ public class DestroySelf : MonoBehaviour
 
     public Vector2 GetGridPosition()
     {
-        Node n = grid.NodeFromWorldPoint(transform.localPosition);
+        BaseNode n = grid.NodeFromWorldPoint(transform.localPosition);
         return new Vector2(n.gridX, n.gridY);
     }
 

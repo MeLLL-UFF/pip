@@ -34,12 +34,13 @@ public class Danger : MonoBehaviour
     private void FixedUpdate()
     {
         timePassed += Time.fixedDeltaTime;
-        dangerLevelOfPosition = timePassed / Delay;
 
         if (timePassed > Delay)
         {
             timePassed = Delay;
         }
+
+        dangerLevelOfPosition = timePassed / Delay;
     }
 
     public float GetDangerLevelOfPosition(Player player)
@@ -49,9 +50,14 @@ public class Danger : MonoBehaviour
         return dangerLevelOfPosition * penalty;
     }
 
+    public string GetDangerLevelOfPositionToPrint()
+    {
+        return (dangerLevelOfPosition * -1.0f).ToString("0.000");
+    }
+
     public Vector2 GetGridPosition()
     {
-        Node n = grid.NodeFromWorldPoint(transform.localPosition);
+        BaseNode n = grid.NodeFromWorldPoint(transform.localPosition);
         return new Vector2(n.gridX, n.gridY);
     }
 

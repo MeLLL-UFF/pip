@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class Pair<T, U>
 {
@@ -17,7 +18,7 @@ public class Pair<T, U>
     public U Second { get; set; }
 };
 
-public class Node : IHeapItem<Node> {
+public class BaseNode : IHeapItem<BaseNode> {
 
     public bool walkable;
     public Vector3 worldPosition;
@@ -25,63 +26,90 @@ public class Node : IHeapItem<Node> {
     public int gridY;
 
     public int movementPenalty;
-    public StateType stateType;
 
     //cell info
     public double rhs;
-    //public double g;
     public double cost;
 
     public Pair<double, double> k = new Pair<double, double>(0, 0);
 
-    public Node parent;
-    //public Node bestNextNode;
-    int heapIndex;
+    public BaseNode parent;
+    protected int heapIndex;
 
-    //[0,0,0,1,0,1] Testar se a representação das celulas podem ser feitas com números binários também
-    private float[] binaryArray = new float[(int)StateType.ST_Size];
-
-    public void addFlag(StateType stateType)
+    //função usada para retornar hybrid vector
+    public virtual float[] getBinaryArray()
     {
-        if (stateType != StateType.ST_Empty && stateType < StateType.ST_Size)
-        {
-            binaryArray[(int)stateType] = 1;
-        }
+        float[] t = new float[1];
+        return t;
     }
 
-    public void removeFlag(StateType stateType)
+    //função usada retornar flags do modo Binary
+    public virtual int getBinary()
     {
-        if (stateType != StateType.ST_Empty && stateType < StateType.ST_Size)
-        {
-            binaryArray[(int)stateType] = 0;
-        }
+        return (int)StateType.ST_Empty;
     }
 
-    public void clearAllFlags()
+    //0=free, 1=breakable, -1=obstructed
+    public virtual int getFreeBreakableObstructedCell()
     {
-        for(int i = 0; i < (int)StateType.ST_Size; i++)
-        {
-            binaryArray[i] = 0;
-        }
+        return 0;
     }
 
-    public bool hasFlag(StateType stateType)
+    //0=empty, 1=position contain the player
+    public virtual int getPositionAgent()
     {
-        if (stateType < StateType.ST_Size)
-        {
-            if (stateType != StateType.ST_Empty)
-                return (binaryArray[(int)stateType] == 1 ? true : false);
-            else
-            {
-                for (int i = 0; i < (int)StateType.ST_Size; i++)
-                {
-                    if (binaryArray[i] == 1)
-                        return false;
-                }
+        return 0;
+    }
 
-                return true;
-            }
-        }
+    //0 ou 1. Calculo de perigo é feito depois.
+    public virtual bool getDangerPosition()
+    {
+        return false;
+    }
+
+    public virtual int getPositionTarget()
+    {
+        return 0;
+    }
+
+    public virtual string getStringBinaryArray()
+    {
+        return "";
+    }
+
+    public virtual void addFlags(List<StateType> flags)
+    {
+        
+    }
+
+    public virtual void addFlag(StateType stateType)
+    {
+        
+    }
+
+    public virtual void removeFlag(StateType stateType)
+    {
+        
+    }
+
+    public virtual void clearAllFlags()
+    {
+        
+    }
+
+    public virtual bool hasFlag(StateType stateType)
+    {
+        return false;
+    }
+
+    //função não testa ST_Empty
+    public virtual bool hasSomeFlag(List<StateType> flags)
+    {
+        return false;
+    }
+
+    public virtual bool hasSomeFlag(StateType flags)
+    {
         return false;
     }
 
@@ -97,7 +125,7 @@ public class Node : IHeapItem<Node> {
         k.Second = s;
     }
 
-    public Node(bool _walkable, Vector3 _worldPos, int _gridX, int _gridY, int _penalty, StateType _stateType)
+    public BaseNode(bool _walkable, Vector3 _worldPos, int _gridX, int _gridY, int _penalty, List<StateType> stateTypes)
     {
         walkable = _walkable;
         worldPosition = _worldPos;
@@ -105,13 +133,13 @@ public class Node : IHeapItem<Node> {
         gridY = _gridY;
         movementPenalty = _penalty;
 
-        stateType = _stateType;
+        addFlags(stateTypes);
 
         cost = _penalty;
     }
 
     //construtor usado apenas para o cálculo do kOld em ComputeClosestPath
-    public Node(Node other)
+    public BaseNode(BaseNode other)
     {
         /*this.walkable = other.walkable;
         this.worldPosition = other.worldPosition;
@@ -119,6 +147,10 @@ public class Node : IHeapItem<Node> {
         this.gridY = other.gridY;
         this.movementPenalty = other.movementPenalty;*/
         this.k = other.k;
+    }
+
+    public BaseNode()
+    {
     }
 
     public int HeapIndex
@@ -133,17 +165,17 @@ public class Node : IHeapItem<Node> {
         }
     }
 
-    public bool eq(Node n2) {
+    public bool eq(BaseNode n2) {
         return ((this.gridX == n2.gridX) && (this.gridY == n2.gridY));
     }
 
-    public bool neq(Node n2)
+    public bool neq(BaseNode n2)
     {
         return ((this.gridX != n2.gridX) || (this.gridY != n2.gridY));
     }
 
     //Greater than
-    public bool gt(Node n2)
+    public bool gt(BaseNode n2)
     {
         if (this.k.First - 0.00001 > n2.k.First)
             return true;
@@ -154,7 +186,7 @@ public class Node : IHeapItem<Node> {
     }
 
     //Less than or equal to
-    public bool lte(Node n2)
+    public bool lte(BaseNode n2)
     {
         if (this.k.First < n2.k.First)
             return true;
@@ -165,7 +197,7 @@ public class Node : IHeapItem<Node> {
     }
 
     //Less than
-    public bool lt(Node n2)
+    public bool lt(BaseNode n2)
     {
         if (this.k.First + 0.000001 < n2.k.First)
             return true;
@@ -176,7 +208,7 @@ public class Node : IHeapItem<Node> {
     }
 
 
-    public int CompareTo(Node nodeToCompare)
+    public int CompareTo(BaseNode nodeToCompare)
     {
         if (nodeToCompare != null)
         {

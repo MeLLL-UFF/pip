@@ -17,11 +17,16 @@ public class Grid : MonoBehaviour {
     public LayerMask defaultLayer;
     public LayerMask noCollisionLayer;
 
-    Node[,] grid;
+    public GridType gridType = GridType.GT_Hybrid;
+    public GridSentData gridSentData = GridSentData.GSD_All;
+    BaseNode[,] grid;
 
     float nodeDiameter;
     int gridSizeX;
     int gridSizeY;
+
+    private List<StateType> blockFlagsList = new List<StateType>();
+    private StateType blockFlags;
 
     private void Update()
     {
@@ -37,6 +42,12 @@ public class Grid : MonoBehaviour {
         gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);
         gridSizeY = Mathf.RoundToInt(gridWorldSize.y / nodeDiameter);
 
+        blockFlagsList.Add(StateType.ST_Block);
+        blockFlagsList.Add(StateType.ST_Wall);
+        blockFlagsList.Add(StateType.ST_Bomb);
+
+        blockFlags = StateType.ST_Block | StateType.ST_Wall | StateType.ST_Bomb;
+
         foreach (TerrainType region in walkableRegions)
         {
             walkableMask.value |= region.terrainMask.value;
@@ -45,7 +56,6 @@ public class Grid : MonoBehaviour {
 
             walkableRegionsDictionary.Add((int)Mathf.Log(region.terrainMask.value, 2), region.teerainPenalty);
         }
-
 
         CreateGrid();
     }
@@ -76,6 +86,32 @@ public class Grid : MonoBehaviour {
         return false;
     }
 
+    public void updateStateOnNode(Vector2 pos)
+    {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+
+        if (!isOnGrid(x, y))
+            return;
+
+        BaseNode node = NodeFromPos(x, y);
+
+        List<StateType> nodeStateTypes = new List<StateType>();
+        Ray ray = new Ray(node.worldPosition + Vector3.up * 50, Vector3.down);
+        RaycastHit[] hits;
+        hits = Physics.RaycastAll(ray, 100, walkableMask);
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            RaycastHit hit = hits[i];
+
+            nodeStateTypes.Add(getStateTypeFromHit(hit));
+        }
+
+        node.clearAllFlags();
+        node.addFlags(nodeStateTypes);
+    }
+
     public bool checkFreePosition(Vector2 pos)
     {
         int x = (int)pos.x;
@@ -84,9 +120,18 @@ public class Grid : MonoBehaviour {
         if (!isOnGrid(x, y))
             return false;
 
-        StateType stateType = STFromPos(x, y);
-        if (stateType == StateType.ST_Block || stateType == StateType.ST_Wall || stateType == StateType.ST_Bomb)
-            return false;
+        BaseNode node = NodeFromPos(x, y);
+
+        if (gridType == GridType.GT_Hybrid)
+        {
+            if (node.hasSomeFlag(blockFlagsList))
+                return false;
+        }
+        else if (gridType == GridType.GT_Binary)
+        {
+            if (node.hasSomeFlag(blockFlags))
+                return false;
+        }
 
         return true;
     }
@@ -145,9 +190,46 @@ public class Grid : MonoBehaviour {
         return nodeStateType;
     }
 
+    void CreateGridAccordingToType()
+    {
+        switch(gridType)
+        {
+            case GridType.GT_Hybrid:
+                grid = new HybridNode[gridSizeX, gridSizeY];
+                break;
+            case GridType.GT_Binary:
+                grid = new BinaryNode[gridSizeX, gridSizeY];
+                break;
+            /*case GridType.GT_OneHot:
+                break;*/
+            default:
+                break;
+        }
+    }
+
+    BaseNode CreateNodeAccordingToType(bool walkable, Vector3 worldPos, int gridX, int gridY, int penalty, List<StateType> stateTypes)
+    {
+        BaseNode node = null;
+        switch (gridType)
+        {
+            case GridType.GT_Hybrid:
+                node = new HybridNode(walkable, worldPos, gridX, gridY, penalty, stateTypes);
+                break;
+            case GridType.GT_Binary:
+                node = new BinaryNode(walkable, worldPos, gridX, gridY, penalty, stateTypes);
+                break;
+            /*case GridType.GT_OneHot:
+                break;*/
+            default:
+                break;
+        }
+
+        return node;
+    }
+
     void CreateGrid()
     {
-        grid = new Node[gridSizeX, gridSizeY];
+        CreateGridAccordingToType();
         Vector3 worldBottomLeft = transform.position - Vector3.right * gridWorldSize.x / 2 - Vector3.forward * gridWorldSize.y / 2;
 
         for (int x = 0; x < gridSizeX; x++)
@@ -159,21 +241,24 @@ public class Grid : MonoBehaviour {
 
                 int movementPenalty = 0;
 
-                StateType nodeStateType = StateType.ST_Empty;
+                List<StateType> nodeStateTypes = new List<StateType>();
 
                 if (walkable)
                 {
                     Ray ray = new Ray(worldPoint + Vector3.up * 50, Vector3.down);
-                    RaycastHit hit;
-                    if (Physics.Raycast(ray, out hit, 100, walkableMask))
-                    {
-                        walkableRegionsDictionary.TryGetValue(hit.collider.gameObject.layer, out movementPenalty);
+                    RaycastHit[] hits;
+                    hits = Physics.RaycastAll(ray, 100, walkableMask);
+                    //walkableRegionsDictionary.TryGetValue(hit.collider.gameObject.layer, out movementPenalty);
 
-                        nodeStateType = getStateTypeFromHit(hit);
+                    for (int i = 0; i < hits.Length; i++)
+                    {
+                        RaycastHit hit = hits[i];
+
+                        nodeStateTypes.Add(getStateTypeFromHit(hit));
                     }
                 }
 
-                grid[x, y] = new Node(walkable, worldPoint, x, y, movementPenalty, nodeStateType);
+                grid[x, y] = CreateNodeAccordingToType(walkable, worldPoint, x, y, movementPenalty, nodeStateTypes);
 
                 //inicializado rhs e g para infinito de acordo com o algoritmo d star lite
                 grid[x, y].InitDStarParams(double.PositiveInfinity, double.PositiveInfinity);
@@ -194,28 +279,30 @@ public class Grid : MonoBehaviour {
 
                 int movementPenalty = 0;
 
-                StateType nodeStateType = StateType.ST_Empty;
+                List<StateType> nodeStateTypes = new List<StateType>();
                 if (walkable)
                 {
                     Ray ray = new Ray(worldPoint + Vector3.up * 50, Vector3.down);
-                    RaycastHit hit;
-                    if (Physics.Raycast(ray, out hit, 100, walkableMask))
+                    RaycastHit[] hits;
+                    hits = Physics.RaycastAll(ray, 100, walkableMask);
+                    //walkableRegionsDictionary.TryGetValue(hit.collider.gameObject.layer, out movementPenalty);
+                    for (int i = 0; i < hits.Length; i++)
                     {
-                        walkableRegionsDictionary.TryGetValue(hit.collider.gameObject.layer, out movementPenalty);
+                        RaycastHit hit = hits[i];
+                        nodeStateTypes.Add(getStateTypeFromHit(hit));
                     }
 
-                    nodeStateType = getStateTypeFromHit(hit);
-
                     grid[x, y].movementPenalty = movementPenalty;
-                    grid[x, y].stateType = nodeStateType;
+                    grid[x, y].clearAllFlags();
+                    grid[x, y].addFlags(nodeStateTypes);
                 }
             }
         }
     }
 
-    public List<Node> ListUpdateNodesInGrid()
+    public List<BaseNode> ListUpdateNodesInGrid()
     {
-        List<Node> updatedNodes = new List<Node>();
+        List<BaseNode> updatedNodes = new List<BaseNode>();
         Vector3 worldBottomLeft = transform.position - Vector3.right * gridWorldSize.x / 2 - Vector3.forward * gridWorldSize.y / 2;
 
         for (int x = 0; x < gridSizeX; x++)
@@ -227,17 +314,18 @@ public class Grid : MonoBehaviour {
 
                 int movementPenalty = 0;
 
-                StateType nodeStateType = StateType.ST_Empty;
+                List<StateType> nodeStateTypes = new List<StateType>();
                 if (walkable)
                 {
                     Ray ray = new Ray(worldPoint + Vector3.up * 50, Vector3.down);
-                    RaycastHit hit;
-                    if (Physics.Raycast(ray, out hit, 100, walkableMask))
+                    RaycastHit[] hits;
+                    hits = Physics.RaycastAll(ray, 100, walkableMask);
+                    //walkableRegionsDictionary.TryGetValue(hit.collider.gameObject.layer, out movementPenalty);
+                    for (int i = 0; i < hits.Length; i++)
                     {
-                        walkableRegionsDictionary.TryGetValue(hit.collider.gameObject.layer, out movementPenalty);
+                        RaycastHit hit = hits[i];
+                        nodeStateTypes.Add(getStateTypeFromHit(hit));
                     }
-
-                    nodeStateType = getStateTypeFromHit(hit);
 
                     if (grid[x, y].movementPenalty != movementPenalty)
                     {
@@ -245,7 +333,8 @@ public class Grid : MonoBehaviour {
                     }
 
                     grid[x, y].movementPenalty = movementPenalty;
-                    grid[x, y].stateType = nodeStateType;
+                    grid[x, y].clearAllFlags();
+                    grid[x, y].addFlags(nodeStateTypes);
                 }
             }
         }
@@ -266,9 +355,9 @@ public class Grid : MonoBehaviour {
         }
     }
 
-    public List<Node> GetSucc(Node node)
+    public List<BaseNode> GetSucc(BaseNode node)
     {
-        List<Node> neghbours = new List<Node>();
+        List<BaseNode> neghbours = new List<BaseNode>();
 
         if (!node.walkable || double.IsPositiveInfinity(node.cost))
             return neghbours;
@@ -294,9 +383,9 @@ public class Grid : MonoBehaviour {
         return neghbours;
     }
 
-    public List<Node> GetPred(Node node)
+    public List<BaseNode> GetPred(BaseNode node)
     {
-        List<Node> neghbours = new List<Node>();
+        List<BaseNode> neghbours = new List<BaseNode>();
 
         for (int x = -1; x <= 1; x++)
         {
@@ -319,9 +408,9 @@ public class Grid : MonoBehaviour {
         return neghbours;
     }
 
-    public List<Node> GetNeighbours(Node node)
+    public List<BaseNode> GetNeighbours(BaseNode node)
     {
-        List<Node> neghbours = new List<Node>();
+        List<BaseNode> neghbours = new List<BaseNode>();
 
         for (int x = -1; x <= 1; x++)
         {
@@ -343,7 +432,7 @@ public class Grid : MonoBehaviour {
         return neghbours;
     }
 
-    public Node NodeFromWorldPoint(Vector3 worldPosition)
+    public BaseNode NodeFromWorldPoint(Vector3 worldPosition)
     {
         //minus one because first line and column are wall always
         worldPosition = worldPosition - Vector3.one;
@@ -360,14 +449,9 @@ public class Grid : MonoBehaviour {
         return grid[x, y];
     }
 
-    public Node NodeFromPos(int x, int y)
+    public BaseNode NodeFromPos(int x, int y)
     {
         return grid[x, y];
-    }
-
-    public StateType STFromPos(int x, int y)
-    {
-        return grid[x, y].stateType;
     }
 
     public void printGrid()
@@ -377,11 +461,66 @@ public class Grid : MonoBehaviour {
         {
             for (int x = 0; x < gridSizeX; ++x)
             {
-                saida += (int)grid[x, y].stateType + " | ";
+                saida += grid[x, y].getStringBinaryArray() + " | ";
             }
             saida += "\n";
         }
 
+        Debug.Log(saida);
+    }
+
+    public void printGridDivided()
+    {
+        string saida = "";
+        for (int y = gridSizeY - 1; y >= 0; --y)
+        {
+            for (int x = 0; x < gridSizeX; ++x)
+            {
+                saida += (grid[x, y].getFreeBreakableObstructedCell()) + "\t";
+            }
+            saida += "\n";
+        }
+        Debug.Log(saida);
+
+        saida = "";
+        for (int y = gridSizeY - 1; y >= 0; --y)
+        {
+            for (int x = 0; x < gridSizeX; ++x)
+            {
+                saida += (grid[x, y].getPositionAgent());
+            }
+            saida += "\n";
+        }
+        Debug.Log(saida);
+
+        saida = "";
+        for (int y = gridSizeY - 1; y >= 0; --y)
+        {
+            for (int x = 0; x < gridSizeX; ++x)
+            {
+                saida += (grid[x, y].getPositionTarget());
+            }
+            saida += "\n";
+        }
+        Debug.Log(saida);
+
+        saida = "";
+        for (int y = gridSizeY - 1; y >= 0; --y)
+        {
+            for (int x = 0; x < gridSizeX; ++x)
+            {
+                bool hasDanger = grid[x, y].getDangerPosition();
+                if (!hasDanger)
+                    saida += (0.0f).ToString("0.000") + "\t";
+                else
+                {
+                    Danger danger = ServiceLocator.GetBombManager().getDanger(x, y);
+                    string dangerLevel = danger.GetDangerLevelOfPositionToPrint();
+                    saida += (dangerLevel) + "\t";
+                }
+            }
+            saida += "\n";
+        }
         Debug.Log(saida);
     }
 
@@ -392,7 +531,7 @@ public class Grid : MonoBehaviour {
         {
             for (int x = 0; x < gridSizeX; ++x)
             {
-                saida += (int)grid[x, y].stateType + " | ";
+                saida += grid[x, y].getStringBinaryArray() + " | ";
             }
             saida += "\n";
         }
@@ -405,8 +544,7 @@ public class Grid : MonoBehaviour {
         int x = (int)gridPos.x;
         int z = (int)gridPos.y;
 
-        if (StateType.ST_Empty == grid[x, z].stateType)
-            grid[x, z].stateType = stateType;
+        grid[x, z].addFlag(stateType);
     }
 
     public void disableObjectOnGrid(StateType stateType, Vector2 gridPos)
@@ -414,8 +552,7 @@ public class Grid : MonoBehaviour {
         int x = (int)gridPos.x;
         int z = (int)gridPos.y;
 
-        if (stateType == grid[x, z].stateType)
-            grid[x, z].stateType = StateType.ST_Empty;
+        grid[x, z].removeFlag(stateType);
     }
 
     public void updateAgentOnGrid(Player player)
@@ -423,14 +560,12 @@ public class Grid : MonoBehaviour {
         Vector2 pos = player.GetOldGridPosition();
         int x = (int)pos.x;
         int z = (int)pos.y;
-        if (grid[x, z].stateType == StateType.ST_Agent)
-            grid[x, z].stateType = StateType.ST_Empty;
+        grid[x, z].removeFlag(StateType.ST_Agent);
 
         pos = player.GetGridPosition();
         x = (int)pos.x;
         z = (int)pos.y;
-        if (grid[x, z].stateType == StateType.ST_Empty)
-            grid[x, z].stateType = StateType.ST_Agent;
+        grid[x, z].addFlag(StateType.ST_Agent);
     }
 
     public void clearAgentOnGrid(Player player)
@@ -438,12 +573,12 @@ public class Grid : MonoBehaviour {
         Vector2 pos = player.GetOldGridPosition();
         int x = (int)pos.x;
         int z = (int)pos.y;
-        grid[x, z].stateType = StateType.ST_Empty;
+        grid[x, z].removeFlag(StateType.ST_Agent);
 
         pos = player.GetGridPosition();
         x = (int)pos.x;
         z = (int)pos.y;
-        grid[x, z].stateType = StateType.ST_Empty;
+        grid[x, z].removeFlag(StateType.ST_Agent);
     }
 
     void OnDrawGizmos()
@@ -454,7 +589,7 @@ public class Grid : MonoBehaviour {
         if (grid != null && displayGridGizmos)
         {
             // Node playerNode = NodeFromWorldPoint(player.position);
-            foreach (Node n in grid)
+            foreach (BaseNode n in grid)
             {
                 Gizmos.color = (n.walkable) ? Color.white : Color.red;
                 /*if (playerNode == n)

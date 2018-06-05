@@ -76,13 +76,13 @@ public class Player : Agent
 
     public Vector2 GetGridPosition()
     {
-        Node n = grid.NodeFromWorldPoint(myTransform.localPosition);
+        BaseNode n = grid.NodeFromWorldPoint(myTransform.localPosition);
         return new Vector2(n.gridX, n.gridY);
     }
 
     public Vector2 GetOldGridPosition()
     {
-        Node n = grid.NodeFromWorldPoint(oldLocalPosition);
+        BaseNode n = grid.NodeFromWorldPoint(oldLocalPosition);
         return new Vector2(n.gridX, n.gridY);
     }
 
@@ -131,13 +131,98 @@ public class Player : Agent
         grid.refreshNodesInGrid();
     }
 
+    private void AddVectorObsForGrid()
+    {
+        if (grid.gridType == GridType.GT_Hybrid)
+        {
+            if (grid.gridSentData == GridSentData.GSD_All)
+            {
+                for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
+                {
+                    for (int x = 0; x < grid.GetGridSizeX(); ++x)
+                    {
+                        AddVectorObs(grid.NodeFromPos(x, y).getBinaryArray());
+                    }
+                }
+            }
+            else if (grid.gridSentData == GridSentData.GSD_Divided)
+            {
+
+            }
+        }
+        else if (grid.gridType == GridType.GT_Binary)
+        {
+            if (grid.gridSentData == GridSentData.GSD_All)
+            {
+                for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
+                {
+                    for (int x = 0; x < grid.GetGridSizeX(); ++x)
+                    {
+                        AddVectorObs(grid.NodeFromPos(x, y).getBinary());
+                    }
+                }
+            }
+            else if (grid.gridSentData == GridSentData.GSD_Divided)
+            {
+                //enviar grid que representa posições livres, com blocos ou com paredes
+                for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
+                {
+                    for (int x = 0; x < grid.GetGridSizeX(); ++x)
+                    {
+                        AddVectorObs(grid.NodeFromPos(x, y).getFreeBreakableObstructedCell());
+                    }
+                }
+
+                //enviar grid que representa posição do agente
+                for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
+                {
+                    for (int x = 0; x < grid.GetGridSizeX(); ++x)
+                    {
+                        AddVectorObs(grid.NodeFromPos(x, y).getPositionAgent());
+                    }
+                }
+
+                //enviar grid que representa áreas de perigo
+                for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
+                {
+                    for (int x = 0; x < grid.GetGridSizeX(); ++x)
+                    {
+                        bool hasDanger = grid.NodeFromPos(x, y).getDangerPosition();
+                        if (!hasDanger)
+                            AddVectorObs(0.0f);
+                        else
+                        {
+                            Danger danger = ServiceLocator.GetBombManager().getDanger(x, y);
+                            if (danger != null)
+                            {
+                                float dangerLevel = danger.GetDangerLevelOfPosition(this);
+                                AddVectorObs(dangerLevel);
+                            }
+                            else
+                                AddVectorObs(0.0f);
+                        }
+                    }   
+                }
+
+                //enviar grid que representa posição do target
+                for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
+                {
+                    for (int x = 0; x < grid.GetGridSizeX(); ++x)
+                    {
+                        AddVectorObs(grid.NodeFromPos(x, y).getPositionTarget());
+                    }
+                }
+            }
+        }
+    }
+
     public override void CollectObservations()
     {
         myGridPosition = GetGridPosition();
-        AddVectorObs(myGridPosition); //add +2
+        //AddVectorObs(myGridPosition); //add +2
 
         //adicionando posição do objetivo
-        AddVectorObs(targetGridPosition); //add +2
+        //AddVectorObs(targetGridPosition); //add +2
 
         //velocidade do agente
         /*float velX = rigidBody.velocity.x / moveSpeed;
@@ -145,18 +230,12 @@ public class Player : Agent
         AddVectorObs(velX);
         AddVectorObs(velZ);*/
 
-        AddVectorObs(canDropBombs ? 1 : 0);
-        AddVectorObs(isInDanger ? 1 : 0);
-        AddVectorObs(ServiceLocator.GetBombManager().existsBombOrDanger() ? 1 : 0);
+        //AddVectorObs(canDropBombs ? 1 : 0);
+        //AddVectorObs(isInDanger ? 1 : 0);
+        //AddVectorObs(ServiceLocator.GetBombManager().existsBombOrDanger() ? 1 : 0);
 
         //adicionando grid de observação da posição dos agentes
-        for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
-        {
-            for (int x = 0; x < grid.GetGridSizeX(); ++x)
-            {
-                AddVectorObs((int)grid.NodeFromPos(x, y).stateType);
-            }
-        }
+        AddVectorObsForGrid();
 
         ServiceLocator.GetLogManager().statePrint("Agent" + playerNumber,
                                                     myGridPosition,
@@ -171,16 +250,26 @@ public class Player : Agent
 
     private void penalizeInvalidMovement()
     {
-        AddReward(-0.006f);
-        ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " tentou andar sem poder", -0.006f);
+        AddReward(Config.REWARD_INVALID_ACTION);
+        ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " tentou andar sem poder", Config.REWARD_INVALID_ACTION);
     }
 
     public override void AgentAction(float[] vectorAction, string textAction)
     {
         //Monitor.Log("CumulativeReward", GetCumulativeReward(), MonitorType.text, transform);
-        if (Input.GetKeyUp(KeyCode.J))
+        
+
+        if (GetStepCount() >= Config.MAX_STEP_PER_AGENT)
         {
-            Debug.Log("GridPos" + GetGridPosition());
+            dead = true;
+            AddReward(Config.REWARD_MAX_STEP_REACHED);
+            ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou max step", Config.REWARD_MAX_STEP_REACHED);
+
+            grid.clearAgentOnGrid(this);
+            playerModel.SetActive(false);
+            myTransform.position = initialPosition;
+
+            Invoke("DoneWithDelay", 3.0f);
         }
 
         if (!dead)
@@ -262,8 +351,8 @@ public class Player : Agent
                     }
                     else
                     {
-                        AddReward(-0.001f);
-                        ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " tentou colocar bomba sem poder", -0.006f);
+                        AddReward(Config.REWARD_INVALID_BOMB_ACTION);
+                        ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " tentou colocar bomba sem poder", Config.REWARD_INVALID_BOMB_ACTION);
                     }
                     break;
                 //Wait
@@ -280,22 +369,30 @@ public class Player : Agent
             if (distanceToTarget < closestDistance)
             {
                 closestDistance = distanceToTarget;
-                AddReward(0.05f);
-                ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " melhor aproximacao do objetivo", 0.05f);
+                //AddReward(0.05f);
+                AddReward(Config.REWARD_CLOSEST_DISTANCE);
+                ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " melhor aproximacao do objetivo", Config.REWARD_CLOSEST_DISTANCE);
             }
 
             if (distanceToTarget < previousDistance)
             {
-                AddReward(0.001f);
-                ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " se aproximou", 0.001f);
+                AddReward(Config.REWARD_APPROACHED_DISTANCE);
+                ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " se aproximou", Config.REWARD_APPROACHED_DISTANCE);
             }
+            else if (distanceToTarget > previousDistance)
+            {
+                AddReward(Config.REWARD_FAR_DISTANCE);
+                ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " se distanciou", Config.REWARD_FAR_DISTANCE);
+            }
+
             previousDistance = distanceToTarget;
 
             //penalidade de tempo
-            AddReward(-0.003f);
-            ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " sofreu penalidade de tempo", -0.003f);
+            //AddReward(-0.003f);
+            AddReward(Config.REWARD_TIME_PENALTY);
+            ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " sofreu penalidade de tempo", Config.REWARD_TIME_PENALTY);
 
-            if (ServiceLocator.GetBombManager().existsBombOrDanger())
+            /*if (ServiceLocator.GetBombManager().existsBombOrDanger())
             {
                 if (!isInDanger)
                 {
@@ -307,7 +404,7 @@ public class Player : Agent
                     AddReward(-0.05f);
                     ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " continua em area de perigo", -0.05f);
                 }
-            }
+            }*/
 
             ServiceLocator.GetLogManager().rewardResumePrint(GetReward(), GetCumulativeReward());
             ServiceLocator.GetLogManager().actionPrint("Agent" + playerNumber, action);
@@ -339,8 +436,8 @@ public class Player : Agent
             grid.enableObjectOnGrid(StateType.ST_Bomb, bomb.GetComponent<Bomb>().GetGridPosition());
             bomb.GetComponent<Bomb>().CreateDangerZone();
 
-            AddReward(0.006f);
-            ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " colocou uma bomba", 0.006f);
+            //AddReward(0.006f);
+            //ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " colocou uma bomba", 0.006f);
 
             canDropBombs = false;
             isInDanger = true;
@@ -363,8 +460,8 @@ public class Player : Agent
             if (!dead)
             {
                 dead = true;
-                AddReward(-1f);
-                ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " atingido por explosao", -1f);
+                AddReward(Config.REWARD_DIE);
+                ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " atingido por explosao", Config.REWARD_DIE);
                 globalManager.PlayerDied(playerNumber);
 
                 grid.clearAgentOnGrid(this);
@@ -379,18 +476,18 @@ public class Player : Agent
         }
         else if (other.CompareTag("Target"))
         {
-            AddReward(1.0f);
-            ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou o objetivo", 1.0f);
+            AddReward(Config.REWARD_GOAL);
+            ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou o objetivo", Config.REWARD_GOAL);
             Done();
         }
         /* Agente toma muita recompensa negativa e desiste de colocar bomba muito rápido*/
         else if (other.CompareTag("Danger"))
         {
             isInDanger = true;
-            float dangerLevel = Mathf.Abs(other.gameObject.GetComponent<Danger>().GetDangerLevelOfPosition(this));
+            /*float dangerLevel = Mathf.Abs(other.gameObject.GetComponent<Danger>().GetDangerLevelOfPosition(this));
             dangerLevel *= -0.1f;
             AddReward(dangerLevel);
-            ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " em area de perigo", dangerLevel);
+            ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " em area de perigo", dangerLevel);*/
         }
     }
 
@@ -401,6 +498,12 @@ public class Player : Agent
 
     public void FixedUpdate()
     {
+        if (Input.GetKeyUp(KeyCode.J))
+        {
+            Debug.Log("entrou");
+            grid.printGridDivided();
+        }
+
         WaitTimeInference();
     }
 

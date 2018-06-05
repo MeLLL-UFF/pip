@@ -22,7 +22,7 @@ public class Destructable : MonoBehaviour {
 
     public Vector2 GetGridPosition()
     {
-        Node n = grid.NodeFromWorldPoint(transform.localPosition);
+        BaseNode n = grid.NodeFromWorldPoint(transform.localPosition);
         return new Vector2(n.gridX, n.gridY);
     }
 
@@ -43,8 +43,8 @@ public class Destructable : MonoBehaviour {
                 Bomb bomb = other.gameObject.GetComponent<DestroySelf>().myBomb;
                 if (bomb != null)
                 {
-                    bomb.bomberman.AddReward(0.1f);
-                    ServiceLocator.GetLogManager().rewardPrint("Agente" + bomb.bomberman.playerNumber + " destruiu um bloco", 0.1f);
+                    bomb.bomberman.AddReward(Config.REWARD_BLOCK_DESTROY);
+                    ServiceLocator.GetLogManager().rewardPrint("Agente" + bomb.bomberman.playerNumber + " destruiu um bloco", Config.REWARD_BLOCK_DESTROY);
                 }
                 else
                 {
