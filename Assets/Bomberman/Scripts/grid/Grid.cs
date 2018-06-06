@@ -5,6 +5,7 @@ using System;
 
 public class Grid : MonoBehaviour {
 
+    public int scenarioId; 
     public bool displayGridGizmos;
     public LayerMask unwalkableMask;
     public Vector2 gridWorldSize;
@@ -15,7 +16,7 @@ public class Grid : MonoBehaviour {
 
     public LayerMask blockLayer;
     public LayerMask defaultLayer;
-    public LayerMask noCollisionLayer;
+    public LayerMask agentsLayer;
 
     public GridType gridType = GridType.GT_Hybrid;
     public GridSentData gridSentData = GridSentData.GSD_All;
@@ -97,9 +98,9 @@ public class Grid : MonoBehaviour {
         BaseNode node = NodeFromPos(x, y);
 
         List<StateType> nodeStateTypes = new List<StateType>();
-        Ray ray = new Ray(node.worldPosition + Vector3.up * 50, Vector3.down);
+        Ray ray = new Ray(node.worldPosition + Vector3.up * 6, Vector3.down);
         RaycastHit[] hits;
-        hits = Physics.RaycastAll(ray, 100, walkableMask);
+        hits = Physics.RaycastAll(ray, 10, walkableMask);
 
         for (int i = 0; i < hits.Length; i++)
         {
@@ -136,6 +137,22 @@ public class Grid : MonoBehaviour {
         return true;
     }
 
+    public bool checkTarget(Vector2 pos)
+    {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+
+        if (!isOnGrid(x, y))
+            return false;
+
+        BaseNode node = NodeFromPos(x, y);
+
+        if (node.hasFlag(StateType.ST_Target))
+            return true;
+       
+        return false;
+    }
+
     StateType getStateTypeFromHit(RaycastHit hit)
     {
         StateType nodeStateType = StateType.ST_Empty;
@@ -153,12 +170,7 @@ public class Grid : MonoBehaviour {
         }
         else if ((1 << hit.collider.gameObject.layer & defaultLayer) != 0)
         {
-            if (hit.collider.CompareTag("Player"))
-            {
-                //hit.collider.gameObject.GetComponent<Player>().playerNumber;
-                nodeStateType = StateType.ST_Agent;
-            }
-            else if (hit.collider.CompareTag("Explosion"))
+            if (hit.collider.CompareTag("Explosion"))
             {
                 nodeStateType = StateType.ST_Fire;
             }
@@ -179,13 +191,21 @@ public class Grid : MonoBehaviour {
                 nodeStateType = StateType.ST_Empty;
             }
         }
-        /*else if ((1 << hit.collider.gameObject.layer & noCollisionLayer) != 0)
+        else if ((1 << hit.collider.gameObject.layer & agentsLayer) != 0)
         {
-            if (hit.collider.CompareTag("Danger"))
+            if (hit.collider.CompareTag("Player"))
             {
-                nodeStateType = StateType.ST_Danger;
+                int number = hit.collider.gameObject.GetComponent<Player>().playerNumber;
+                if (number == 1)
+                    nodeStateType = StateType.ST_Agent1;
+                else if (number == 2)
+                {
+                    //como o agente está imitando o outro, logo é necessário que o espaço de estados seja representado da mesma forma
+                    nodeStateType = StateType.ST_Agent1;
+                }
+                    
             }
-        }*/
+        }
 
         return nodeStateType;
     }
@@ -245,9 +265,9 @@ public class Grid : MonoBehaviour {
 
                 if (walkable)
                 {
-                    Ray ray = new Ray(worldPoint + Vector3.up * 50, Vector3.down);
+                    Ray ray = new Ray(worldPoint + Vector3.up * 6, Vector3.down);
                     RaycastHit[] hits;
-                    hits = Physics.RaycastAll(ray, 100, walkableMask);
+                    hits = Physics.RaycastAll(ray, 10, walkableMask);
                     //walkableRegionsDictionary.TryGetValue(hit.collider.gameObject.layer, out movementPenalty);
 
                     for (int i = 0; i < hits.Length; i++)
@@ -282,9 +302,9 @@ public class Grid : MonoBehaviour {
                 List<StateType> nodeStateTypes = new List<StateType>();
                 if (walkable)
                 {
-                    Ray ray = new Ray(worldPoint + Vector3.up * 50, Vector3.down);
+                    Ray ray = new Ray(worldPoint + Vector3.up * 6, Vector3.down);
                     RaycastHit[] hits;
-                    hits = Physics.RaycastAll(ray, 100, walkableMask);
+                    hits = Physics.RaycastAll(ray, 10, walkableMask);
                     //walkableRegionsDictionary.TryGetValue(hit.collider.gameObject.layer, out movementPenalty);
                     for (int i = 0; i < hits.Length; i++)
                     {
@@ -317,9 +337,9 @@ public class Grid : MonoBehaviour {
                 List<StateType> nodeStateTypes = new List<StateType>();
                 if (walkable)
                 {
-                    Ray ray = new Ray(worldPoint + Vector3.up * 50, Vector3.down);
+                    Ray ray = new Ray(worldPoint + Vector3.up * 6, Vector3.down);
                     RaycastHit[] hits;
-                    hits = Physics.RaycastAll(ray, 100, walkableMask);
+                    hits = Physics.RaycastAll(ray, 10, walkableMask);
                     //walkableRegionsDictionary.TryGetValue(hit.collider.gameObject.layer, out movementPenalty);
                     for (int i = 0; i < hits.Length; i++)
                     {
@@ -487,7 +507,7 @@ public class Grid : MonoBehaviour {
         {
             for (int x = 0; x < gridSizeX; ++x)
             {
-                saida += (grid[x, y].getPositionAgent());
+                saida += (grid[x, y].getPositionAgent(1));
             }
             saida += "\n";
         }
@@ -514,7 +534,7 @@ public class Grid : MonoBehaviour {
                     saida += (0.0f).ToString("0.000") + "\t";
                 else
                 {
-                    Danger danger = ServiceLocator.GetBombManager().getDanger(x, y);
+                    Danger danger = ServiceLocator.getManager(scenarioId).GetBombManager().getDanger(x, y);
                     string dangerLevel = danger.GetDangerLevelOfPositionToPrint();
                     saida += (dangerLevel) + "\t";
                 }
@@ -560,12 +580,12 @@ public class Grid : MonoBehaviour {
         Vector2 pos = player.GetOldGridPosition();
         int x = (int)pos.x;
         int z = (int)pos.y;
-        grid[x, z].removeFlag(StateType.ST_Agent);
+        grid[x, z].removeFlag(player.getStateType());
 
         pos = player.GetGridPosition();
         x = (int)pos.x;
         z = (int)pos.y;
-        grid[x, z].addFlag(StateType.ST_Agent);
+        grid[x, z].addFlag(player.getStateType());
     }
 
     public void clearAgentOnGrid(Player player)
@@ -573,12 +593,12 @@ public class Grid : MonoBehaviour {
         Vector2 pos = player.GetOldGridPosition();
         int x = (int)pos.x;
         int z = (int)pos.y;
-        grid[x, z].removeFlag(StateType.ST_Agent);
+        grid[x, z].removeFlag(player.getStateType());
 
         pos = player.GetGridPosition();
         x = (int)pos.x;
         z = (int)pos.y;
-        grid[x, z].removeFlag(StateType.ST_Agent);
+        grid[x, z].removeFlag(player.getStateType());
     }
 
     void OnDrawGizmos()

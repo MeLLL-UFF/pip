@@ -6,13 +6,13 @@ using System;
 
 public class LogManager {
 
-    static bool initialized = false;
-    private string fileName = "./logdir/logtest";
+    bool initialized = false;
+    private string fileName = "./logdir/logtest_scenario_";
     private StreamWriter sw;
     private long countStep;
     private string tabFormat;
 
-    internal LogManager()
+    internal LogManager(int scenarioId)
     {
         if (!initialized)
         {
@@ -21,7 +21,7 @@ public class LogManager {
                 Directory.CreateDirectory("./logdir/");
             }
 
-            sw = new StreamWriter(fileName + DateTime.Now.ToString("_yyyy_MM_dd_HH_mm_ss_fff") + ".txt", true);
+            sw = new StreamWriter(fileName + scenarioId + DateTime.Now.ToString("_yyyy_MM_dd_HH_mm_ss_fff") + ".txt", true);
             countStep = 0;
             tabFormat = "\t\t";
             initialized = true;
@@ -74,8 +74,8 @@ public class LogManager {
 
     public void localStepPrint(Player player)
     {
-        print("Agent Step " + player.GetStepCount());
-        print("Recompensas:", "\n");
+        print("Agent " + player.playerNumber + " Step " + player.GetStepCount());
+        //print("Recompensas:", "\n");
     }
 
     public void episodePrint(int epCount)
@@ -83,9 +83,9 @@ public class LogManager {
         print("Global Episode " + epCount, "\n");
     }
 
-    public void localEpisodePrint(int epCount)
+    public void localEpisodePrint(int epCount, Player player)
     {
-        print("Local Episode " + epCount);
+        print("Local Episode of agent " + player.playerNumber + ": " + epCount);
     }
 
     public void statePrint(string agentName, Vector2 agentGridPos, Vector2 targetGridPos, /*Vector2 velocity,*/ string grid, bool canDropBombs, bool isInDanger, bool existBombs)

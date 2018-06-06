@@ -27,17 +27,18 @@ public class ActionTypeExtension
 
 [Flags] public enum StateType
 {
-    ST_Empty =  0,      // 0
-    ST_Wall =   1 << 0, // 1 
-    ST_Block =  1 << 1, // 2
-    ST_Bomb =   1 << 2, // 4
-    ST_Fire =   1 << 3, // 8
-    ST_Danger = 1 << 4, // 16
-    ST_Agent =  1 << 5, // 32
-    ST_Target = 1 << 6, // 64
+    ST_Empty    =   0,          // 0        00000000
+    ST_Wall     =   1 << 0,     // 1        00000001
+    ST_Block    =   1 << 1,     // 2        00000010
+    ST_Bomb     =   1 << 2,     // 4        00000100
+    ST_Fire     =   1 << 3,     // 8        00001000
+    ST_Danger   =   1 << 4,     // 16       00010000
+    ST_Agent1   =   1 << 5,     // 32
+    ST_Agent2   =   1 << 6,     // 64
+    ST_Target   =   1 << 7,     // 128
 
-    ST_All = (ST_Wall | ST_Block | ST_Bomb | ST_Fire | ST_Danger | ST_Agent | ST_Target),
-    ST_Size = 8
+    ST_All = (ST_Wall | ST_Block | ST_Bomb | ST_Fire | ST_Danger | ST_Agent1 | ST_Agent2 | ST_Target),
+    ST_Size = 9
 }
 
 public class StateTypeExtension

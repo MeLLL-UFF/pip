@@ -56,7 +56,7 @@ public class BaseNode : IHeapItem<BaseNode> {
     }
 
     //0=empty, 1=position contain the player
-    public virtual int getPositionAgent()
+    public virtual int getPositionAgent(int playerNumber)
     {
         return 0;
     }

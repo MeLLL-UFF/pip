@@ -7,6 +7,7 @@ using System.Collections;
 /// </summary>
 public class Danger : MonoBehaviour
 {
+    public int scenarioId;
     public Bomb myBomb = null;
     public int id;
 
@@ -69,7 +70,7 @@ public class Danger : MonoBehaviour
 
     void myDestroy()
     {
-        ServiceLocator.GetBombManager().removeDanger(this.id);
+        ServiceLocator.getManager(scenarioId).GetBombManager().removeDanger(this.id);
         forceDestroy();
     }
 }

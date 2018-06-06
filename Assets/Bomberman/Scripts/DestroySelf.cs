@@ -37,6 +37,7 @@ using System.Collections;
 /// </summary>
 public class DestroySelf : MonoBehaviour
 {
+    public int scenarioId;
     public Bomb myBomb = null;
     public int id;
 
@@ -72,7 +73,7 @@ public class DestroySelf : MonoBehaviour
 
     void myDestroy()
     {
-        ServiceLocator.GetBombManager().removeExplosion(this.id);
+        ServiceLocator.getManager(scenarioId).GetBombManager().removeExplosion(this.id);
         forceDestroy();
     }
 }

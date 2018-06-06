@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class BombManager {
 
-    static bool initialized = false;
+    bool initialized = false;
 
     private Dictionary<int, GameObject> bombs = new Dictionary<int, GameObject>();
     private static int count = 1;

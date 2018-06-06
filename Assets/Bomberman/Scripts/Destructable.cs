@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Destructable : MonoBehaviour {
 
+    public int scenarioId;
     bool wasDestroy = false;
     Vector3 initPos;
 
@@ -13,10 +14,14 @@ public class Destructable : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
         stateType = StateType.ST_Block;
-        grid = GameObject.Find("GridSystem").GetComponent<Grid>();
+        if (scenarioId == 1)
+            grid = GameObject.Find("GridSystem1").GetComponent<Grid>();
+        else if (scenarioId == 2)
+            grid = GameObject.Find("GridSystem2").GetComponent<Grid>();
+
         wasDestroy = false;
         initPos = transform.position;
-        ServiceLocator.GetBlocksManager().addBlock(this);
+        ServiceLocator.getManager(scenarioId).GetBlocksManager().addBlock(this);
         grid.enableObjectOnGrid(stateType, GetGridPosition());
     }
 
@@ -44,11 +49,11 @@ public class Destructable : MonoBehaviour {
                 if (bomb != null)
                 {
                     bomb.bomberman.AddReward(Config.REWARD_BLOCK_DESTROY);
-                    ServiceLocator.GetLogManager().rewardPrint("Agente" + bomb.bomberman.playerNumber + " destruiu um bloco", Config.REWARD_BLOCK_DESTROY);
+                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + bomb.bomberman.playerNumber + " destruiu um bloco", Config.REWARD_BLOCK_DESTROY);
                 }
                 else
                 {
-                    ServiceLocator.GetLogManager().print("Bomba nula");
+                    ServiceLocator.getManager(scenarioId).GetLogManager().print("Bomba nula");
                 }
 
                 gameObject.SetActive(false);

@@ -35,9 +35,14 @@ public class BinaryNode : BaseNode {
         }
     }
 
-    public override int getPositionAgent()
+    public override int getPositionAgent(int playerNumber)
     {
-        if (hasFlag(StateType.ST_Agent))
+        StateType testFlag = StateType.ST_Agent2;
+
+        if (playerNumber == 1)
+            testFlag = StateType.ST_Agent1;
+
+        if (hasFlag(testFlag))
         {
             return 1;
         }

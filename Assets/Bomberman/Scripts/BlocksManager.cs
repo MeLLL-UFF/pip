@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class BlocksManager {
 
-    static bool initialized = false;
+    bool initialized = false;
 
     private List<Destructable> blocks = new List<Destructable>();
 

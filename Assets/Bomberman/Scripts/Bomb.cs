@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class Bomb : MonoBehaviour {
 
+    public int scenarioId;
     public GameObject explosionPrefab;
     public GameObject dangerPrefab;
     public LayerMask levelMask;
@@ -18,7 +19,6 @@ public class Bomb : MonoBehaviour {
 
     private void Awake()
     {
-        grid = GameObject.Find("GridSystem").GetComponent<Grid>();
         stateType = StateType.ST_Bomb;
     }
 
@@ -45,8 +45,9 @@ public class Bomb : MonoBehaviour {
         GameObject dangerObject = Instantiate(dangerPrefab, transform.position, Quaternion.identity, transform.parent);
         dangerObject.GetComponent<Danger>().myBomb = this;
         dangerObject.GetComponent<Danger>().grid = grid;
+        dangerObject.GetComponent<Danger>().scenarioId = scenarioId;
 
-        ServiceLocator.GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
+        ServiceLocator.getManager(scenarioId).GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
         //comentado porque senão vai sobrescrever a bomba no mapa
         //grid.enableObjectOnGrid(StateType.ST_Danger, dangerObject.GetComponent<DestroySelf>().GetGridPosition());
 
@@ -61,8 +62,9 @@ public class Bomb : MonoBehaviour {
         GameObject explosionObject = Instantiate(explosionPrefab, transform.position, Quaternion.identity, transform.parent);
         explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
         explosionObject.GetComponent<DestroySelf>().grid = grid;
+        explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
 
-        ServiceLocator.GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
+        ServiceLocator.getManager(scenarioId).GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
         grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
 
         StartCoroutine(CreateExplosions(Vector3.forward));
@@ -80,7 +82,7 @@ public class Bomb : MonoBehaviour {
         }
 
         grid.disableObjectOnGrid(stateType, GetGridPosition());
-        ServiceLocator.GetBombManager().removeBomb(bombId);
+        ServiceLocator.getManager(scenarioId).GetBombManager().removeBomb(bombId);
 
         Destroy(gameObject, .3f);
     }
@@ -102,8 +104,9 @@ public class Bomb : MonoBehaviour {
                 GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation, transform.parent);
                 explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
                 explosionObject.GetComponent<DestroySelf>().grid = grid;
+                explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
 
-                ServiceLocator.GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
+                ServiceLocator.getManager(scenarioId).GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
                 grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
             }
             else
@@ -113,8 +116,9 @@ public class Bomb : MonoBehaviour {
                     GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation, transform.parent);
                     explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
                     explosionObject.GetComponent<DestroySelf>().grid = grid;
+                    explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
 
-                    ServiceLocator.GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
+                    ServiceLocator.getManager(scenarioId).GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
                     grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
                 }
 
@@ -137,8 +141,9 @@ public class Bomb : MonoBehaviour {
                 GameObject dangerObject = Instantiate(dangerPrefab, transform.position + (i * direction), dangerPrefab.transform.rotation, transform.parent);
                 dangerObject.GetComponent<Danger>().myBomb = gameObject.GetComponent<Bomb>();
                 dangerObject.GetComponent<Danger>().grid = grid;
+                dangerObject.GetComponent<Danger>().scenarioId = scenarioId;
 
-                ServiceLocator.GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
+                ServiceLocator.getManager(scenarioId).GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
                 grid.enableObjectOnGrid(StateType.ST_Danger, dangerObject.GetComponent<Danger>().GetGridPosition());
             }
             else
@@ -148,8 +153,9 @@ public class Bomb : MonoBehaviour {
                     GameObject dangerObject = Instantiate(dangerPrefab, transform.position + (i * direction), dangerPrefab.transform.rotation, transform.parent);
                     dangerObject.GetComponent<Danger>().myBomb = gameObject.GetComponent<Bomb>();
                     dangerObject.GetComponent<Danger>().grid = grid;
+                    dangerObject.GetComponent<Danger>().scenarioId = scenarioId;
 
-                    ServiceLocator.GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
+                    ServiceLocator.getManager(scenarioId).GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
                     grid.enableObjectOnGrid(StateType.ST_Danger, dangerObject.GetComponent<Danger>().GetGridPosition());
                 }
 

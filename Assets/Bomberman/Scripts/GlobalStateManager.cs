@@ -85,7 +85,11 @@ public class GlobalStateManager : MonoBehaviour
             temp = "The game ended in a draw!";
         }
 
-        ServiceLocator.GetLogManager().print(temp);
+        ServiceLocator.getManager(1).GetLogManager().print(temp);
+
+        if (ServiceLocator.getManager(2) != null)
+            ServiceLocator.getManager(2).GetLogManager().print(temp);
+
         //txtRef.text = temp;
         //btnRef.gameObject.SetActive(true);
     }
@@ -97,6 +101,9 @@ public class GlobalStateManager : MonoBehaviour
 
     void OnApplicationQuit()
     {
-        ServiceLocator.GetLogManager().finish();
+        ServiceLocator.getManager(1).GetLogManager().finish();
+
+        if (ServiceLocator.getManager(2) != null)
+            ServiceLocator.getManager(2).GetLogManager().finish();
     }
 }

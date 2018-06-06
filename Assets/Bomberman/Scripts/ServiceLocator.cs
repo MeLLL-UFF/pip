@@ -2,48 +2,72 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ServiceLocator : Singleton<ServiceLocator>
+public class Managers
 {
-    static BombManager sBombManager;
-    static BlocksManager sBlocksManager;
-    static PlayersManager sPlayersManager;
-    static LogManager sLogManager;
+    public int id;
 
-    protected override void Init()
+    private BombManager sBombManager;
+    private BlocksManager sBlocksManager;
+    private LogManager sLogManager;
+
+    public Managers(int _id)
     {
-        DontDestroyOnLoad(this);
-
-        sLogManager = new LogManager();
+        id = _id;
+        sLogManager = new LogManager(id);
         sBombManager = new BombManager();
         sBlocksManager = new BlocksManager();
-        sPlayersManager = new PlayersManager();
     }
 
-    public static BombManager GetBombManager()
+    public LogManager GetLogManager()
+    {
+        Debug.Assert(sLogManager != null, "sLogManager is null.");
+
+        return sLogManager;
+    }
+
+    public BombManager GetBombManager()
     {
         Debug.Assert(sBombManager != null, "sBombManager is null.");
 
         return sBombManager;
     }
 
-    public static BlocksManager GetBlocksManager()
+    public BlocksManager GetBlocksManager()
     {
         Debug.Assert(sBlocksManager != null, "sBlocksManager is null.");
 
         return sBlocksManager;
     }
+}
 
-    public static PlayersManager GetPlayersManager()
+public class ServiceLocator : Singleton<ServiceLocator>
+{
+    bool hasImitation = true;
+    static Managers manager1 = null;
+    static Managers manager2 = null;
+
+    protected override void Init()
     {
-        Debug.Assert(sPlayersManager != null, "sPlayersManager is null.");
+        DontDestroyOnLoad(this);
 
-        return sPlayersManager;
+        if (hasImitation)
+        {
+            manager1 = new Managers(1);
+            manager2 = new Managers(2);
+        }
+        else
+        {
+            manager1 = new Managers(1);
+        }
     }
 
-    public static LogManager GetLogManager()
+    public static Managers getManager(int id)
     {
-        Debug.Assert(sPlayersManager != null, "sPlayersManager is null.");
+        if (id == 1)
+            return manager1;
+        else if (id == 2)
+            return manager2;
 
-        return sLogManager;
+        return null;
     }
 }
