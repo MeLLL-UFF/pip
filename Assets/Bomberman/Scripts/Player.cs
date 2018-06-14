@@ -49,6 +49,7 @@ public class Player : Agent
     public float moveSpeed = 5f;
     public bool canDropBombs;
     public bool dead = false;
+    public bool targetReached = false;
     public bool canMove = true;
     public GameObject bombPrefab;
     public Transform Target;
@@ -79,6 +80,18 @@ public class Player : Agent
 
     private GameObject playerModel;
 
+    //variaveis usadas para salvar arquivo de replay
+    public bool saveReplay = true;
+    private ReplayWriter replayWriter;
+    private string observationGridString;
+    private string actionIdString;
+
+    private void clearReplayVars()
+    {
+        observationGridString = "";
+        actionIdString = "";
+    }
+
     public StateType getStateType()
     {
         return stateType;
@@ -96,20 +109,22 @@ public class Player : Agent
         return new Vector2(n.gridX, n.gridY);
     }
 
-    public void Awake()
+    public void Start()
     {
         academy = FindObjectOfType(typeof(BombermanAcademy)) as BombermanAcademy;
         if (playerNumber == 1)
         {
             stateType = StateType.ST_Agent1;
-            academy.setAgent1(this);
+            ServiceLocator.getManager(scenarioId).GetPlayerManager().setAgent1(this);
         }
         else if (playerNumber == 2)
         {
-            //como o agente está imitando o outro, logo é necessário que o espaço de estados seja representado da mesma forma
-            stateType = StateType.ST_Agent1;
-            academy.setAgent2(this);
+            stateType = StateType.ST_Agent2;
+            ServiceLocator.getManager(scenarioId).GetPlayerManager().setAgent2(this);
         }
+
+        if (saveReplay)
+            replayWriter = new ReplayWriter(playerNumber, scenarioId);
     }
 
     public override void InitializeAgent()
@@ -120,7 +135,9 @@ public class Player : Agent
         closestDistance = float.MaxValue;
         previousDistance = float.MaxValue;
         isReady = true;
-        
+        targetReached = false;
+
+
         playerModel = transform.Find("PlayerModel").gameObject;
 
         rigidBody = GetComponent<Rigidbody>();
@@ -144,9 +161,9 @@ public class Player : Agent
         this.rigidBody.velocity = Vector3.zero;
         
         canMove = true;
+        targetReached = false;
         hasPlacedBomb = false;
         canDropBombs = true;
-        dead = false;
         isInDanger = false;
         closestDistance = float.MaxValue;
         previousDistance = float.MaxValue;
@@ -154,17 +171,21 @@ public class Player : Agent
 
         ServiceLocator.getManager(scenarioId).GetLogManager().localEpisodePrint(localEpisode++, this);
 
-        //if (playerNumber == 1)
-        //{
+        if (playerNumber == 1)
+        {
+            //Debug.Log("Agente 1 resetou a fase");
             ServiceLocator.getManager(scenarioId).GetBombManager().clearBombs();
             ServiceLocator.getManager(scenarioId).GetBlocksManager().resetBlocks();
             grid.refreshNodesInGrid();
             isReady = true;
-        /*}
+        }
         else
         {
+            //Debug.Log("Agente 2 nao resetou a fase");
             isReady = true;
-        }*/
+        }
+
+        dead = false;
     }
 
     private void AddVectorObsForGrid()
@@ -194,7 +215,16 @@ public class Player : Agent
                 {
                     for (int x = 0; x < grid.GetGridSizeX(); ++x)
                     {
-                        AddVectorObs(grid.NodeFromPos(x, y).getBinary());
+                        int cell = grid.NodeFromPos(x, y).getBinary();
+                        AddVectorObs(cell);
+
+                        if (saveReplay)
+                        {
+                            if (observationGridString.Length > 0)
+                                observationGridString += "," + cell;
+                            else
+                                observationGridString = cell.ToString();
+                        }
                     }
                 }
             }
@@ -254,6 +284,7 @@ public class Player : Agent
 
     public override void CollectObservations()
     {
+        clearReplayVars();
         myGridPosition = GetGridPosition();
         //AddVectorObs(myGridPosition); //add +2
 
@@ -290,16 +321,6 @@ public class Player : Agent
         ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " tentou andar sem poder", Config.REWARD_INVALID_ACTION);
     }
 
-    private void killAgent()
-    {
-        dead = true;
-        grid.clearAgentOnGrid(this);
-        playerModel.SetActive(false);
-        transform.position = initialPosition;
-
-        Invoke("DoneWithDelay", 3.0f);
-    }
-
     public override void AgentAction(float[] vectorAction, string textAction)
     {
         //Monitor.Log("CumulativeReward", GetCumulativeReward(), MonitorType.text, transform);
@@ -318,123 +339,156 @@ public class Player : Agent
 
             ActionType action = ActionTypeExtension.convert((int)vectorAction[0]);
 
-            //Testar objetivo final e target aqui porque foi observado que ao chegar ao destino final, o estado não é atualizado.
-            if (grid.checkTarget(myGridPosition))
+            if (saveReplay)
             {
-                AddReward(Config.REWARD_GOAL);
-                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou o objetivo", Config.REWARD_GOAL);
-                Done();
-                doneAnother();
+                actionIdString = ((int)vectorAction[0]).ToString();
+                replayWriter.printStep(observationGridString, actionIdString);
             }
-
-            hasPlacedBomb = false;
-            animator.SetBool("Walking", false);
             
-            //-----------------------------------------------------------------------------------------------------
-
-            Vector2 newPos;
-            switch (action)
+            if (!targetReached)
             {
-                //cima
-                case ActionType.AT_Up:
-                    //rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, moveSpeed);
-                    newPos = myGridPosition + new Vector2(0, 1);
-                    if (grid.checkFreePosition(newPos))
-                    {
-                        transform.position = transform.position + new Vector3(0, 0, 1);
-                    }
-                    else
-                        penalizeInvalidMovement();
+                //Testar objetivo final e target aqui porque foi observado que ao chegar ao destino final, o estado não é atualizado.
+                if (grid.checkTarget(myGridPosition))
+                {
+                    AddReward(Config.REWARD_GOAL);
+                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou o objetivo", Config.REWARD_GOAL);
+                    targetReached = true;
+                    ServiceLocator.getManager(scenarioId).GetPlayerManager().addTargetCount();
+                    //Done();
+                    //doneAnother();
+                }
 
-                    transform.rotation = Quaternion.Euler(0, 0, 0);
-                    animator.SetBool("Walking", true);
-                    break;
-                //baixo
-                case ActionType.AT_Down:
-                    //rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, -moveSpeed);
-                    newPos = myGridPosition + new Vector2(0, -1);
-                    if (grid.checkFreePosition(newPos))
-                    {
-                        transform.position = transform.position + new Vector3(0, 0, -1);
-                    }
-                    else
-                        penalizeInvalidMovement();
+                hasPlacedBomb = false;
+                animator.SetBool("Walking", false);
 
-                    transform.rotation = Quaternion.Euler(0, 180, 0);
-                    animator.SetBool("Walking", true);
-                    break;
-                //direita
-                case ActionType.AT_Right:
-                    //rigidBody.velocity = new Vector3(moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
-                    newPos = myGridPosition + new Vector2(1, 0);
-                    if (grid.checkFreePosition(newPos))
-                    {
-                        transform.position = transform.position + new Vector3(1, 0, 0);
-                    }
-                    else
-                        penalizeInvalidMovement();
+                //-----------------------------------------------------------------------------------------------------
 
-                    transform.rotation = Quaternion.Euler(0, 90, 0);
-                    animator.SetBool("Walking", true);
-                    break;
-                //esquerda
-                case ActionType.AT_Left:
-                    //rigidBody.velocity = new Vector3(-moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
-                    newPos = myGridPosition + new Vector2(-1, 0);
-                    if (grid.checkFreePosition(newPos))
-                    {
-                        transform.position = transform.position + new Vector3(-1, 0, 0);
-                    }
-                    else
-                        penalizeInvalidMovement();
+                Vector2 newPos;
+                switch (action)
+                {
+                    //cima
+                    case ActionType.AT_Up:
+                        //rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, moveSpeed);
+                        newPos = myGridPosition + new Vector2(0, 1);
+                        if (grid.checkFreePosition(newPos))
+                        {
+                            transform.position = transform.position + new Vector3(0, 0, 1);
+                        }
+                        else
+                            penalizeInvalidMovement();
 
-                    transform.rotation = Quaternion.Euler(0, 270, 0);
-                    animator.SetBool("Walking", true);
-                    break;
-                //Drop bomb
-                case ActionType.AT_Bomb:
-                    if (canDropBombs)
-                    { 
-                        hasPlacedBomb = true;
-                        DropBomb();
-                    }
-                    else
-                    {
-                        AddReward(Config.REWARD_INVALID_BOMB_ACTION);
-                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " tentou colocar bomba sem poder", Config.REWARD_INVALID_BOMB_ACTION);
-                    }
-                    break;
-                //Wait
-                case ActionType.AT_Wait:
-                default:
-                    break;
+                        transform.rotation = Quaternion.Euler(0, 0, 0);
+                        animator.SetBool("Walking", true);
+                        break;
+                    //baixo
+                    case ActionType.AT_Down:
+                        //rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, -moveSpeed);
+                        newPos = myGridPosition + new Vector2(0, -1);
+                        if (grid.checkFreePosition(newPos))
+                        {
+                            transform.position = transform.position + new Vector3(0, 0, -1);
+                        }
+                        else
+                            penalizeInvalidMovement();
+
+                        transform.rotation = Quaternion.Euler(0, 180, 0);
+                        animator.SetBool("Walking", true);
+                        break;
+                    //direita
+                    case ActionType.AT_Right:
+                        //rigidBody.velocity = new Vector3(moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
+                        newPos = myGridPosition + new Vector2(1, 0);
+                        if (grid.checkFreePosition(newPos))
+                        {
+                            transform.position = transform.position + new Vector3(1, 0, 0);
+                        }
+                        else
+                            penalizeInvalidMovement();
+
+                        transform.rotation = Quaternion.Euler(0, 90, 0);
+                        animator.SetBool("Walking", true);
+                        break;
+                    //esquerda
+                    case ActionType.AT_Left:
+                        //rigidBody.velocity = new Vector3(-moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
+                        newPos = myGridPosition + new Vector2(-1, 0);
+                        if (grid.checkFreePosition(newPos))
+                        {
+                            transform.position = transform.position + new Vector3(-1, 0, 0);
+                        }
+                        else
+                            penalizeInvalidMovement();
+
+                        transform.rotation = Quaternion.Euler(0, 270, 0);
+                        animator.SetBool("Walking", true);
+                        break;
+                    //Drop bomb
+                    case ActionType.AT_Bomb:
+                        if (canDropBombs)
+                        {
+                            hasPlacedBomb = true;
+                            DropBomb();
+                        }
+                        else
+                        {
+                            AddReward(Config.REWARD_INVALID_BOMB_ACTION);
+                            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " tentou colocar bomba sem poder", Config.REWARD_INVALID_BOMB_ACTION);
+                        }
+                        break;
+                    //Wait
+                    case ActionType.AT_Wait:
+                    default:
+                        break;
+                }
+
+                //recompensas
+                myGridPosition = GetGridPosition();
+
+                float distanceToTarget = Vector2.Distance(myGridPosition, targetGridPosition);
+
+                //se aproximando ainda mais. Melhor aproximação
+                if (distanceToTarget < closestDistance)
+                {
+                    closestDistance = distanceToTarget;
+                    AddReward(Config.REWARD_CLOSEST_DISTANCE);
+                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " melhor aproximacao do objetivo", Config.REWARD_CLOSEST_DISTANCE);
+                }
+
+                if (distanceToTarget < previousDistance)
+                {
+                    AddReward(Config.REWARD_APPROACHED_DISTANCE);
+                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " se aproximou", Config.REWARD_APPROACHED_DISTANCE);
+                }
+                else if (distanceToTarget > previousDistance)
+                {
+                    AddReward(Config.REWARD_FAR_DISTANCE);
+                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " se distanciou", Config.REWARD_FAR_DISTANCE);
+                }
+
+                previousDistance = distanceToTarget;
             }
-
-            //recompensas
-            myGridPosition = GetGridPosition();
-
-            float distanceToTarget = Vector2.Distance(myGridPosition, targetGridPosition);
-
-            //se aproximando ainda mais. Melhor aproximação
-            if (distanceToTarget < closestDistance)
+            else
             {
-                closestDistance = distanceToTarget;
-                AddReward(Config.REWARD_CLOSEST_DISTANCE);
-                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " melhor aproximacao do objetivo", Config.REWARD_CLOSEST_DISTANCE);
-            }
+                if (playerNumber == 1)
+                {
+                    PlayerManager playerManager = ServiceLocator.getManager(scenarioId).GetPlayerManager();
+                    if (playerManager.getTargetCount() >= 2)
+                    {
+                        playerManager.clearTargetCount();
 
-            if (distanceToTarget < previousDistance)
-            {
-                AddReward(Config.REWARD_APPROACHED_DISTANCE);
-                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " se aproximou", Config.REWARD_APPROACHED_DISTANCE);
-            }
-            else if (distanceToTarget > previousDistance)
-            {
-                AddReward(Config.REWARD_FAR_DISTANCE);
-                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " se distanciou", Config.REWARD_FAR_DISTANCE);
-            }
+                        AddReward(Config.REWARD_TEAM_GOAL);
+                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + ": time alcancou o objetivo", Config.REWARD_TEAM_GOAL);
+                        targetReached = false;
 
-            previousDistance = distanceToTarget;
+                        playerManager.getAgent2().AddReward(Config.REWARD_TEAM_GOAL);
+                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerManager.getAgent2().playerNumber + ": time alcancou o objetivo", Config.REWARD_TEAM_GOAL);
+                        playerManager.getAgent2().targetReached = false;
+
+                        Done();
+                        doneAnother();
+                    }
+                }
+            }
 
             //penalidade de tempo
             AddReward(Config.REWARD_TIME_PENALTY);
@@ -510,7 +564,17 @@ public class Player : Agent
             {
                 AddReward(Config.REWARD_DIE);
                 ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " atingido por explosao", Config.REWARD_DIE);
-                globalManager.PlayerDied(playerNumber);
+
+                Bomb bomb = other.gameObject.GetComponent<DestroySelf>().myBomb;
+                if (bomb != null)
+                {
+                    if (bomb.bomberman.playerNumber != playerNumber)
+                    {
+                        //penalizando amigo por fogo amigo
+                        bomb.bomberman.AddReward(Config.REWARD_KILL_FRIEND);
+                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + bomb.bomberman.playerNumber + " matou amigo", Config.REWARD_KILL_FRIEND);
+                    }
+                }
 
                 killAgent();
             }
@@ -533,30 +597,98 @@ public class Player : Agent
         }
     }
 
+    private void defaultKillCode()
+    {
+        dead = true;
+        grid.clearAgentOnGrid(this);
+        playerModel.SetActive(false);
+        transform.position = initialPosition;
+    }
+
+    private void killAgentOnly()
+    {
+        defaultKillCode();
+        //Debug.Log("Morri force - agente " + playerNumber);
+    }
+
+    private void killAgentBoth()
+    {
+        defaultKillCode();
+        //Debug.Log("Morri both - agente " + playerNumber);
+
+        Invoke("DoneWithDelay", 2.5f);
+    }
+
+    private void killAgent()
+    {
+        defaultKillCode();
+        //Debug.Log("Morri - agente " + playerNumber);
+
+        if (ServiceLocator.getManager(scenarioId).GetPlayerManager().getDeadCount() == 0)
+        {
+            ServiceLocator.getManager(scenarioId).GetPlayerManager().addDeadCount();
+            Invoke("VerifyDeadCount", 0.5f);
+        }
+
+    }
+
+    void VerifyDeadCount()
+    {
+        PlayerManager playerManager = ServiceLocator.getManager(scenarioId).GetPlayerManager();
+        /*if (playerManager.getDeadCount() >= 2)
+        {
+            Debug.Log("DeadCount2");
+            //playerManager.clearDeadCount();
+            Invoke("DoneWithDelay", 2.5f);
+        }
+        else */if (playerManager.getDeadCount() >= 1)
+        {
+            //playerManager.clearDeadCount();
+            if (playerManager.getAgent1().dead)
+            {
+                //Debug.Log("DeadCount1 ag1");
+                Invoke("DoneWithDelay", 2.5f);
+            }
+            else if (playerManager.getAgent2().dead)
+            {
+                //Debug.Log("DeadCount1 ag2");
+                Invoke("DoneWithDelay", 0.0f);
+            }
+        }
+    }
+
     private void doneAnother()
     {
-        /*isReady = false;
+        isReady = false;
         if (playerNumber == 1)
         {
-            if (academy.getAgent2() != null)
+            Player another = ServiceLocator.getManager(scenarioId).GetPlayerManager().getAgent2();
+            if (another != null)
             {
-                academy.getAgent2().Done();
-                academy.getAgent2().isReady = false;
+                //Debug.Log("Matei o agente2");
+                another.killAgentOnly();
+                another.Done();
+                another.isReady = false;
+                ServiceLocator.getManager(scenarioId).GetPlayerManager().clearDeadCount();
             }
         }
         else if (playerNumber == 2)
         {
-            if (academy.getAgent1() != null)
+            dead = true;
+            Player another = ServiceLocator.getManager(scenarioId).GetPlayerManager().getAgent1();
+            if (another != null)
             {
-                academy.getAgent1().Done();
-                academy.getAgent1().isReady = false;
+                //Debug.Log("Matei o agente1");
+                another.killAgentBoth();
+                another.isReady = false;
             }
-        }*/
+        }
     }
 
     private void DoneWithDelay()
     {
-        Done();
+        if (playerNumber == 1)
+            Done();
 
         doneAnother();
     }
@@ -568,7 +700,7 @@ public class Player : Agent
 
     private void WaitTimeInference()
     {
-        if (/*academy.isReady() &&*/ !dead)
+        if (!dead && ServiceLocator.getManager(scenarioId).GetPlayerManager().getDeadCount() == 0)
         {
             if (!academy.GetIsInference())
             {
@@ -587,5 +719,11 @@ public class Player : Agent
                 }
             }
         }
+    }
+
+    void OnApplicationQuit()
+    {
+        if (saveReplay)
+            replayWriter.finish();
     }
 }

@@ -201,7 +201,7 @@ public class Grid : MonoBehaviour {
                 else if (number == 2)
                 {
                     //como o agente está imitando o outro, logo é necessário que o espaço de estados seja representado da mesma forma
-                    nodeStateType = StateType.ST_Agent1;
+                    nodeStateType = StateType.ST_Agent2;
                 }
                     
             }

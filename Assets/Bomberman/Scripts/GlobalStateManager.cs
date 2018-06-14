@@ -35,12 +35,6 @@ using UnityEngine.SceneManagement;
 
 public class GlobalStateManager : MonoBehaviour
 {
-    private int deadPlayers = 0;
-    private int deadPlayerNumber = -1;
-
-    //default is false
-    private bool[] deadPlayersControl = new bool[2];
-
     public Text txtRef;
     public Button btnRef;
     public float xMax = 9.0f / 2.0f;
@@ -49,49 +43,6 @@ public class GlobalStateManager : MonoBehaviour
     private void Start()
     {
         btnRef.gameObject.SetActive(false);
-    }
-
-    public void PlayerDied(int playerNumber)
-    {
-        if (!deadPlayersControl[playerNumber - 1])
-        {
-            deadPlayers++;
-            deadPlayersControl[playerNumber - 1] = true;
-
-            if (deadPlayers == 1)
-            {
-                deadPlayerNumber = playerNumber;
-                Invoke("CheckPlayerDeath", .3f);
-            }
-        }
-    }
-
-    void CheckPlayerDeath()
-    {
-        string temp = "";
-        if (deadPlayers == 1)
-        {
-            if (deadPlayerNumber == 1)
-            {
-                temp = "Player 2 is the winner!";
-            }
-            else
-            {
-                temp = "Player 1 is the winner!";
-            }
-        }
-        else
-        {
-            temp = "The game ended in a draw!";
-        }
-
-        ServiceLocator.getManager(1).GetLogManager().print(temp);
-
-        if (ServiceLocator.getManager(2) != null)
-            ServiceLocator.getManager(2).GetLogManager().print(temp);
-
-        //txtRef.text = temp;
-        //btnRef.gameObject.SetActive(true);
     }
 
     public void RestartGame()

@@ -6,7 +6,9 @@ public class Config {
 
     //Recompensas
     public static float REWARD_DIE = -1f;
+    public static float REWARD_KILL_FRIEND = -1f;
     public static float REWARD_GOAL = 1f;
+    public static float REWARD_TEAM_GOAL = 1f;
     public static float REWARD_BLOCK_DESTROY = 0.21f;
     //public static float REWARD_BLOCK_DESTROY = 0.51f;
     public static float REWARD_CLOSEST_DISTANCE = 0.31f;
