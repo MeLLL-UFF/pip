@@ -5,10 +5,11 @@ using UnityEngine;
 public class BombermanDecision : MonoBehaviour, Decision {
 
     private ReplayReader replayReader;
+    public string replayFileName;
 
     public void Awake()
     {
-        replayReader = new ReplayReader("behavior.txt");
+        replayReader = new ReplayReader(replayFileName);
     }
 
     void OnApplicationQuit()
@@ -19,6 +20,32 @@ public class BombermanDecision : MonoBehaviour, Decision {
 
     bool checkObservations(List<float> vectorObs, ReplayReader.ReplayStep replayStep)
     {
+        if (vectorObs == null)
+        {
+            //Debug.Log("vectorObs nulo");
+            return false;
+        }
+
+        if (replayStep == null)
+        {
+            //Debug.Log("replayStep nulo");
+            return false;
+        }
+        else
+        {
+            if (replayStep.observationGrid == null)
+            {
+                //Debug.Log("observationGrid nulo");
+                return false;
+            }
+        }
+
+        if (vectorObs.Count != replayStep.observationGrid.Length)
+        {
+            //Debug.Log("Vetores de tamanhos diferentes");
+            return false;
+        }
+
         for(int i = 0; i < vectorObs.Count; i++)
         {
             int obs = (int)vectorObs[i];
@@ -33,6 +60,15 @@ public class BombermanDecision : MonoBehaviour, Decision {
     {
         int searchAll = 0;
         ReplayReader.ReplayStep replayStep = replayReader.readStep();
+        while(replayStep == null)
+        {
+            //Debug.Log("Fim de arquivo de replay");
+            replayReader.finish();
+            replayReader.reopen();
+            replayStep = replayReader.readStep();
+        }
+  
+
         while (!checkObservations(vectorObs, replayStep))
         {
             replayStep = replayReader.readStep();
@@ -42,13 +78,13 @@ public class BombermanDecision : MonoBehaviour, Decision {
 
                 if (searchAll <= 1)
                 {
-                    Debug.Log("Procurando matche");
+                    //Debug.Log("Procurando matche");
                     replayReader.finish();
                     replayReader.reopen();
                 }
                 else
                 {
-                    Debug.Log("Nao foi encontrado matche. Evitando Loop infinito");
+                    //Debug.Log("Nao foi encontrado matche. Evitando Loop infinito");
                     return new float[1] { 0 };
                 }
             }
@@ -70,7 +106,7 @@ public class BombermanDecision : MonoBehaviour, Decision {
             ReplayReader.ReplayStep replayStep = replayReader.readStep();
             if (replayStep == null)
             {
-                Debug.Log("Fim de arquivo de replay");
+                //Debug.Log("Fim de arquivo de replay");
                 replayReader.finish();
                 replayReader.reopen();
             }
