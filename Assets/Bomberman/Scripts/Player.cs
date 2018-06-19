@@ -32,11 +32,11 @@ using UnityEngine;
 using System.Collections;
 using System;
 using System.Collections.Generic;
+using MLAgents;
 
 public class Player : Agent
 {
     public int scenarioId;
-    public GlobalStateManager globalManager;
 
     [Header("Specific to Player")]
     private BombermanAcademy academy;
@@ -51,6 +51,7 @@ public class Player : Agent
     public bool dead = false;
     public bool targetReached = false;
     public bool canMove = true;
+
     public GameObject bombPrefab;
     public Transform Target;
     public Grid grid;
@@ -70,6 +71,7 @@ public class Player : Agent
     private float previousDistance = float.MaxValue;
 
     private int localEpisode = 1;
+    private int localStep = 1;
     
     public float timeBetweenDecisionsAtInference;
     private float timeSinceDecision;
@@ -109,7 +111,12 @@ public class Player : Agent
         return new Vector2(n.gridX, n.gridY);
     }
 
-    public void Start()
+    public int getLocalStep()
+    {
+        return localStep;
+    }
+
+    private void Start()
     {
         academy = FindObjectOfType(typeof(BombermanAcademy)) as BombermanAcademy;
         if (playerNumber == 1)
@@ -129,33 +136,43 @@ public class Player : Agent
 
     public override void InitializeAgent()
     {
+        Debug.Log("InitializeAgent foi chamado");
         base.InitializeAgent();
+
         isInDanger = false;
         canDropBombs = true;
         closestDistance = float.MaxValue;
         previousDistance = float.MaxValue;
+        initialPosition = transform.position;
+        oldLocalPosition = transform.localPosition;
+
         isReady = true;
         targetReached = false;
 
-
         playerModel = transform.Find("PlayerModel").gameObject;
-
         rigidBody = GetComponent<Rigidbody>();
         animator = transform.Find("PlayerModel").GetComponent<Animator>();
-
-        initialPosition = transform.position;
-        oldLocalPosition = transform.localPosition;
 
         Vector3 gridTarget3d = Target.transform.localPosition - Vector3.one;
         targetGridPosition = new Vector2(Mathf.RoundToInt(gridTarget3d.x), Mathf.RoundToInt(gridTarget3d.z));
 
-        //grid.updateAgentOnGrid(this); // dando erro de referencia pois o grid não foi iniciado ainda. Porém o grid recupera essa informação quando inicia.
-
         wasInitialized = true;
     }
 
+    /*public override void AgentOnDone()
+    {
+        Debug.Log("AgentOnDone foi chamado");
+        base.AgentOnDone();
+
+        //ver como recriar agente que não reseta automaticamente. https://github.com/Unity-Technologies/ml-agents/blob/master/docs/Learning-Environment-Design-Agents.md
+        //Instantiating an Agent at Runtime
+
+        Destroy(gameObject);
+    }*/
+
     public override void AgentReset()
     {
+        Debug.Log("AgentReset foi chamado");
         this.transform.position = initialPosition;
         this.rigidBody.angularVelocity = Vector3.zero;
         this.rigidBody.velocity = Vector3.zero;
@@ -169,6 +186,7 @@ public class Player : Agent
         previousDistance = float.MaxValue;
         playerModel.SetActive(true);
 
+        localStep = 1;
         ServiceLocator.getManager(scenarioId).GetLogManager().localEpisodePrint(localEpisode++, this);
 
         if (playerNumber == 1)
@@ -336,6 +354,7 @@ public class Player : Agent
         if (!dead)
         {
             ServiceLocator.getManager(scenarioId).GetLogManager().localStepPrint(this);
+            localStep++;
 
             ActionType action = ActionTypeExtension.convert((int)vectorAction[0]);
 
@@ -354,8 +373,13 @@ public class Player : Agent
                     ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou o objetivo", Config.REWARD_GOAL);
                     targetReached = true;
                     ServiceLocator.getManager(scenarioId).GetPlayerManager().addTargetCount();
-                    //Done();
-                    //doneAnother();
+
+                    if (ServiceLocator.getManager(scenarioId).GetPlayerManager().getNumPlayers() <= 1)
+                    {
+                        targetReached = false;
+                        Done();
+                        //doneAnother();
+                    }
                 }
 
                 hasPlacedBomb = false;
@@ -514,11 +538,12 @@ public class Player : Agent
             grid.updateAgentOnGrid(this);
             oldLocalPosition = transform.localPosition;
         }
+        else
+        {
+            Debug.Log("Estou morto " + GetStepCount());
+        }
     }
 
-    /// <summary>
-    /// Drops a bomb beneath the player
-    /// </summary>
     private void DropBomb ()
     {
         if (bombPrefab)
@@ -669,6 +694,11 @@ public class Player : Agent
                 another.killAgentOnly();
                 another.Done();
                 another.isReady = false;
+                ServiceLocator.getManager(scenarioId).GetPlayerManager().clearDeadCount();
+            }
+
+            if (ServiceLocator.getManager(scenarioId).GetPlayerManager().getNumPlayers() == 1)
+            {
                 ServiceLocator.getManager(scenarioId).GetPlayerManager().clearDeadCount();
             }
         }

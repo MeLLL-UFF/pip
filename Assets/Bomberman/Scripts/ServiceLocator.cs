@@ -79,4 +79,12 @@ public class ServiceLocator : Singleton<ServiceLocator>
 
         return null;
     }
+
+    void OnApplicationQuit()
+    {
+        getManager(1).GetLogManager().finish();
+
+        if (getManager(2) != null)
+            getManager(2).GetLogManager().finish();
+    }
 }

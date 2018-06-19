@@ -9,6 +9,7 @@ public class PlayerManager {
     private Player agent2;
     private int deadCount;
     private int targetCount;
+    List<Player> playerList = new List<Player>();
 
     public PlayerManager()
     {
@@ -19,6 +20,16 @@ public class PlayerManager {
             targetCount = 0;
             initialized = true;
         }
+    }
+
+    private void addPlayer(Player p)
+    {
+        playerList.Add(p);
+    }
+
+    public int getNumPlayers()
+    {
+        return playerList.Count;
     }
 
     public void addDeadCount()
@@ -54,11 +65,13 @@ public class PlayerManager {
     public void setAgent1(Player p)
     {
         agent1 = p;
+        addPlayer(p);
     }
 
     public void setAgent2(Player p)
     {
         agent2 = p;
+        addPlayer(p);
     }
 
     public Player getAgent1()

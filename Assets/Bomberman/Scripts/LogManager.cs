@@ -74,7 +74,7 @@ public class LogManager {
 
     public void localStepPrint(Player player)
     {
-        print("Agent " + player.playerNumber + " Step " + player.GetStepCount());
+        print("Agent " + player.playerNumber + " Step " + player.getLocalStep());
         //print("Recompensas:", "\n");
     }
 
