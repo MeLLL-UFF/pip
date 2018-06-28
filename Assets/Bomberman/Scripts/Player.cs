@@ -41,6 +41,12 @@ public class Player : Agent
     [Header("Specific to Player")]
     private BombermanAcademy academy;
 
+    private BCTeacherHelper bcTeacherHelper;
+    private bool firstGoalReached = false;
+    public bool isSpecialist;
+
+    public Transform monitorFocus;
+
     //Player parameters
     [Range (1, 2)] //Enables a nifty slider in the editor. Indicates what player this is: P1 or P2
     public int playerNumber = 1;
@@ -72,6 +78,7 @@ public class Player : Agent
 
     private int localEpisode = 1;
     private int localStep = 1;
+    private int totalLocalStep = 1;
     
     public float timeBetweenDecisionsAtInference;
     private float timeSinceDecision;
@@ -119,6 +126,9 @@ public class Player : Agent
     private void Start()
     {
         academy = FindObjectOfType(typeof(BombermanAcademy)) as BombermanAcademy;
+        if (isSpecialist)
+            bcTeacherHelper = GetComponent<BCTeacherHelper>();
+
         if (playerNumber == 1)
         {
             stateType = StateType.ST_Agent1;
@@ -341,9 +351,7 @@ public class Player : Agent
 
     public override void AgentAction(float[] vectorAction, string textAction)
     {
-        //Monitor.Log("CumulativeReward", GetCumulativeReward(), MonitorType.text, transform);
-        
-        if (GetStepCount() >= Config.MAX_STEP_PER_AGENT)
+        if (getLocalStep() >= Config.MAX_STEP_PER_AGENT)
         {
             AddReward(Config.REWARD_MAX_STEP_REACHED);
             ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou max step", Config.REWARD_MAX_STEP_REACHED);
@@ -355,8 +363,18 @@ public class Player : Agent
         {
             ServiceLocator.getManager(scenarioId).GetLogManager().localStepPrint(this);
             localStep++;
+            totalLocalStep++;
 
             ActionType action = ActionTypeExtension.convert((int)vectorAction[0]);
+            if (monitorFocus != null)
+            {
+                Monitor.Log("Episode: ", (localEpisode-1).ToString(), monitorFocus);
+                Monitor.Log("RT Step: ", (totalLocalStep - 1).ToString(), monitorFocus);
+                Monitor.Log("RL Step: ", (getLocalStep()-1).ToString(), monitorFocus);
+                Monitor.Log(" T Step: ", GetTotalStepCount().ToString(), monitorFocus);
+                Monitor.Log(" L Step: ", GetStepCount().ToString(), monitorFocus);
+                Monitor.Log("ActionP" + playerNumber + ": ", Convert.ToString((int)action), monitorFocus);
+            }
 
             if (saveReplay)
             {
@@ -373,6 +391,8 @@ public class Player : Agent
                     ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou o objetivo", Config.REWARD_GOAL);
                     targetReached = true;
                     ServiceLocator.getManager(scenarioId).GetPlayerManager().addTargetCount();
+
+                    //Debug.Log(playerNumber + ": " + ServiceLocator.getManager(scenarioId).GetPlayerManager().getTargetCount());
 
                     if (ServiceLocator.getManager(scenarioId).GetPlayerManager().getNumPlayers() <= 1)
                     {
@@ -498,7 +518,6 @@ public class Player : Agent
                     PlayerManager playerManager = ServiceLocator.getManager(scenarioId).GetPlayerManager();
                     if (playerManager.getTargetCount() >= 2)
                     {
-                        playerManager.clearTargetCount();
 
                         AddReward(Config.REWARD_TEAM_GOAL);
                         ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + ": time alcancou o objetivo", Config.REWARD_TEAM_GOAL);
@@ -506,10 +525,19 @@ public class Player : Agent
 
                         playerManager.getAgent2().AddReward(Config.REWARD_TEAM_GOAL);
                         ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerManager.getAgent2().playerNumber + ": time alcancou o objetivo", Config.REWARD_TEAM_GOAL);
-                        playerManager.getAgent2().targetReached = false;
+                        
 
                         Done();
-                        doneAnother();
+                        doneAnotherWithoutDeath();
+
+                        if (isSpecialist && !firstGoalReached)
+                        {
+                            playerManager.getAgent2().bcTeacherHelper.forceStopRecord();
+                            playerManager.getAgent2().firstGoalReached = true;
+                            bcTeacherHelper.forceStopRecord();
+                            firstGoalReached = true;
+                        }
+                        
                     }
                 }
             }
@@ -711,6 +739,28 @@ public class Player : Agent
                 //Debug.Log("Matei o agente1");
                 another.killAgentBoth();
                 another.isReady = false;
+            }
+        }
+    }
+
+    private void doneAnotherWithoutDeath()
+    {
+        isReady = false;
+        if (playerNumber == 1)
+        {
+            Player another = ServiceLocator.getManager(scenarioId).GetPlayerManager().getAgent2();
+            if (another != null)
+            {
+                another.Done();
+                another.isReady = false;
+                ServiceLocator.getManager(scenarioId).GetPlayerManager().clearDeadCount();
+                ServiceLocator.getManager(scenarioId).GetPlayerManager().clearTargetCount();
+                //another.targetReached = false;
+            }
+
+            if (ServiceLocator.getManager(scenarioId).GetPlayerManager().getNumPlayers() == 1)
+            {
+                ServiceLocator.getManager(scenarioId).GetPlayerManager().clearDeadCount();
             }
         }
     }
