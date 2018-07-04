@@ -7,10 +7,13 @@ public class BombermanDecision : MonoBehaviour, Decision {
 
     private ReplayReader replayReader;
     public string replayFileName;
+    private string seqId;
+    public bool finishSeqs;
 
     public void Awake()
     {
         replayReader = new ReplayReader(replayFileName);
+        finishSeqs = false;
     }
 
     void OnApplicationQuit()
@@ -34,6 +37,9 @@ public class BombermanDecision : MonoBehaviour, Decision {
         }
         else
         {
+            if (replayStep.command == "CORRUPTED")
+                return false;
+
             if (replayStep.observationGrid == null)
             {
                 //Debug.Log("observationGrid nulo");
@@ -60,20 +66,34 @@ public class BombermanDecision : MonoBehaviour, Decision {
     float[] findMatch(List<float> vectorObs)
     {
         int searchAll = 0;
+        //lê linha do arquivo
         ReplayReader.ReplayStep replayStep = replayReader.readStep();
-        while(replayStep == null)
+        //Debug.Log("Primeiro: " + replayStep.command);
+
+        //se for última linha, reabre o arquivo e lê a primeira linha
+        while (replayStep.command.Equals("END"))
         {
             //Debug.Log("Fim de arquivo de replay");
             replayReader.finish();
             replayReader.reopen();
             replayStep = replayReader.readStep();
         }
-  
 
-        while (!checkObservations(vectorObs, replayStep))
+        //se linha for de sequencia, armazena o seqID e lê a próxima linha
+        //Debug.Log("Segundo: " + replayStep.command);
+        if (replayStep.command.Equals("SEQ"))
         {
+            //Debug.Log("Entrou");
+            seqId = replayStep.seqId;
+            //Debug.Log("Sequencia iniciada: " + seqId);
             replayStep = replayReader.readStep();
-            if (replayStep == null)
+        }
+
+        //procura match entre observação e arquivo de replay
+        //while (!checkObservations(vectorObs, replayStep))
+        {
+            //testa pra ver se é a ultima linha do arquivo. Se for incrementa contador e reabre o arquivo.
+            /*if (replayStep.command.Equals("END"))
             {
                 searchAll++;
 
@@ -82,13 +102,49 @@ public class BombermanDecision : MonoBehaviour, Decision {
                     //Debug.Log("Procurando matche");
                     replayReader.finish();
                     replayReader.reopen();
+                    replayStep = replayReader.readStep();
                 }
                 else
                 {
                     //Debug.Log("Nao foi encontrado matche. Evitando Loop infinito");
                     return new float[1] { 0 };
                 }
+            }*/
+
+            //se linha for de sequencia, armazena o seqID e lê a próxima linha
+            /*if (replayStep.command.Equals("SEQ"))
+            {
+                
+                //procura por sequencia corrente
+                while (!replayStep.seqId.Equals(seqId))
+                {
+                    replayStep = replayReader.readStep();
+
+                    if (replayStep.command.Equals("END"))
+                    {
+                        searchAll++;
+
+                        if (searchAll <= 1)
+                        {
+                            replayReader.finish();
+                            replayReader.reopen();
+                            replayStep = replayReader.readStep();
+                        }
+                        else
+                        {
+                            return new float[1] { 0 };
+                        }
+                    }
+                }
+
+                //lê a proxima linha que é uma de STEP
+                replayStep = replayReader.readStep();
             }
+            else
+            {
+                //Lê a proxima linha
+                replayStep = replayReader.readStep();
+            }*/
         }
 
         return new float[1] { replayStep.actionId };
@@ -104,22 +160,10 @@ public class BombermanDecision : MonoBehaviour, Decision {
         if (gameObject.GetComponent<Brain>().brainParameters.vectorActionSpaceType
             == SpaceType.discrete)
         {
-            ReplayReader.ReplayStep replayStep = replayReader.readStep();
-            if (replayStep == null)
-            {
-                //Debug.Log("Fim de arquivo de replay");
-                replayReader.finish();
-                replayReader.reopen();
-            }
-            else
-            {
-                if (checkObservations(vectorObs, replayStep))
-                    return new float[1] { replayStep.actionId };
-                else
-                {
+            if (!finishSeqs && !done)
                     return findMatch(vectorObs);
-                }
-            }
+
+            return new float[1] { 0 };
         }
 
         // If the vector action space type is discrete, then we don't do anything.     

@@ -26,6 +26,11 @@ public class ReplayWriter {
         }
     }
 
+    public void initSeq(int seqNum)
+    {
+        sw.WriteLine("SEQ_" + seqNum);
+    }
+
     public void printStep(string observationGrid, string actionId)
     {
         sw.WriteLine(observationGrid + ";" + actionId);

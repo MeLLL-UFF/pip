@@ -21,5 +21,5 @@ public class Config {
     public static float REWARD_MAX_STEP_REACHED = -0.5f;
 
     //Max step per agent
-    public static int MAX_STEP_PER_AGENT = 110;
+    public static int MAX_STEP_PER_AGENT = 200;
 }

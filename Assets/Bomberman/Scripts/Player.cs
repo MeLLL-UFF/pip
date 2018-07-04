@@ -40,9 +40,11 @@ public class Player : Agent
 
     [Header("Specific to Player")]
     private BombermanAcademy academy;
+    private BombermanDecision bombermanDecision;
 
     private BCTeacherHelper bcTeacherHelper;
-    private bool firstGoalReached = false;
+    public int numSeqCompleted = 4;
+    private int countSeq = 0;
     public bool isSpecialist;
 
     public Transform monitorFocus;
@@ -91,7 +93,7 @@ public class Player : Agent
 
     //variaveis usadas para salvar arquivo de replay
     public bool saveReplay = true;
-    private ReplayWriter replayWriter;
+    private ReplayWriter replayWriter = null;
     private string observationGridString;
     private string actionIdString;
 
@@ -125,6 +127,7 @@ public class Player : Agent
 
     private void Start()
     {
+        //Debug.Log("Start foi chamado");
         academy = FindObjectOfType(typeof(BombermanAcademy)) as BombermanAcademy;
         if (isSpecialist)
             bcTeacherHelper = GetComponent<BCTeacherHelper>();
@@ -138,16 +141,15 @@ public class Player : Agent
         {
             stateType = StateType.ST_Agent2;
             ServiceLocator.getManager(scenarioId).GetPlayerManager().setAgent2(this);
-        }
-
-        if (saveReplay)
-            replayWriter = new ReplayWriter(playerNumber, scenarioId);
+        } 
     }
 
     public override void InitializeAgent()
     {
-        Debug.Log("InitializeAgent foi chamado");
+        //Debug.Log("InitializeAgent foi chamado");
         base.InitializeAgent();
+
+        countSeq = 0;
 
         isInDanger = false;
         canDropBombs = true;
@@ -166,6 +168,9 @@ public class Player : Agent
         Vector3 gridTarget3d = Target.transform.localPosition - Vector3.one;
         targetGridPosition = new Vector2(Mathf.RoundToInt(gridTarget3d.x), Mathf.RoundToInt(gridTarget3d.z));
 
+        if (isSpecialist)
+            bombermanDecision = brain.GetComponent<BombermanDecision>();
+
         wasInitialized = true;
     }
 
@@ -182,7 +187,7 @@ public class Player : Agent
 
     public override void AgentReset()
     {
-        Debug.Log("AgentReset foi chamado");
+        //Debug.Log("AgentReset foi chamado");
         this.transform.position = initialPosition;
         this.rigidBody.angularVelocity = Vector3.zero;
         this.rigidBody.velocity = Vector3.zero;
@@ -196,7 +201,17 @@ public class Player : Agent
         previousDistance = float.MaxValue;
         playerModel.SetActive(true);
 
+        if (saveReplay)
+        {
+            if (replayWriter == null)
+                replayWriter = new ReplayWriter(playerNumber, scenarioId);
+
+            replayWriter.initSeq(localEpisode);
+        }
+        
+
         localStep = 1;
+        
         ServiceLocator.getManager(scenarioId).GetLogManager().localEpisodePrint(localEpisode++, this);
 
         if (playerNumber == 1)
@@ -392,7 +407,10 @@ public class Player : Agent
                     targetReached = true;
                     ServiceLocator.getManager(scenarioId).GetPlayerManager().addTargetCount();
 
-                    //Debug.Log(playerNumber + ": " + ServiceLocator.getManager(scenarioId).GetPlayerManager().getTargetCount());
+                    if (isSpecialist)
+                    {
+                        countSeq++;
+                    }
 
                     if (ServiceLocator.getManager(scenarioId).GetPlayerManager().getNumPlayers() <= 1)
                     {
@@ -530,12 +548,12 @@ public class Player : Agent
                         Done();
                         doneAnotherWithoutDeath();
 
-                        if (isSpecialist && !firstGoalReached)
+                        if (isSpecialist && countSeq == numSeqCompleted)
                         {
                             playerManager.getAgent2().bcTeacherHelper.forceStopRecord();
-                            playerManager.getAgent2().firstGoalReached = true;
                             bcTeacherHelper.forceStopRecord();
-                            firstGoalReached = true;
+                            bombermanDecision.finishSeqs = true;
+                            playerManager.getAgent2().bombermanDecision.finishSeqs = true;
                         }
                         
                     }
@@ -780,22 +798,25 @@ public class Player : Agent
 
     private void WaitTimeInference()
     {
-        if (!dead && ServiceLocator.getManager(scenarioId).GetPlayerManager().getDeadCount() == 0)
+        if (wasInitialized)
         {
-            if (!academy.GetIsInference())
+            if (!dead && ServiceLocator.getManager(scenarioId).GetPlayerManager().getDeadCount() == 0)
             {
-                RequestDecision();
-            }
-            else
-            {
-                if (timeSinceDecision >= timeBetweenDecisionsAtInference)
+                if (!academy.GetIsInference())
                 {
-                    timeSinceDecision = 0f;
                     RequestDecision();
                 }
                 else
                 {
-                    timeSinceDecision += Time.fixedDeltaTime;
+                    if (timeSinceDecision >= timeBetweenDecisionsAtInference)
+                    {
+                        timeSinceDecision = 0f;
+                        RequestDecision();
+                    }
+                    else
+                    {
+                        timeSinceDecision += Time.fixedDeltaTime;
+                    }
                 }
             }
         }

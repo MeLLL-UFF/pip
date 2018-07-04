@@ -16,6 +16,13 @@ public class ReplayReader {
     {
         public int[] observationGrid;
         public int actionId;
+        public string command;
+        public string seqId;
+
+        public ReplayStep()
+        {
+            seqId = "null";
+        }
     }
 
     public ReplayReader(string filename)
@@ -50,33 +57,53 @@ public class ReplayReader {
 
     public ReplayStep readStep()
     {
+        ReplayStep replayStep = new ReplayStep();
         string line = sr.ReadLine();
         if (line != null && line != "Fim")
         {
-            counter++;
-            ReplayStep replayStep = new ReplayStep();
-            string[] parts = line.Split(';');
-            if (parts.Length != 2)
-                return null;
-
-            string firstPart = parts[0];
-            string actionPart = parts[1];
-
-            replayStep.actionId = Int32.Parse(actionPart);
-
-            string[] observationParts = firstPart.Split(',');
-            int[] obs = new int[observationParts.Length];
-            for (int i = 0; i < observationParts.Length; ++i)
+            if (line.Substring(0, 3).Equals("SEQ"))
             {
-                obs[i] = Int32.Parse(observationParts[i]);
-            }
-            replayStep.observationGrid = obs;
+                //Debug.Log("Substring SEQ encontrada");
+                replayStep.command = "SEQ";
+                replayStep.seqId = line;
+                //Debug.Log("Interno: " + replayStep.command);
 
-            return replayStep;
+                counter = 0;
+
+                return replayStep;
+            }
+            else
+            {
+                string[] parts = line.Split(';');
+                if (parts.Length != 2)
+                {
+                    replayStep.command = "CORRUPTED";
+                    return replayStep;
+                }
+
+                replayStep.command = "STEP";
+                string firstPart = parts[0];
+                string actionPart = parts[1];
+
+                replayStep.actionId = Int32.Parse(actionPart);
+
+                string[] observationParts = firstPart.Split(',');
+                int[] obs = new int[observationParts.Length];
+                for (int i = 0; i < observationParts.Length; ++i)
+                {
+                    obs[i] = Int32.Parse(observationParts[i]);
+                }
+                replayStep.observationGrid = obs;
+
+                return replayStep;
+            }
+
+            counter++;
         }
         else
         {
-            return null;
+            replayStep.command = "END";
+            return replayStep;
         }
     }
 
