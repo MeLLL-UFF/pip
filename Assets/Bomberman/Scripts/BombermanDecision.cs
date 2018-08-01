@@ -5,21 +5,33 @@ using MLAgents;
 
 public class BombermanDecision : MonoBehaviour, Decision {
 
-    private ReplayReader replayReader;
-    public string replayFileName;
-    private string seqId;
-    public bool finishSeqs;
+    private ReplayReader replayReader1;
+    private string replayFileName1 = "behaviorAgent1.txt";
+    private string seqId1;
+    public bool finishSeqs1;
+
+    private ReplayReader replayReader2;
+    private string replayFileName2 = "behaviorAgent2.txt";
+    private string seqId2;
+    public bool finishSeqs2;
+
+    private bool isReplayFile1;
 
     public void Awake()
     {
-        replayReader = new ReplayReader(replayFileName);
-        finishSeqs = false;
+        replayReader1 = new ReplayReader(replayFileName1);
+        replayReader2 = new ReplayReader(replayFileName2);
+        finishSeqs1 = false;
+        finishSeqs2 = false;
     }
 
     void OnApplicationQuit()
     {
-        if (replayReader != null)
-            replayReader.finish();
+        if (replayReader1 != null)
+            replayReader1.finish();
+
+        if (replayReader2 != null)
+            replayReader2.finish();
     }
 
     bool checkObservations(List<float> vectorObs, ReplayReader.ReplayStep replayStep)
@@ -63,7 +75,7 @@ public class BombermanDecision : MonoBehaviour, Decision {
         return true;
     }
 
-    float[] findMatch(List<float> vectorObs)
+    float[] findMatch(List<float> vectorObs, ref ReplayReader replayReader, ref string seqId)
     {
         int searchAll = 0;
         //lê linha do arquivo
@@ -160,8 +172,21 @@ public class BombermanDecision : MonoBehaviour, Decision {
         if (gameObject.GetComponent<Brain>().brainParameters.vectorActionSpaceType
             == SpaceType.discrete)
         {
-            if (!finishSeqs && !done)
-                    return findMatch(vectorObs);
+            //pegando ultima observação para saber se é um agente 1 ou o 2
+            isReplayFile1 = vectorObs[vectorObs.Count - 1] == 1;
+            if (!done)
+            {
+                if (isReplayFile1)
+                {
+                    if (!finishSeqs1)
+                        return findMatch(vectorObs, ref replayReader1, ref seqId1);
+                }
+                else
+                {
+                    if (!finishSeqs2)
+                        return findMatch(vectorObs, ref replayReader2, ref seqId2);
+                }
+            }
 
             return new float[1] { 0 };
         }

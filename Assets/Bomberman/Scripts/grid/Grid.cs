@@ -544,14 +544,32 @@ public class Grid : MonoBehaviour {
         Debug.Log(saida);
     }
 
-    public string gridToString()
+    public string gridToString(int playerNumber)
     {
         string saida = "";
         for (int y = gridSizeY - 1; y >= 0; --y)
         {
             for (int x = 0; x < gridSizeX; ++x)
             {
-                saida += grid[x, y].getStringBinaryArray() + " | ";
+                BaseNode node = grid[x, y];
+                StateType nodeStateType = (StateType)node.getBinary();
+
+                if (playerNumber == 2)
+                {
+                    //se é um nó com stateType agent
+                    if (node.hasFlag(StateType.ST_Agent1))
+                    {
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent1);
+                        nodeStateType = nodeStateType | StateType.ST_Agent2;
+                    }
+                    else if (node.hasFlag(StateType.ST_Agent2))
+                    {
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent2);
+                        nodeStateType = nodeStateType | StateType.ST_Agent1;
+                    }
+                }
+
+                saida += StateTypeExtension.getIntBinaryString(nodeStateType) + " | ";
             }
             saida += "\n";
         }

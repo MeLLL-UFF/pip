@@ -134,14 +134,12 @@ public class Player : Agent
 
         if (playerNumber == 1)
         {
-            stateType = StateType.ST_Agent1;
             ServiceLocator.getManager(scenarioId).GetPlayerManager().setAgent1(this);
         }
         else if (playerNumber == 2)
         {
-            stateType = StateType.ST_Agent2;
             ServiceLocator.getManager(scenarioId).GetPlayerManager().setAgent2(this);
-        } 
+        }
     }
 
     public override void InitializeAgent()
@@ -170,6 +168,15 @@ public class Player : Agent
 
         if (isSpecialist)
             bombermanDecision = brain.GetComponent<BombermanDecision>();
+
+        if (playerNumber == 1)
+        {
+            stateType = StateType.ST_Agent1;
+        }
+        else if (playerNumber == 2)
+        {
+            stateType = StateType.ST_Agent2;
+        }
 
         wasInitialized = true;
     }
@@ -258,7 +265,26 @@ public class Player : Agent
                 {
                     for (int x = 0; x < grid.GetGridSizeX(); ++x)
                     {
-                        int cell = grid.NodeFromPos(x, y).getBinary();
+                        BaseNode node = grid.NodeFromPos(x, y);
+                        StateType nodeStateType = (StateType)node.getBinary();
+
+                        if (playerNumber == 2)
+                        {
+                            //se é um nó com stateType agent
+                            if (node.hasFlag(StateType.ST_Agent1))
+                            {
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent1);
+                                nodeStateType = nodeStateType | StateType.ST_Agent2;
+                            }
+                            else if (node.hasFlag(StateType.ST_Agent2))
+                            {
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent2);
+                                nodeStateType = nodeStateType | StateType.ST_Agent1;
+                            }
+                        }
+                        
+                        int cell = (int)nodeStateType;
+
                         AddVectorObs(cell);
 
                         if (saveReplay)
@@ -347,11 +373,17 @@ public class Player : Agent
         //adicionando grid de observação da posição dos agentes
         AddVectorObsForGrid();
 
+        //Usado na tentativa de fazer um fluxo condicional com o PPOCustom
+        //SetTextObs(playerNumber.ToString());
+
+        //primeiro ou segundo agente. Hack para recuperar arquivo de replay no BombermanDecision
+        AddVectorObs(playerNumber == 1 ? true : false);
+
         ServiceLocator.getManager(scenarioId).GetLogManager().statePrint("Agent " + playerNumber,
                                                     myGridPosition,
                                                     targetGridPosition,
                                                     //new Vector2(velX, velZ),
-                                                    grid.gridToString(),
+                                                    grid.gridToString(playerNumber),
                                                     canDropBombs,
                                                     isInDanger,
                                                     ServiceLocator.getManager(scenarioId).GetBombManager().existsBombOrDanger());
@@ -552,8 +584,8 @@ public class Player : Agent
                         {
                             playerManager.getAgent2().bcTeacherHelper.forceStopRecord();
                             bcTeacherHelper.forceStopRecord();
-                            bombermanDecision.finishSeqs = true;
-                            playerManager.getAgent2().bombermanDecision.finishSeqs = true;
+                            bombermanDecision.finishSeqs1 = true;
+                            playerManager.getAgent2().bombermanDecision.finishSeqs2 = true;
                         }
                         
                     }
