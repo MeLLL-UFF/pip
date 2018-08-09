@@ -7,8 +7,11 @@ public class PlayerManager {
     bool initialized = false;
     private Player agent1;
     private Player agent2;
+
     private int deadCount;
     private int targetCount;
+    private int iterationCount;
+
     List<Player> playerList = new List<Player>();
 
     public PlayerManager()
@@ -18,6 +21,7 @@ public class PlayerManager {
             //Debug.Log("PlayerManager inicializado");
             deadCount = 0;
             targetCount = 0;
+            iterationCount = 0;
             initialized = true;
         }
     }
@@ -60,6 +64,34 @@ public class PlayerManager {
     public void clearTargetCount()
     {
         targetCount = 0;
+    }
+
+    public void addIterationCount()
+    {
+        iterationCount++;
+
+        for (int i = 0; i < playerList.Count; ++i)
+        {
+            playerList[i].myIterationActionWasExecuted = false;
+        }
+    }
+
+    public int getIterationCount()
+    {
+        return iterationCount;
+    }
+
+    public bool isReadyForNewIteration()
+    {
+        for (int i = 0; i < playerList.Count; ++i)
+        {
+            if (!playerList[i].myIterationActionWasExecuted)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public void setAgent1(Player p)

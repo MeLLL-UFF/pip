@@ -110,6 +110,45 @@ public class BombManager {
         bombs.Clear();
     }
 
+    public void timeIterationUpdate()
+    {
+        List<Bomb> list = new List<Bomb>();
+        foreach (KeyValuePair<int, GameObject> entry in bombs)
+        {
+            if (entry.Value.GetComponent<Bomb>().iterationUpdate())
+                list.Add(entry.Value.GetComponent<Bomb>());
+        }
+
+        for (int i = 0; i < list.Count; ++i)
+        {
+            removeBomb(list[i].bombId);
+        }
+
+        List<Danger> listDanger = new List<Danger>();
+        foreach (KeyValuePair<int, Danger> entry in dangerZone)
+        {
+            if (entry.Value.iterationUpdate())
+                listDanger.Add(entry.Value);
+        }
+
+        for (int i = 0; i < listDanger.Count; ++i)
+        {
+            removeDanger(listDanger[i].id);
+        }
+
+        List<DestroySelf> listExplosions = new List<DestroySelf>();
+        foreach (KeyValuePair<int, DestroySelf> entry in explosions)
+        {
+            if (entry.Value.iterationUpdate())
+                listExplosions.Add(entry.Value);
+        }
+
+        for (int i = 0; i < listExplosions.Count; ++i)
+        {
+            removeExplosion(listExplosions[i].id);
+        }
+    }
+
     public List<Bomb> getBombs(int maxBombs)
     {
         List<Bomb> list = new List<Bomb>();

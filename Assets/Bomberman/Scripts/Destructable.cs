@@ -45,11 +45,11 @@ public class Destructable : MonoBehaviour {
             if (!wasDestroy)
             {
                 wasDestroy = true;
-                Bomb bomb = other.gameObject.GetComponent<DestroySelf>().myBomb;
-                if (bomb != null)
+                Player bomberman = other.gameObject.GetComponent<DestroySelf>().bomberman;
+                if (bomberman != null)
                 {
-                    bomb.bomberman.AddReward(Config.REWARD_BLOCK_DESTROY);
-                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + bomb.bomberman.playerNumber + " destruiu um bloco", Config.REWARD_BLOCK_DESTROY);
+                    bomberman.AddReward(Config.REWARD_BLOCK_DESTROY);
+                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + bomberman.playerNumber + " destruiu um bloco", Config.REWARD_BLOCK_DESTROY);
                 }
                 else
                 {

@@ -85,10 +85,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: abba301d6ed51554084527518801d8f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  scenarioId: 0
   myBomb: {fileID: 0}
   id: 0
-  Delay: 0.55
+  bomberman: {fileID: 0}
   grid: {fileID: 0}
+  discrete_timer: 0
 --- !u!198 &19825392
 ParticleSystem:
   m_ObjectHideFlags: 1

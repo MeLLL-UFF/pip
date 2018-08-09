@@ -40,7 +40,8 @@ public class Player : Agent
 
     [Header("Specific to Player")]
     private BombermanAcademy academy;
-    private BombermanDecision bombermanDecision;
+    // private BombermanDecision bombermanDecision;
+    private BombermanOnlyOneDecision bombermanDecision;
 
     private BCTeacherHelper bcTeacherHelper;
     public int numSeqCompleted = 4;
@@ -97,6 +98,11 @@ public class Player : Agent
     private string observationGridString;
     private string actionIdString;
 
+    public bool myIterationActionWasExecuted;
+    public PlayerManager myPlayerManager;
+    public BombManager myBombManager;
+    Player bombermanVillain;
+
     private void clearReplayVars()
     {
         observationGridString = "";
@@ -110,6 +116,7 @@ public class Player : Agent
 
     public Vector2 GetGridPosition()
     {
+        //Console.WriteLine(transform.localPosition);
         BaseNode n = grid.NodeFromWorldPoint(transform.localPosition);
         return new Vector2(n.gridX, n.gridY);
     }
@@ -132,13 +139,16 @@ public class Player : Agent
         if (isSpecialist)
             bcTeacherHelper = GetComponent<BCTeacherHelper>();
 
+        myPlayerManager = ServiceLocator.getManager(scenarioId).GetPlayerManager();
+        myBombManager = ServiceLocator.getManager(scenarioId).GetBombManager();
+
         if (playerNumber == 1)
         {
-            ServiceLocator.getManager(scenarioId).GetPlayerManager().setAgent1(this);
+            myPlayerManager.setAgent1(this);
         }
         else if (playerNumber == 2)
         {
-            ServiceLocator.getManager(scenarioId).GetPlayerManager().setAgent2(this);
+            myPlayerManager.setAgent2(this);
         }
     }
 
@@ -167,7 +177,7 @@ public class Player : Agent
         targetGridPosition = new Vector2(Mathf.RoundToInt(gridTarget3d.x), Mathf.RoundToInt(gridTarget3d.z));
 
         if (isSpecialist)
-            bombermanDecision = brain.GetComponent<BombermanDecision>();
+            bombermanDecision = brain.GetComponent<BombermanOnlyOneDecision>();
 
         if (playerNumber == 1)
         {
@@ -177,6 +187,9 @@ public class Player : Agent
         {
             stateType = StateType.ST_Agent2;
         }
+
+        myIterationActionWasExecuted = false;
+        bombermanVillain = null;
 
         wasInitialized = true;
     }
@@ -224,7 +237,7 @@ public class Player : Agent
         if (playerNumber == 1)
         {
             //Debug.Log("Agente 1 resetou a fase");
-            ServiceLocator.getManager(scenarioId).GetBombManager().clearBombs();
+            myBombManager.clearBombs();
             ServiceLocator.getManager(scenarioId).GetBlocksManager().resetBlocks();
             grid.refreshNodesInGrid();
             isReady = true;
@@ -236,6 +249,8 @@ public class Player : Agent
         }
 
         dead = false;
+        myIterationActionWasExecuted = false;
+        bombermanVillain = null;
     }
 
     private void AddVectorObsForGrid()
@@ -327,7 +342,7 @@ public class Player : Agent
                             AddVectorObs(0.0f);
                         else
                         {
-                            Danger danger = ServiceLocator.getManager(scenarioId).GetBombManager().getDanger(x, y);
+                            Danger danger = myBombManager.getDanger(x, y);
                             if (danger != null)
                             {
                                 float dangerLevel = danger.GetDangerLevelOfPosition(this);
@@ -377,7 +392,7 @@ public class Player : Agent
         //SetTextObs(playerNumber.ToString());
 
         //primeiro ou segundo agente. Hack para recuperar arquivo de replay no BombermanDecision
-        AddVectorObs(playerNumber == 1 ? true : false);
+        //AddVectorObs(playerNumber == 1 ? true : false);
 
         ServiceLocator.getManager(scenarioId).GetLogManager().statePrint("Agent " + playerNumber,
                                                     myGridPosition,
@@ -386,7 +401,7 @@ public class Player : Agent
                                                     grid.gridToString(playerNumber),
                                                     canDropBombs,
                                                     isInDanger,
-                                                    ServiceLocator.getManager(scenarioId).GetBombManager().existsBombOrDanger());
+                                                    myBombManager.existsBombOrDanger());
         
     }
 
@@ -398,13 +413,13 @@ public class Player : Agent
 
     public override void AgentAction(float[] vectorAction, string textAction)
     {
-        if (getLocalStep() >= Config.MAX_STEP_PER_AGENT)
+        /*if (getLocalStep() >= Config.MAX_STEP_PER_AGENT)
         {
             AddReward(Config.REWARD_MAX_STEP_REACHED);
             ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou max step", Config.REWARD_MAX_STEP_REACHED);
 
             killAgent();
-        }
+        }*/
 
         if (!dead)
         {
@@ -437,19 +452,45 @@ public class Player : Agent
                     AddReward(Config.REWARD_GOAL);
                     ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou o objetivo", Config.REWARD_GOAL);
                     targetReached = true;
-                    ServiceLocator.getManager(scenarioId).GetPlayerManager().addTargetCount();
+                    myPlayerManager.addTargetCount();
 
                     if (isSpecialist)
                     {
                         countSeq++;
                     }
 
-                    if (ServiceLocator.getManager(scenarioId).GetPlayerManager().getNumPlayers() <= 1)
+                    if (myPlayerManager.getNumPlayers() <= 1)
                     {
                         targetReached = false;
+                        myPlayerManager.clearTargetCount();
+
+                        if (isSpecialist && countSeq == numSeqCompleted)
+                        {
+                            bcTeacherHelper.forceStopRecord();
+                            bombermanDecision.finishSeqs1 = true;
+                        }
+
                         Done();
                         //doneAnother();
                     }
+                }
+
+                if (grid.checkFire(myGridPosition))
+                {
+                    AddReward(Config.REWARD_DIE);
+                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " atingido por explosao", Config.REWARD_DIE);
+
+                    if (bombermanVillain != null)
+                    {
+                        if (bombermanVillain.playerNumber != playerNumber)
+                        {
+                            //penalizando amigo por fogo amigo
+                            bombermanVillain.AddReward(Config.REWARD_KILL_FRIEND);
+                            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + bombermanVillain.playerNumber + " matou amigo", Config.REWARD_KILL_FRIEND);
+                        }
+                    }
+
+                    killAgent();
                 }
 
                 hasPlacedBomb = false;
@@ -535,6 +576,9 @@ public class Player : Agent
                         break;
                 }
 
+
+                //BaseNode teste = grid.NodeFromWorldPoint(new Vector3(1.0f, 0.5f, 8.0f));
+
                 //recompensas
                 myGridPosition = GetGridPosition();
 
@@ -565,16 +609,15 @@ public class Player : Agent
             {
                 if (playerNumber == 1)
                 {
-                    PlayerManager playerManager = ServiceLocator.getManager(scenarioId).GetPlayerManager();
-                    if (playerManager.getTargetCount() >= 2)
+                    if (myPlayerManager.getTargetCount() >= 2)
                     {
-
+                        //Debug.Log("Entrou");
                         AddReward(Config.REWARD_TEAM_GOAL);
                         ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + ": time alcancou o objetivo", Config.REWARD_TEAM_GOAL);
                         targetReached = false;
 
-                        playerManager.getAgent2().AddReward(Config.REWARD_TEAM_GOAL);
-                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerManager.getAgent2().playerNumber + ": time alcancou o objetivo", Config.REWARD_TEAM_GOAL);
+                        myPlayerManager.getAgent2().AddReward(Config.REWARD_TEAM_GOAL);
+                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + myPlayerManager.getAgent2().playerNumber + ": time alcancou o objetivo", Config.REWARD_TEAM_GOAL);
                         
 
                         Done();
@@ -582,10 +625,10 @@ public class Player : Agent
 
                         if (isSpecialist && countSeq == numSeqCompleted)
                         {
-                            playerManager.getAgent2().bcTeacherHelper.forceStopRecord();
+                            myPlayerManager.getAgent2().bcTeacherHelper.forceStopRecord();
                             bcTeacherHelper.forceStopRecord();
                             bombermanDecision.finishSeqs1 = true;
-                            playerManager.getAgent2().bombermanDecision.finishSeqs2 = true;
+                            //playerManager.getAgent2().bombermanDecision.finishSeqs2 = true;
                         }
                         
                     }
@@ -638,7 +681,7 @@ public class Player : Agent
             bomb.GetComponent<Bomb>().grid = grid;
             bomb.GetComponent<Bomb>().scenarioId = scenarioId;
 
-            ServiceLocator.getManager(scenarioId).GetBombManager().addBomb(bomb);
+            myBombManager.addBomb(bomb);
             grid.enableObjectOnGrid(StateType.ST_Bomb, bomb.GetComponent<Bomb>().GetGridPosition());
             bomb.GetComponent<Bomb>().CreateDangerZone();
 
@@ -665,21 +708,7 @@ public class Player : Agent
         {
             if (!dead)
             {
-                AddReward(Config.REWARD_DIE);
-                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " atingido por explosao", Config.REWARD_DIE);
-
-                Bomb bomb = other.gameObject.GetComponent<DestroySelf>().myBomb;
-                if (bomb != null)
-                {
-                    if (bomb.bomberman.playerNumber != playerNumber)
-                    {
-                        //penalizando amigo por fogo amigo
-                        bomb.bomberman.AddReward(Config.REWARD_KILL_FRIEND);
-                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + bomb.bomberman.playerNumber + " matou amigo", Config.REWARD_KILL_FRIEND);
-                    }
-                }
-
-                killAgent();
+                bombermanVillain = other.gameObject.GetComponent<DestroySelf>().bomberman;
             }
         }
         /*else if (other.CompareTag("Target"))
@@ -690,7 +719,7 @@ public class Player : Agent
             doneAnother();
         }*/
         /* Agente toma muita recompensa negativa e desiste de colocar bomba muito rápido*/
-        else if (other.CompareTag("Danger"))
+        if (other.CompareTag("Danger"))
         {
             isInDanger = true;
             /*float dangerLevel = Mathf.Abs(other.gameObject.GetComponent<Danger>().GetDangerLevelOfPosition(this));
@@ -706,6 +735,10 @@ public class Player : Agent
         grid.clearAgentOnGrid(this);
         playerModel.SetActive(false);
         transform.position = initialPosition;
+
+        // tentando corrigir problema da bomba explodir após agente ser reiniciado por tempo
+        if (!academy.GetIsInference())
+            myBombManager.clearBombs();
     }
 
     private void killAgentOnly()
@@ -727,9 +760,9 @@ public class Player : Agent
         defaultKillCode();
         //Debug.Log("Morri - agente " + playerNumber);
 
-        if (ServiceLocator.getManager(scenarioId).GetPlayerManager().getDeadCount() == 0)
+        if (myPlayerManager.getDeadCount() == 0)
         {
-            ServiceLocator.getManager(scenarioId).GetPlayerManager().addDeadCount();
+            myPlayerManager.addDeadCount();
             Invoke("VerifyDeadCount", 0.5f);
         }
 
@@ -737,22 +770,21 @@ public class Player : Agent
 
     void VerifyDeadCount()
     {
-        PlayerManager playerManager = ServiceLocator.getManager(scenarioId).GetPlayerManager();
         /*if (playerManager.getDeadCount() >= 2)
         {
             Debug.Log("DeadCount2");
             //playerManager.clearDeadCount();
             Invoke("DoneWithDelay", 2.5f);
         }
-        else */if (playerManager.getDeadCount() >= 1)
+        else */if (myPlayerManager.getDeadCount() >= 1)
         {
             //playerManager.clearDeadCount();
-            if (playerManager.getAgent1().dead)
+            if (myPlayerManager.getAgent1().dead)
             {
                 //Debug.Log("DeadCount1 ag1");
                 Invoke("DoneWithDelay", 2.5f);
             }
-            else if (playerManager.getAgent2().dead)
+            else if (myPlayerManager.getAgent2().dead)
             {
                 //Debug.Log("DeadCount1 ag2");
                 Invoke("DoneWithDelay", 0.0f);
@@ -765,25 +797,25 @@ public class Player : Agent
         isReady = false;
         if (playerNumber == 1)
         {
-            Player another = ServiceLocator.getManager(scenarioId).GetPlayerManager().getAgent2();
+            Player another = myPlayerManager.getAgent2();
             if (another != null)
             {
                 //Debug.Log("Matei o agente2");
                 another.killAgentOnly();
                 another.Done();
                 another.isReady = false;
-                ServiceLocator.getManager(scenarioId).GetPlayerManager().clearDeadCount();
+                myPlayerManager.clearDeadCount();
             }
 
-            if (ServiceLocator.getManager(scenarioId).GetPlayerManager().getNumPlayers() == 1)
+            if (myPlayerManager.getNumPlayers() == 1)
             {
-                ServiceLocator.getManager(scenarioId).GetPlayerManager().clearDeadCount();
+                myPlayerManager.clearDeadCount();
             }
         }
         else if (playerNumber == 2)
         {
             dead = true;
-            Player another = ServiceLocator.getManager(scenarioId).GetPlayerManager().getAgent1();
+            Player another = myPlayerManager.getAgent1();
             if (another != null)
             {
                 //Debug.Log("Matei o agente1");
@@ -825,14 +857,59 @@ public class Player : Agent
 
     public void FixedUpdate()
     {
-        WaitTimeInference();
+        //WaitTimeInference();
+        WaitIterationActions();
+    }
+
+    private void internalUpdate()
+    {
+        if (myPlayerManager.isReadyForNewIteration())
+        {
+            myPlayerManager.addIterationCount();
+            myBombManager.timeIterationUpdate();
+        }
+
+        if (!myIterationActionWasExecuted)
+        {
+            RequestDecision();
+            myIterationActionWasExecuted = true;
+            //Debug.Log(myPlayerManager.getIterationCount());
+        }
+    }
+
+    private void WaitIterationActions()
+    {
+        if (wasInitialized)
+        {
+            if (!dead && myPlayerManager.getDeadCount() == 0)
+            {
+                if (!academy.GetIsInference())
+                {
+                    internalUpdate();
+                }
+                else
+                {
+                    if (timeSinceDecision >= timeBetweenDecisionsAtInference)
+                    {
+                        timeSinceDecision = 0f;
+
+                        internalUpdate();
+                    }
+                    else
+                    {
+                        timeSinceDecision += Time.fixedDeltaTime;
+                    }
+                }
+                
+            }
+        }
     }
 
     private void WaitTimeInference()
     {
         if (wasInitialized)
         {
-            if (!dead && ServiceLocator.getManager(scenarioId).GetPlayerManager().getDeadCount() == 0)
+            if (!dead && myPlayerManager.getDeadCount() == 0)
             {
                 if (!academy.GetIsInference())
                 {
@@ -842,7 +919,7 @@ public class Player : Agent
                 {
                     if (timeSinceDecision >= timeBetweenDecisionsAtInference)
                     {
-                        timeSinceDecision = 0f;
+                        timeSinceDecision = 0f;      
                         RequestDecision();
                     }
                     else

@@ -153,6 +153,22 @@ public class Grid : MonoBehaviour {
         return false;
     }
 
+    public bool checkFire(Vector2 pos)
+    {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+
+        if (!isOnGrid(x, y))
+            return false;
+
+        BaseNode node = NodeFromPos(x, y);
+
+        if (node.hasFlag(StateType.ST_Fire))
+            return true;
+
+        return false;
+    }
+
     StateType getStateTypeFromHit(RaycastHit hit)
     {
         StateType nodeStateType = StateType.ST_Empty;
@@ -463,8 +479,8 @@ public class Grid : MonoBehaviour {
         percentX = Mathf.Clamp01(percentX);
         percentY = Mathf.Clamp01(percentY);
 
-        int x = Mathf.RoundToInt((gridSizeX) * percentX);
-        int y = Mathf.RoundToInt((gridSizeY) * percentY);
+        int x = Mathf.Clamp(Mathf.RoundToInt((gridSizeX) * percentX), 0, gridSizeX-1);
+        int y = Mathf.Clamp(Mathf.RoundToInt((gridSizeY) * percentY), 0, gridSizeY-1);
 
         return grid[x, y];
     }

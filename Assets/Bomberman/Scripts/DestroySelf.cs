@@ -41,12 +41,14 @@ public class DestroySelf : MonoBehaviour
     public Bomb myBomb = null;
     public int id;
 
-    public float Delay = 0.55f;
-    //Delay in seconds before destroying the gameobject
-
+    public Player bomberman;
     public Grid grid;
 
     private StateType stateType;
+
+    public int discrete_timer = 0;
+
+    private bool wasDestroyed;
 
     private void Awake()
     {
@@ -62,18 +64,37 @@ public class DestroySelf : MonoBehaviour
     public void forceDestroy()
     {
         grid.disableObjectOnGrid(stateType, GetGridPosition());
-        Destroy(gameObject);
+        gameObject.SetActive(false);
+        GameObject.Destroy(gameObject);
     }
 
     void Start ()
     {
         //Debug.Log(Delay);
-        Invoke("myDestroy", Delay);
+        //Invoke("myDestroy", Config.EXPLOSION_TIMER);
+
+        discrete_timer = 0;
+        wasDestroyed = false;
     }
 
-    void myDestroy()
+    public bool iterationUpdate()
     {
-        ServiceLocator.getManager(scenarioId).GetBombManager().removeExplosion(this.id);
+        if (!wasDestroyed)
+        {
+            discrete_timer += 1;
+            if (discrete_timer >= Config.EXPLOSION_TIMER_DISCRETE)
+            {
+                return myDestroy();
+            }
+        }
+
+        return false;
+    }
+
+    bool myDestroy()
+    {
         forceDestroy();
+        wasDestroyed = true;
+        return true;
     }
 }

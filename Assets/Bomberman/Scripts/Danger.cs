@@ -11,14 +11,13 @@ public class Danger : MonoBehaviour
     public Bomb myBomb = null;
     public int id;
 
-    public float Delay = 3.0f;
-    //Delay in seconds before destroying the gameobject
-
     public Grid grid;
     private StateType stateType;
 
     private float dangerLevelOfPosition;
-    private float timePassed;
+    //private float timePassed;
+
+    public int discrete_timer = 0;
 
     private void Awake()
     {
@@ -27,22 +26,39 @@ public class Danger : MonoBehaviour
 
     void Start()
     {
-        timePassed = 0;
-        dangerLevelOfPosition = timePassed / Delay;
-        Invoke("myDestroy", Delay);
+        //timePassed = 0;
+        //dangerLevelOfPosition = timePassed / Config.BOMB_TIMER;
+        //Invoke("myDestroy", Config.BOMB_TIMER);
+
+        discrete_timer = 0;
+        dangerLevelOfPosition = discrete_timer / Config.BOMB_TIMER_DISCRETE;
     }
 
-    private void FixedUpdate()
+    public bool iterationUpdate()
+    {
+        discrete_timer += 1;
+
+        dangerLevelOfPosition = discrete_timer / Config.BOMB_TIMER_DISCRETE;
+
+        if (discrete_timer >= Config.BOMB_TIMER_DISCRETE)
+        {
+            return myDestroy();
+        }
+
+        return false;
+    }
+
+    /*private void FixedUpdate()
     {
         timePassed += Time.fixedDeltaTime;
 
-        if (timePassed > Delay)
+        if (timePassed > Config.BOMB_TIMER)
         {
-            timePassed = Delay;
+            timePassed = Config.BOMB_TIMER;
         }
 
-        dangerLevelOfPosition = timePassed / Delay;
-    }
+        dangerLevelOfPosition = timePassed / Config.BOMB_TIMER;
+    }*/
 
     public float GetDangerLevelOfPosition(Player player)
     {
@@ -68,9 +84,9 @@ public class Danger : MonoBehaviour
         Destroy(gameObject);
     }
 
-    void myDestroy()
+    bool myDestroy()
     {
-        ServiceLocator.getManager(scenarioId).GetBombManager().removeDanger(this.id);
         forceDestroy();
+        return true;
     }
 }

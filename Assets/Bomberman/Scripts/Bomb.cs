@@ -10,7 +10,10 @@ public class Bomb : MonoBehaviour {
     public LayerMask levelMask;
     public bool exploded = false;
     public int bombId;
-    public float timer = 0;
+
+    //public float timer = 0;
+    public int discrete_timer = 0;
+    int lastIterationCount = 0;
 
     public Player bomberman;
     public Grid grid;
@@ -24,14 +27,32 @@ public class Bomb : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-        timer = 0;
-        Invoke("Explode", 3f);
+        //timer = 0;
+        discrete_timer = 0;
+        //Invoke("Explode", Config.BOMB_TIMER);
 	}
 
-    private void FixedUpdate()
+    /*private void FixedUpdate()
     {
         if (!exploded)
+        {
             timer = timer + Time.deltaTime;
+        }
+            
+    }*/
+
+    public bool iterationUpdate()
+    {
+        if (!exploded)
+        {
+            discrete_timer += 1;
+            if (discrete_timer >= Config.BOMB_TIMER_DISCRETE)
+            {
+                return Explode();
+            }
+        }
+
+        return false;
     }
 
     public Vector2 GetGridPosition()
@@ -57,12 +78,13 @@ public class Bomb : MonoBehaviour {
         StartCoroutine(CreateDangers(Vector3.left));
     }
 
-    void Explode()
+    bool Explode()
     {
         GameObject explosionObject = Instantiate(explosionPrefab, transform.position, Quaternion.identity, transform.parent);
         explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
         explosionObject.GetComponent<DestroySelf>().grid = grid;
         explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
+        explosionObject.GetComponent<DestroySelf>().bomberman = bomberman;
 
         ServiceLocator.getManager(scenarioId).GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
         grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
@@ -82,9 +104,13 @@ public class Bomb : MonoBehaviour {
         }
 
         grid.disableObjectOnGrid(stateType, GetGridPosition());
-        ServiceLocator.getManager(scenarioId).GetBombManager().removeBomb(bombId);
 
-        Destroy(gameObject, .3f);
+        //comentado porque dá erro ao tentar remover bomba dentro de uma iteração de bombas com foreach
+        //ServiceLocator.getManager(scenarioId).GetBombManager().removeBomb(bombId);
+
+        Destroy(gameObject, Config.BOMB_TIMER_AFTER_DESTROY);
+
+        return true;
     }
 
     public void autoDestroy()
@@ -105,6 +131,7 @@ public class Bomb : MonoBehaviour {
                 explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
                 explosionObject.GetComponent<DestroySelf>().grid = grid;
                 explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
+                explosionObject.GetComponent<DestroySelf>().bomberman = bomberman;
 
                 ServiceLocator.getManager(scenarioId).GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
                 grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
@@ -117,6 +144,7 @@ public class Bomb : MonoBehaviour {
                     explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
                     explosionObject.GetComponent<DestroySelf>().grid = grid;
                     explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
+                    explosionObject.GetComponent<DestroySelf>().bomberman = bomberman;
 
                     ServiceLocator.getManager(scenarioId).GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
                     grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
@@ -126,7 +154,8 @@ public class Bomb : MonoBehaviour {
             }
         }
 
-        yield return new WaitForSeconds(.05f);
+        //yield return new WaitForSeconds(.05f);
+        yield return null;
     }
 
     private IEnumerator CreateDangers(Vector3 direction)
@@ -170,8 +199,9 @@ public class Bomb : MonoBehaviour {
     {
         if (!exploded && other.CompareTag("Explosion"))
         {
-            CancelInvoke("Explode");
-            Explode();
+            //CancelInvoke("Explode");
+            if (Explode())
+                ServiceLocator.getManager(scenarioId).GetBombManager().removeBomb(bombId);
         }
     }
 }
