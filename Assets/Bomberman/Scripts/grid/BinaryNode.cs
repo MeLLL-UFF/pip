@@ -66,8 +66,8 @@ public class BinaryNode : BaseNode {
 
     public override bool getDangerPosition()
     {
-        if (hasFlag(StateType.ST_Danger))
-            return true;
+        /*if (hasFlag(StateType.ST_Danger))
+            return true;*/
 
         return false;
     }

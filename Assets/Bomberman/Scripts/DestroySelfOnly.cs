@@ -35,66 +35,16 @@ using System.Collections;
 /// <summary>
 /// Small script for easily destroying an object after a while
 /// </summary>
-public class DestroySelf : MonoBehaviour
-{
-    public int scenarioId;
-    public Bomb myBomb = null;
-    public int id;
-
-    public Player bomberman;
-    public Grid grid;
-
-    private StateType stateType;
-
-    public int discrete_timer = 0;
-
-    private bool wasDestroyed;
-
-    private void Awake()
+public class DestroySelfOnly : MonoBehaviour
+{ 
+    private void Start()
     {
-        //stateType = StateType.ST_Fire;
+        Invoke("myDestroy", 0.5f);
     }
 
-    public Vector2 GetGridPosition()
+    void myDestroy()
     {
-        BaseNode n = grid.NodeFromWorldPoint(transform.localPosition);
-        return new Vector2(n.gridX, n.gridY);
-    }
-
-    public void forceDestroy()
-    {
-        grid.disableObjectOnGrid(stateType, GetGridPosition());
-        gameObject.SetActive(false);
+        //gameObject.SetActive(false);
         GameObject.Destroy(gameObject);
-    }
-
-    void Start ()
-    {
-        //Debug.Log(Delay);
-        //Invoke("myDestroy", Config.EXPLOSION_TIMER);
-
-        discrete_timer = 0;
-        wasDestroyed = false;
-    }
-
-    public bool iterationUpdate()
-    {
-        if (!wasDestroyed)
-        {
-            discrete_timer += 1;
-            if (discrete_timer >= Config.EXPLOSION_TIMER_DISCRETE)
-            {
-                return myDestroy();
-            }
-        }
-
-        return false;
-    }
-
-    bool myDestroy()
-    {
-        forceDestroy();
-        wasDestroyed = true;
-        return true;
     }
 }

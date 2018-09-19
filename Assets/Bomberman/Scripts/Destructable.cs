@@ -36,9 +36,35 @@ public class Destructable : MonoBehaviour {
         gameObject.SetActive(true);
         wasDestroy = false;
         transform.position = initPos;
+        grid.enableObjectOnGrid(stateType, GetGridPosition());
     }
 
-    public void OnTriggerEnter(Collider other)
+    public void attackByHammer(Player hammerman)
+    {
+        if (!wasDestroy)
+        {
+            wasDestroy = true;
+            
+            if (hammerman != null)
+            {
+                if (hammerman.forceReward || !hammerman.isMimicking)
+                {
+                    hammerman.AddReward(Config.REWARD_BLOCK_DESTROY);
+                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + hammerman.playerNumber + " destruiu um bloco", Config.REWARD_BLOCK_DESTROY);
+                }
+            }
+            else
+            {
+                ServiceLocator.getManager(scenarioId).GetLogManager().print("hammerman nulo");
+            }
+
+            gameObject.SetActive(false);
+            grid.disableObjectOnGrid(stateType, GetGridPosition());
+            //Destroy(gameObject, 0.1f);
+        }
+    }
+
+    /*public void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Explosion"))
         {
@@ -48,12 +74,15 @@ public class Destructable : MonoBehaviour {
                 Player bomberman = other.gameObject.GetComponent<DestroySelf>().bomberman;
                 if (bomberman != null)
                 {
-                    bomberman.AddReward(Config.REWARD_BLOCK_DESTROY);
-                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + bomberman.playerNumber + " destruiu um bloco", Config.REWARD_BLOCK_DESTROY);
+                    if (bomberman.forceReward || !bomberman.isMimicking)
+                    {
+                        bomberman.AddReward(Config.REWARD_BLOCK_DESTROY);
+                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + bomberman.playerNumber + " destruiu um bloco", Config.REWARD_BLOCK_DESTROY);
+                    }
                 }
                 else
                 {
-                    ServiceLocator.getManager(scenarioId).GetLogManager().print("Bomba nula");
+                    ServiceLocator.getManager(scenarioId).GetLogManager().print("Bomberman nulo");
                 }
 
                 gameObject.SetActive(false);
@@ -62,5 +91,5 @@ public class Destructable : MonoBehaviour {
             }
 
         }
-    }
+    }*/
 }

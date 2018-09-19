@@ -31,10 +31,10 @@ public class Grid : MonoBehaviour {
 
     private void Update()
     {
-        if (Input.GetKeyUp(KeyCode.I))
+        /*if (Input.GetKeyUp(KeyCode.I))
         {
             printGrid();
-        }
+        }*/
     }
 
     void Awake()
@@ -45,9 +45,9 @@ public class Grid : MonoBehaviour {
 
         blockFlagsList.Add(StateType.ST_Block);
         blockFlagsList.Add(StateType.ST_Wall);
-        blockFlagsList.Add(StateType.ST_Bomb);
+        //blockFlagsList.Add(StateType.ST_Bomb);
 
-        blockFlags = StateType.ST_Block | StateType.ST_Wall | StateType.ST_Bomb;
+        blockFlags = StateType.ST_Block | StateType.ST_Wall;// | StateType.ST_Bomb;
 
         foreach (TerrainType region in walkableRegions)
         {
@@ -153,7 +153,7 @@ public class Grid : MonoBehaviour {
         return false;
     }
 
-    public bool checkFire(Vector2 pos)
+    /*public bool checkFire(Vector2 pos)
     {
         int x = (int)pos.x;
         int y = (int)pos.y;
@@ -167,6 +167,55 @@ public class Grid : MonoBehaviour {
             return true;
 
         return false;
+    }*/
+
+    public bool checkDestructible(Vector2 pos)
+    {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+
+        if (!isOnGrid(x, y))
+            return false;
+
+        BaseNode node = NodeFromPos(x, y);
+
+        if (node.hasFlag(StateType.ST_Block))
+            return true;
+
+        return false;
+    }
+
+    public Destructable getDestructibleInPosition(Vector2 pos)
+    {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+
+        if (!isOnGrid(x, y))
+            return null;
+
+        BaseNode node = NodeFromPos(x, y);
+
+        Ray ray = new Ray(node.worldPosition + Vector3.up * 6, Vector3.down);
+        RaycastHit[] hits;
+        hits = Physics.RaycastAll(ray, 10, walkableMask);
+        GameObject gb = null;
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            RaycastHit hit = hits[i];
+
+            StateType st = getStateTypeFromHit(hit);
+            if (st == StateType.ST_Block)
+            {
+                gb = hit.transform.gameObject;
+                break;
+            }
+        }
+
+        if (gb == null)
+            return null;
+
+        return gb.GetComponent<Destructable>();
     }
 
     StateType getStateTypeFromHit(RaycastHit hit)
@@ -186,7 +235,7 @@ public class Grid : MonoBehaviour {
         }
         else if ((1 << hit.collider.gameObject.layer & defaultLayer) != 0)
         {
-            if (hit.collider.CompareTag("Explosion"))
+            /*if (hit.collider.CompareTag("Explosion"))
             {
                 nodeStateType = StateType.ST_Fire;
             }
@@ -194,14 +243,14 @@ public class Grid : MonoBehaviour {
             {
                 nodeStateType = StateType.ST_Bomb;
             }
-            else if (hit.collider.CompareTag("Target"))
+            else */if (hit.collider.CompareTag("Target"))
             {
                 nodeStateType = StateType.ST_Target;
             }
-            else if (hit.collider.CompareTag("Danger"))
+            /*else if (hit.collider.CompareTag("Danger"))
             {
                 nodeStateType = StateType.ST_Danger;
-            }
+            }*/
             else
             {
                 nodeStateType = StateType.ST_Empty;
@@ -471,7 +520,7 @@ public class Grid : MonoBehaviour {
     public BaseNode NodeFromWorldPoint(Vector3 worldPosition)
     {
         //minus one because first line and column are wall always
-        worldPosition = worldPosition - Vector3.one;
+        // worldPosition = worldPosition - Vector3.one;
 
         float percentX = (worldPosition.x) / gridWorldSize.x;
         float percentY = (worldPosition.z) / gridWorldSize.y;
