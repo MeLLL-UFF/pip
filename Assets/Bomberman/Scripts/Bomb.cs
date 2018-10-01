@@ -22,7 +22,7 @@ public class Bomb : MonoBehaviour {
 
     private void Awake()
     {
-        //stateType = StateType.ST_Bomb;
+        stateType = StateType.ST_Bomb;
     }
 
     // Use this for initialization
@@ -69,7 +69,7 @@ public class Bomb : MonoBehaviour {
         dangerObject.GetComponent<Danger>().scenarioId = scenarioId;
 
         ServiceLocator.getManager(scenarioId).GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
-        //comentado porque senão vai sobrescrever a bomba no mapa
+        //comentado porque senão vai sobrescrever a bomba no mapa. Código chamado junto com a bomba
         //grid.enableObjectOnGrid(StateType.ST_Danger, dangerObject.GetComponent<DestroySelf>().GetGridPosition());
 
         StartCoroutine(CreateDangers(Vector3.forward));
@@ -80,7 +80,8 @@ public class Bomb : MonoBehaviour {
 
     bool Explode()
     {
-        /*GameObject explosionObject = Instantiate(explosionPrefab, transform.position, Quaternion.identity, transform.parent);
+        //Bomb code
+        GameObject explosionObject = Instantiate(explosionPrefab, transform.position, Quaternion.identity, transform.parent);
         explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
         explosionObject.GetComponent<DestroySelf>().grid = grid;
         explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
@@ -108,19 +109,21 @@ public class Bomb : MonoBehaviour {
         //comentado porque dá erro ao tentar remover bomba dentro de uma iteração de bombas com foreach
         //ServiceLocator.getManager(scenarioId).GetBombManager().removeBomb(bombId);
 
-        Destroy(gameObject, Config.BOMB_TIMER_AFTER_DESTROY);*/
+        Destroy(gameObject, Config.BOMB_TIMER_AFTER_DESTROY);
 
         return true;
     }
 
     public void autoDestroy()
     {
+        grid.disableObjectOnGrid(stateType, GetGridPosition());
         Destroy(gameObject);
     }
 
     private IEnumerator CreateExplosions(Vector3 direction)
     {
-        /*for(int i = 1; i < 3; i++)
+        //Bomb code
+        for (int i = 1; i < 3; i++)
         {
             RaycastHit hit;
             Physics.Raycast(transform.position + new Vector3(0, .5f, 0), direction, out hit, i, levelMask);
@@ -152,7 +155,7 @@ public class Bomb : MonoBehaviour {
 
                 break;
             }
-        }*/
+        }
 
         //yield return new WaitForSeconds(.05f);
         yield return null;
@@ -160,7 +163,8 @@ public class Bomb : MonoBehaviour {
 
     private IEnumerator CreateDangers(Vector3 direction)
     {
-        /*for (int i = 1; i < 3; i++)
+        //Bomb code
+        for (int i = 1; i < 3; i++)
         {
             RaycastHit hit;
             Physics.Raycast(transform.position + new Vector3(0, .5f, 0), direction, out hit, i, levelMask);
@@ -190,7 +194,7 @@ public class Bomb : MonoBehaviour {
 
                 break;
             }
-        }*/
+        }
 
         yield return null;
     }

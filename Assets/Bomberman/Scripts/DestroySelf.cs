@@ -52,7 +52,7 @@ public class DestroySelf : MonoBehaviour
 
     private void Awake()
     {
-        //stateType = StateType.ST_Fire;
+        stateType = StateType.ST_Fire;
     }
 
     public Vector2 GetGridPosition()

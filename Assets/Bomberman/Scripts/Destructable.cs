@@ -64,7 +64,8 @@ public class Destructable : MonoBehaviour {
         }
     }
 
-    /*public void OnTriggerEnter(Collider other)
+    //Bomb code
+    public void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Explosion"))
         {
@@ -91,5 +92,5 @@ public class Destructable : MonoBehaviour {
             }
 
         }
-    }*/
+    }
 }

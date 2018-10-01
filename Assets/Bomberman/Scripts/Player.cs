@@ -110,6 +110,15 @@ public class Player : Agent
     public BombManager myBombManager;
     Player bombermanVillain;
 
+    bool is_received_subgoal_distance1 = false;
+    bool is_received_subgoal_distance2 = false;
+
+    bool is_received_subgoal_step1 = false;
+    bool is_received_subgoal_step2 = false;
+    bool is_received_subgoal_step3 = false;
+    bool is_received_subgoal_step4 = false;
+    int bombCount = 0;
+
     private void clearReplayVars()
     {
         observationGridString = "";
@@ -175,6 +184,15 @@ public class Player : Agent
         isReady = true;
         targetReached = false;
 
+        is_received_subgoal_distance1 = false;
+        is_received_subgoal_distance2 = false;
+
+        is_received_subgoal_step1 = false;
+        is_received_subgoal_step2 = false;
+        is_received_subgoal_step3 = false;
+        is_received_subgoal_step4 = false;
+        bombCount = 0;
+
         playerModel = transform.Find("PlayerModel").gameObject;
         rigidBody = GetComponent<Rigidbody>();
         animator = transform.Find("PlayerModel").GetComponent<Animator>();
@@ -232,6 +250,15 @@ public class Player : Agent
         closestDistance = float.MaxValue;
         previousDistance = float.MaxValue;
         playerModel.SetActive(true);
+
+        is_received_subgoal_distance1 = false;
+        is_received_subgoal_distance2 = false;
+
+        is_received_subgoal_step1 = false;
+        is_received_subgoal_step2 = false;
+        is_received_subgoal_step3 = false;
+        is_received_subgoal_step4 = false;
+        bombCount = 0;
 
         if (saveReplay)
         {
@@ -475,8 +502,8 @@ public class Player : Agent
     {
         if (forceReward || !isMimicking)
         {
-            AddReward(Config.REWARD_VALID_WALK_ACTION);
-            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " andou para um lugar livre", Config.REWARD_VALID_WALK_ACTION);
+            AddReward(Config.REWARD_VALID_WALK_POSITION);
+            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " andou para um lugar livre", Config.REWARD_VALID_WALK_POSITION);
         }
     }
 
@@ -540,6 +567,57 @@ public class Player : Agent
             
     }
 
+    private void verifySubGoals(Vector2 gridPos)
+    {
+        int distance = Math.Abs((int)(gridPos.x - targetGridPosition.x)) + Math.Abs((int)(gridPos.y - targetGridPosition.y)); 
+
+        
+        //Quanto a distância
+        if (!is_received_subgoal_distance2 && bombCount >= 3 && distance <= 4f)
+        {
+            is_received_subgoal_distance2 = true;
+            AddReward(Config.REWARD_SUB_GOAL_DISTANCE_2);
+            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou sub goal distance 2", Config.REWARD_SUB_GOAL_DISTANCE_2);
+        }
+        else if (!is_received_subgoal_distance1 && bombCount >= 1 && distance <= 7f)
+        {
+            is_received_subgoal_distance1 = true;
+            AddReward(Config.REWARD_SUB_GOAL_DISTANCE_1);
+            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou sub goal distance 1", Config.REWARD_SUB_GOAL_DISTANCE_1);
+        }
+
+
+
+        //Quanto ao número de iterações que está vivo.
+        /*if (bombCount >= 3)
+        {
+            if (!is_received_subgoal_step4 && getLocalStep() >= 50)
+            {
+                is_received_subgoal_step4 = true;
+                AddReward(Config.REWARD_SUB_GOAL_NUM_STEP_4);
+                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou sub goal step 4", Config.REWARD_SUB_GOAL_NUM_STEP_4);
+            }
+            else if (!is_received_subgoal_step3 && getLocalStep() >= 40)
+            {
+                is_received_subgoal_step3 = true;
+                AddReward(Config.REWARD_SUB_GOAL_NUM_STEP_3);
+                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou sub goal step 3", Config.REWARD_SUB_GOAL_NUM_STEP_3);
+            }
+            else if (!is_received_subgoal_step2 && getLocalStep() >= 20)
+            {
+                is_received_subgoal_step2 = true;
+                AddReward(Config.REWARD_SUB_GOAL_NUM_STEP_2);
+                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou sub goal step 2", Config.REWARD_SUB_GOAL_NUM_STEP_2);
+            }
+            else if (!is_received_subgoal_step1 && getLocalStep() >= 10)
+            {
+                is_received_subgoal_step1 = true;
+                AddReward(Config.REWARD_SUB_GOAL_NUM_STEP_1);
+                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou sub goal step 1", Config.REWARD_SUB_GOAL_NUM_STEP_1);
+            }
+        }*/
+    }
+
     public override void AgentAction(float[] vectorAction, string textAction)
     {
         if (!dead)
@@ -587,277 +665,296 @@ public class Player : Agent
                 actionIdString = ((int)vectorAction[0]).ToString();
                 replayWriter.printStep(observationGridString, actionIdString);
             }
-            
-            if (!targetReached)
+
+            if (!IsDone())
             {
-                //Testar objetivo final e target aqui porque foi observado que ao chegar ao destino final, o estado não é atualizado.
-                if (grid.checkTarget(myGridPosition))
+                if (!targetReached)
                 {
-                    if (forceReward || !isMimicking)
+                    //Testar objetivo final e target aqui porque foi observado que ao chegar ao destino final, o estado não é atualizado.
+                    if (grid.checkTarget(myGridPosition))
                     {
-                        AddReward(Config.REWARD_GOAL);
-                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou o objetivo", Config.REWARD_GOAL);
-                    }
-                    
-                    targetReached = true;
-                    myPlayerManager.addTargetCount();
-
-                    if (isSpecialist)
-                    {
-                        countSeq++;
-                    }
-
-                    if (myPlayerManager.getNumPlayers() <= 1)
-                    {
-                        targetReached = false;
-                        myPlayerManager.clearTargetCount();
-
-                        if (isSpecialist && countSeq == numSeqCompleted)
-                        {
-                            bcTeacherHelper.forceStopRecord();
-                            bombermanDecision.finishSeqs1 = true;
-                        }
-
-                        Done();
-                        //doneAnother();
-                    }
-                }
-
-                /*if (grid.checkFire(myGridPosition))
-                {
-                    if (forceReward || !isMimicking)
-                    {
-                        AddReward(Config.REWARD_DIE);
-                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " atingido por explosao", Config.REWARD_DIE);
-
-                        if (bombermanVillain != null)
-                        {
-                            if (bombermanVillain.playerNumber != playerNumber)
-                            {
-                                //penalizando amigo por fogo amigo
-                                bombermanVillain.AddReward(Config.REWARD_KILL_FRIEND);
-                                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + bombermanVillain.playerNumber + " matou amigo", Config.REWARD_KILL_FRIEND);
-                            }
-                        }
-                    }
-
-                    killAgent();
-                }*/
-
-                hasPlacedBomb = false;
-                animator.SetBool("Walking", false);
-
-                //-----------------------------------------------------------------------------------------------------
-
-                Vector2 newPos, hammerPos;
-                switch (action)
-                {
-                    //cima
-                    case ActionType.AT_Up:
-                        //rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, moveSpeed);
-                        newPos = myGridPosition + new Vector2(0, 1);
-                        if (grid.checkFreePosition(newPos))
-                        {
-                            transform.position = transform.position + new Vector3(0, 0, 1);
-                            reinforceValidWalkMovement();
-                        }
-                        else
-                            penalizeInvalidWalkMovement();
-
-                        transform.rotation = Quaternion.Euler(0, 0, 0);
-                        animator.SetBool("Walking", true);
-                        break;
-                    //baixo
-                    case ActionType.AT_Down:
-                        //rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, -moveSpeed);
-                        newPos = myGridPosition + new Vector2(0, -1);
-                        if (grid.checkFreePosition(newPos))
-                        {
-                            transform.position = transform.position + new Vector3(0, 0, -1);
-                            reinforceValidWalkMovement();
-                        }
-                        else
-                            penalizeInvalidWalkMovement();
-
-                        transform.rotation = Quaternion.Euler(0, 180, 0);
-                        animator.SetBool("Walking", true);
-                        break;
-                    //direita
-                    case ActionType.AT_Right:
-                        //rigidBody.velocity = new Vector3(moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
-                        newPos = myGridPosition + new Vector2(1, 0);
-                        if (grid.checkFreePosition(newPos))
-                        {
-                            transform.position = transform.position + new Vector3(1, 0, 0);
-                            reinforceValidWalkMovement();
-                        }
-                        else
-                            penalizeInvalidWalkMovement();
-
-                        transform.rotation = Quaternion.Euler(0, 90, 0);
-                        animator.SetBool("Walking", true);
-                        break;
-                    //esquerda
-                    case ActionType.AT_Left:
-                        //rigidBody.velocity = new Vector3(-moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
-                        newPos = myGridPosition + new Vector2(-1, 0);
-                        if (grid.checkFreePosition(newPos))
-                        {
-                            transform.position = transform.position + new Vector3(-1, 0, 0);
-                            reinforceValidWalkMovement();
-                        }
-                        else
-                            penalizeInvalidWalkMovement();
-
-                        transform.rotation = Quaternion.Euler(0, 270, 0);
-                        animator.SetBool("Walking", true);
-                        break;
-                    //Drop bomb
-                    /*case ActionType.AT_Bomb:
-                        if (canDropBombs)
-                        {
-                            hasPlacedBomb = true;
-                            DropBomb();
-                        }
-                        else
-                        {
-                            if (forceReward || !isMimicking)
-                            {
-                                AddReward(Config.REWARD_INVALID_BOMB_ACTION);
-                                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " tentou colocar bomba sem poder", Config.REWARD_INVALID_BOMB_ACTION);
-                            }
-                        }
-                        break;*/
-                    //Hammer Up
-                    case ActionType.AT_Hammer_Up:
-                        hammerPos = myGridPosition + new Vector2(0, 1);
-                        tryHammerAttack(hammerPos);
-
-                        transform.rotation = Quaternion.Euler(0, 0, 0);
-                        break;
-                    //Hammer Down
-                    case ActionType.AT_Hammer_Down:
-                        hammerPos = myGridPosition + new Vector2(0, -1);
-                        tryHammerAttack(hammerPos);
-
-                        transform.rotation = Quaternion.Euler(0, 180, 0);
-                        break;
-                    //Hammer Right
-                    case ActionType.AT_Hammer_Right:
-                        hammerPos = myGridPosition + new Vector2(1, 0);
-                        tryHammerAttack(hammerPos);
-
-                        transform.rotation = Quaternion.Euler(0, 90, 0);
-                        break;
-                    //Hammer Left
-                    case ActionType.AT_Hammer_Left:
-                        hammerPos = myGridPosition + new Vector2(-1, 0);
-                        tryHammerAttack(hammerPos);
-
-                        transform.rotation = Quaternion.Euler(0, 270, 0);
-                        break;
-                    //Wait
-                    case ActionType.AT_Wait:
-                        penalizeStopAction();
-                        break;
-                    default:
-                        break;
-                }
-
-                // recompensa para avaliar se aluno está imitando corretamente professor
-                if (isMimicking)
-                {
-                    AddReward(calculateMimickRewards(myAction));
-                }
-
-                //recompensas
-                myGridPosition = GetGridPosition();
-
-                float distanceToTarget = Vector2.Distance(myGridPosition, targetGridPosition);
-
-                //se aproximando ainda mais. Melhor aproximação
-                if (distanceToTarget < closestDistance)
-                {
-                    closestDistance = distanceToTarget;
-                    if (forceReward || !isMimicking)
-                    { 
-                        AddReward(Config.REWARD_CLOSEST_DISTANCE);
-                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " melhor aproximacao do objetivo", Config.REWARD_CLOSEST_DISTANCE);
-                    }
-                }
-
-                if (distanceToTarget < previousDistance)
-                {
-                    if (forceReward || !isMimicking)
-                    {
-                        AddReward(Config.REWARD_APPROACHED_DISTANCE);
-                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " se aproximou", Config.REWARD_APPROACHED_DISTANCE);
-                    }
-                }
-                else if (distanceToTarget > previousDistance)
-                {
-                    if (forceReward || !isMimicking)
-                    {
-                        AddReward(Config.REWARD_FAR_DISTANCE);
-                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " se distanciou", Config.REWARD_FAR_DISTANCE);
-                    }
-                }
-
-                previousDistance = distanceToTarget;
-            }
-            else
-            {
-                if (playerNumber == 1)
-                {
-                    if (myPlayerManager.getTargetCount() >= 2)
-                    {
-                        //Debug.Log("Entrou");
                         if (forceReward || !isMimicking)
                         {
-                            AddReward(Config.REWARD_TEAM_GOAL);
-                            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + ": time alcancou o objetivo", Config.REWARD_TEAM_GOAL);
-
-                            myPlayerManager.getAgent2().AddReward(Config.REWARD_TEAM_GOAL);
-                            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + myPlayerManager.getAgent2().playerNumber + ": time alcancou o objetivo", Config.REWARD_TEAM_GOAL);
+                            AddReward(Config.REWARD_GOAL);
+                            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " alcancou o objetivo", Config.REWARD_GOAL);
                         }
-                        targetReached = false;
 
-                        Done();
-                        doneAnotherWithoutDeath();
+                        targetReached = true;
+                        myPlayerManager.addTargetCount();
 
-                        if (isSpecialist && countSeq == numSeqCompleted)
+                        if (isSpecialist)
                         {
-                            myPlayerManager.getAgent2().bcTeacherHelper.forceStopRecord();
-                            bcTeacherHelper.forceStopRecord();
-                            bombermanDecision.finishSeqs1 = true;
-                            //playerManager.getAgent2().bombermanDecision.finishSeqs2 = true;
+                            countSeq++;
                         }
-                        
+
+                        if (myPlayerManager.getNumPlayers() <= 1)
+                        {
+                            targetReached = false;
+                            myPlayerManager.clearTargetCount();
+
+                            if (isSpecialist && countSeq == numSeqCompleted)
+                            {
+                                bcTeacherHelper.forceStopRecord();
+                                bombermanDecision.finishSeqs1 = true;
+                            }
+
+                            Done();
+                            //doneAnother();
+                        }
                     }
-                }
-            }
+                    else if (grid.checkFire(myGridPosition)) //Bomb code
+                    {
+                        if (forceReward || !isMimicking)
+                        {
+                            AddReward(Config.REWARD_DIE);
+                            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " atingido por explosao", Config.REWARD_DIE);
 
-            if (forceReward || !isMimicking)
-            {
-                //penalidade de tempo
-                AddReward(Config.REWARD_TIME_PENALTY);
-                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " sofreu penalidade de tempo", Config.REWARD_TIME_PENALTY);
-            }
-                
+                            if (bombermanVillain != null)
+                            {
+                                if (bombermanVillain.playerNumber != playerNumber)
+                                {
+                                    //penalizando amigo por fogo amigo
+                                    bombermanVillain.AddReward(Config.REWARD_KILL_FRIEND);
+                                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + bombermanVillain.playerNumber + " matou amigo", Config.REWARD_KILL_FRIEND);
+                                }
+                            }
+                        }
 
-            /*if (ServiceLocator.GetBombManager().existsBombOrDanger())
-            {
-                if (!isInDanger)
-                {
-                    AddReward(0.05f);
-                    ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " esta seguro", 0.05f);
+                        killAgent();
+                    }
+
+                    //----------
+                    if (grid.checkDanger(myGridPosition))
+                    {
+                        isInDanger = true;
+                    }
+                    else
+                    {
+                        isInDanger = false;
+                    }
+
+                    hasPlacedBomb = false;
+                    animator.SetBool("Walking", false);
+
+                    //-----------------------------------------------------------------------------------------------------
+                    if (!dead && !IsDone())
+                    {
+                        Vector2 newPos, hammerPos;
+                        switch (action)
+                        {
+                            //cima
+                            case ActionType.AT_Up:
+                                //rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, moveSpeed);
+                                newPos = myGridPosition + new Vector2(0, 1);
+                                if (grid.checkFreePosition(newPos))
+                                {
+                                    transform.position = transform.position + new Vector3(0, 0, 1);
+                                    reinforceValidWalkMovement();
+                                }
+                                else
+                                    penalizeInvalidWalkMovement();
+
+                                transform.rotation = Quaternion.Euler(0, 0, 0);
+                                animator.SetBool("Walking", true);
+                                break;
+                            //baixo
+                            case ActionType.AT_Down:
+                                //rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, -moveSpeed);
+                                newPos = myGridPosition + new Vector2(0, -1);
+                                if (grid.checkFreePosition(newPos))
+                                {
+                                    transform.position = transform.position + new Vector3(0, 0, -1);
+                                    reinforceValidWalkMovement();
+                                }
+                                else
+                                    penalizeInvalidWalkMovement();
+
+                                transform.rotation = Quaternion.Euler(0, 180, 0);
+                                animator.SetBool("Walking", true);
+                                break;
+                            //direita
+                            case ActionType.AT_Right:
+                                //rigidBody.velocity = new Vector3(moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
+                                newPos = myGridPosition + new Vector2(1, 0);
+                                if (grid.checkFreePosition(newPos))
+                                {
+                                    transform.position = transform.position + new Vector3(1, 0, 0);
+                                    reinforceValidWalkMovement();
+                                }
+                                else
+                                    penalizeInvalidWalkMovement();
+
+                                transform.rotation = Quaternion.Euler(0, 90, 0);
+                                animator.SetBool("Walking", true);
+                                break;
+                            //esquerda
+                            case ActionType.AT_Left:
+                                //rigidBody.velocity = new Vector3(-moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
+                                newPos = myGridPosition + new Vector2(-1, 0);
+                                if (grid.checkFreePosition(newPos))
+                                {
+                                    transform.position = transform.position + new Vector3(-1, 0, 0);
+                                    reinforceValidWalkMovement();
+                                }
+                                else
+                                    penalizeInvalidWalkMovement();
+
+                                transform.rotation = Quaternion.Euler(0, 270, 0);
+                                animator.SetBool("Walking", true);
+                                break;
+                            //Drop bomb
+                            case ActionType.AT_Bomb:
+                                if (canDropBombs && !dead)
+                                {
+                                    hasPlacedBomb = true;
+                                    DropBomb();
+                                }
+                                else
+                                {
+                                    if (forceReward || !isMimicking)
+                                    {
+                                        AddReward(Config.REWARD_INVALID_BOMB_ACTION);
+                                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " tentou colocar bomba sem poder", Config.REWARD_INVALID_BOMB_ACTION);
+                                    }
+                                }
+                                break;
+                            //Hammer Up
+                            /*case ActionType.AT_Hammer_Up:
+                                hammerPos = myGridPosition + new Vector2(0, 1);
+                                tryHammerAttack(hammerPos);
+
+                                transform.rotation = Quaternion.Euler(0, 0, 0);
+                                break;
+                            //Hammer Down
+                            case ActionType.AT_Hammer_Down:
+                                hammerPos = myGridPosition + new Vector2(0, -1);
+                                tryHammerAttack(hammerPos);
+
+                                transform.rotation = Quaternion.Euler(0, 180, 0);
+                                break;
+                            //Hammer Right
+                            case ActionType.AT_Hammer_Right:
+                                hammerPos = myGridPosition + new Vector2(1, 0);
+                                tryHammerAttack(hammerPos);
+
+                                transform.rotation = Quaternion.Euler(0, 90, 0);
+                                break;
+                            //Hammer Left
+                            case ActionType.AT_Hammer_Left:
+                                hammerPos = myGridPosition + new Vector2(-1, 0);
+                                tryHammerAttack(hammerPos);
+
+                                transform.rotation = Quaternion.Euler(0, 270, 0);
+                                break;*/
+                            //Wait
+                            case ActionType.AT_Wait:
+                                penalizeStopAction();
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    // recompensa para avaliar se aluno está imitando corretamente professor
+                    if (isMimicking)
+                    {
+                        AddReward(calculateMimickRewards(myAction));
+                    }
+
+                    //recompensas
+                    myGridPosition = GetGridPosition();
+
+                    float distanceToTarget = Vector2.Distance(myGridPosition, targetGridPosition);
+
+                    //se aproximando ainda mais. Melhor aproximação
+                    if (distanceToTarget < closestDistance)
+                    {
+                        closestDistance = distanceToTarget;
+                        if (forceReward || !isMimicking)
+                        {
+                            AddReward(Config.REWARD_CLOSEST_DISTANCE);
+                            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " melhor aproximacao do objetivo", Config.REWARD_CLOSEST_DISTANCE);
+                        }
+                    }
+
+                    if (distanceToTarget < previousDistance)
+                    {
+                        if (forceReward || !isMimicking)
+                        {
+                            AddReward(Config.REWARD_APPROACHED_DISTANCE);
+                            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " se aproximou", Config.REWARD_APPROACHED_DISTANCE);
+                        }
+                    }
+                    else if (distanceToTarget > previousDistance)
+                    {
+                        if (forceReward || !isMimicking)
+                        {
+                            AddReward(Config.REWARD_FAR_DISTANCE);
+                            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " se distanciou", Config.REWARD_FAR_DISTANCE);
+                        }
+                    }
+
+                    //verifySubGoals(myGridPosition);
+                    if (ServiceLocator.getManager(scenarioId).GetBombManager().existsBombOrDanger())
+                    {
+                        if (!isInDanger)
+                        {
+                            AddReward(Config.REWARD_SAFE_AREA);
+                            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " esta seguro", Config.REWARD_SAFE_AREA);
+                        }
+                        else
+                        {
+                            AddReward(Config.REWARD_DANGER_AREA);
+                            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " continua em area de perigo", Config.REWARD_DANGER_AREA);
+                        }
+                    }
+
+
+
+                    previousDistance = distanceToTarget;
                 }
                 else
                 {
-                    AddReward(-0.05f);
-                    ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " continua em area de perigo", -0.05f);
+                    if (playerNumber == 1)
+                    {
+                        if (myPlayerManager.getTargetCount() >= 2)
+                        {
+                            //Debug.Log("Entrou");
+                            if (forceReward || !isMimicking)
+                            {
+                                AddReward(Config.REWARD_TEAM_GOAL);
+                                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + ": time alcancou o objetivo", Config.REWARD_TEAM_GOAL);
+
+                                myPlayerManager.getAgent2().AddReward(Config.REWARD_TEAM_GOAL);
+                                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + myPlayerManager.getAgent2().playerNumber + ": time alcancou o objetivo", Config.REWARD_TEAM_GOAL);
+                            }
+                            targetReached = false;
+
+                            Done();
+                            doneAnotherWithoutDeath();
+
+                            if (isSpecialist && countSeq == numSeqCompleted)
+                            {
+                                myPlayerManager.getAgent2().bcTeacherHelper.forceStopRecord();
+                                bcTeacherHelper.forceStopRecord();
+                                bombermanDecision.finishSeqs1 = true;
+                                //playerManager.getAgent2().bombermanDecision.finishSeqs2 = true;
+                            }
+
+                        }
+                    }
                 }
-            }*/
+
+                if (forceReward || !isMimicking)
+                {
+                    //penalidade de tempo
+                    AddReward(Config.REWARD_TIME_PENALTY);
+                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " sofreu penalidade de tempo", Config.REWARD_TIME_PENALTY);
+                }
+
+
+                
+            }
 
             ServiceLocator.getManager(scenarioId).GetLogManager().rewardResumePrint(GetReward(), GetCumulativeReward());
             ServiceLocator.getManager(scenarioId).GetLogManager().actionPrint("Agent" + playerNumber, action);
@@ -871,7 +968,7 @@ public class Player : Agent
         }
     }
 
-    /*private void DropBomb ()
+    private void DropBomb ()
     {
         if (bombPrefab)
         { 
@@ -889,15 +986,17 @@ public class Player : Agent
 
             myBombManager.addBomb(bomb);
             grid.enableObjectOnGrid(StateType.ST_Bomb, bomb.GetComponent<Bomb>().GetGridPosition());
+            grid.enableObjectOnGrid(StateType.ST_Danger, bomb.GetComponent<Bomb>().GetGridPosition());
             bomb.GetComponent<Bomb>().CreateDangerZone();
 
-            //AddReward(0.006f);
-            //ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " colocou uma bomba", 0.006f);
+            AddReward(Config.REWARD_VALID_BOMB_ACTION);
+            ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + playerNumber + " colocou uma bomba", Config.REWARD_VALID_BOMB_ACTION);
 
+            bombCount++;
             canDropBombs = false;
             isInDanger = true;
         }
-    }*/
+    }
 
     public void OnTriggerExit(Collider other)
     {
@@ -937,8 +1036,9 @@ public class Player : Agent
         transform.position = initialPosition;
 
         // tentando corrigir problema da bomba explodir após agente ser reiniciado por tempo
-        /*if (!academy.GetIsInference())
-            myBombManager.clearBombs();*/
+        //Bomb code
+        if (!academy.GetIsInference())
+            myBombManager.clearBombs();
     }
 
     private void killAgentOnly()

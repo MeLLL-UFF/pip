@@ -21,7 +21,7 @@ public class Danger : MonoBehaviour
 
     private void Awake()
     {
-        //stateType = StateType.ST_Danger;
+        stateType = StateType.ST_Danger;
     }
 
     void Start()

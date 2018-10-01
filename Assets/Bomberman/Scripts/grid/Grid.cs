@@ -45,9 +45,10 @@ public class Grid : MonoBehaviour {
 
         blockFlagsList.Add(StateType.ST_Block);
         blockFlagsList.Add(StateType.ST_Wall);
-        //blockFlagsList.Add(StateType.ST_Bomb);
+        //Bomb code
+        blockFlagsList.Add(StateType.ST_Bomb);
 
-        blockFlags = StateType.ST_Block | StateType.ST_Wall;// | StateType.ST_Bomb;
+        blockFlags = StateType.ST_Block | StateType.ST_Wall | StateType.ST_Bomb;
 
         foreach (TerrainType region in walkableRegions)
         {
@@ -153,7 +154,8 @@ public class Grid : MonoBehaviour {
         return false;
     }
 
-    /*public bool checkFire(Vector2 pos)
+    // Bomb code
+    public bool checkFire(Vector2 pos)
     {
         int x = (int)pos.x;
         int y = (int)pos.y;
@@ -167,7 +169,23 @@ public class Grid : MonoBehaviour {
             return true;
 
         return false;
-    }*/
+    }
+
+    public bool checkDanger(Vector2 pos)
+    {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+
+        if (!isOnGrid(x, y))
+            return false;
+
+        BaseNode node = NodeFromPos(x, y);
+
+        if (node.hasFlag(StateType.ST_Danger))
+            return true;
+
+        return false;
+    }
 
     public bool checkDestructible(Vector2 pos)
     {
@@ -235,7 +253,8 @@ public class Grid : MonoBehaviour {
         }
         else if ((1 << hit.collider.gameObject.layer & defaultLayer) != 0)
         {
-            /*if (hit.collider.CompareTag("Explosion"))
+            //Bomb code
+            if (hit.collider.CompareTag("Explosion"))
             {
                 nodeStateType = StateType.ST_Fire;
             }
@@ -243,14 +262,14 @@ public class Grid : MonoBehaviour {
             {
                 nodeStateType = StateType.ST_Bomb;
             }
-            else */if (hit.collider.CompareTag("Target"))
+            else if (hit.collider.CompareTag("Target"))
             {
                 nodeStateType = StateType.ST_Target;
             }
-            /*else if (hit.collider.CompareTag("Danger"))
+            else if (hit.collider.CompareTag("Danger"))
             {
                 nodeStateType = StateType.ST_Danger;
-            }*/
+            }
             else
             {
                 nodeStateType = StateType.ST_Empty;
