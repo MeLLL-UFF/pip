@@ -5,6 +5,8 @@ using UnityEngine;
 public class BlocksManager {
 
     bool initialized = false;
+    // primeiro reset é chamado uma vez na inicialização do agente. Logo isso é um hack para corrigir isso.
+    bool firstReset;
 
     private List<Destructable> blocks = new List<Destructable>();
 
@@ -13,6 +15,7 @@ public class BlocksManager {
         if (!initialized)
         {
             initialized = true;
+            firstReset = false;
         }
     }
 
@@ -23,10 +26,15 @@ public class BlocksManager {
 
     public void resetBlocks()
     {
-        for (int i = 0; i < blocks.Count; i++)
+        if (firstReset)
         {
-            blocks[i].reset();
+            for (int i = 0; i < blocks.Count; i++)
+            {
+                blocks[i].reset();
+            }
         }
+
+        firstReset = true;
     }
 
     public void clear()

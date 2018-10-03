@@ -13,23 +13,14 @@ public class Config {
     public static float REWARD_GOAL = 1f;
     public static float REWARD_TEAM_GOAL = 1f;
 
-    public static float REWARD_SUB_GOAL_DISTANCE_1 = 0.5f;
-    public static float REWARD_SUB_GOAL_DISTANCE_2 = 0.8f;
-
-    public static float REWARD_SUB_GOAL_NUM_STEP_1 = 0.2f;
-    public static float REWARD_SUB_GOAL_NUM_STEP_2 = 0.4f;
-    public static float REWARD_SUB_GOAL_NUM_STEP_3 = 0.6f;
-    public static float REWARD_SUB_GOAL_NUM_STEP_4 = 0.8f;
-
-
-    //public static float REWARD_BLOCK_DESTROY = 0.51f;
-    public static float REWARD_BLOCK_DESTROY = 0.06f;
-    //public static float REWARD_CLOSEST_DISTANCE = 0.31f; //pode ser visto como subgoals
-    public static float REWARD_CLOSEST_DISTANCE = 0.06f;
+    public static float REWARD_BLOCK_DESTROY = 0.08f;
+    //public static float REWARD_BLOCK_DESTROY = 0.06f;
+    public static float REWARD_CLOSEST_DISTANCE = 0.08f; //pode ser visto como subgoals
+    //public static float REWARD_CLOSEST_DISTANCE = 0.06f;
     //public static float REWARD_APPROACHED_DISTANCE = 0.001f;
-    public static float REWARD_APPROACHED_DISTANCE = 0.001f;
+    public static float REWARD_APPROACHED_DISTANCE = 0.002f;
     //public static float REWARD_FAR_DISTANCE = -0.001f;
-    public static float REWARD_FAR_DISTANCE = -0.001f;
+    public static float REWARD_FAR_DISTANCE = -0.002f;
     //public static float REWARD_TIME_PENALTY = -0.001f;
     public static float REWARD_TIME_PENALTY = -0.01f;
 
@@ -62,10 +53,10 @@ public class Config {
     public static float REWARD_WRONG_TEACHER_ACTION = -0.6f;
 
     //Max step per agent
-    public static int MAX_STEP_PER_AGENT = 150;
+    public static int MAX_STEP_PER_AGENT = 800;
 
     //tempo para a bomba explodir (contínuo)
-    public static float BOMB_TIMER = 3.0f;
+    //public static float BOMB_TIMER = 3.0f;
     //tempo para a bomba sumir após explodir
     public static float BOMB_TIMER_AFTER_DESTROY = 0.3f;
     //tempo para o fogo da explosão sumir após explosão

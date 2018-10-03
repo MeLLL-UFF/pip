@@ -4,25 +4,61 @@ using UnityEngine;
 
 public class Destructable : MonoBehaviour {
 
-    public int scenarioId;
+    private int scenarioId;
     bool wasDestroy = false;
+    public bool randomStart = false;
+    public bool randomReset = false;
+    private bool assortedActivation;
+    private bool initialActivation;
     Vector3 initPos;
 
     private Grid grid;
     private StateType stateType;
 
-	// Use this for initialization
-	void Start () {
+    private void Awake()
+    {
+        initialActivation = gameObject.activeSelf;
+
+        if (randomStart)
+        {
+            int randomNumber = Random.Range(0, 2);
+            if (randomNumber == 0)
+            {
+                assortedActivation = false;
+            }
+            else
+            {
+                assortedActivation = true;
+            }
+
+        }
+    }
+
+    // Use this for initialization
+    void Start () {
         stateType = StateType.ST_Block;
-        if (scenarioId == 1)
-            grid = GameObject.Find("GridSystem1").GetComponent<Grid>();
-        else if (scenarioId == 2)
-            grid = GameObject.Find("GridSystem2").GetComponent<Grid>();
+
+        grid = transform.parent.parent.Find("GridSystem").GetComponent<Grid>();
+        scenarioId = grid.scenarioId;
 
         wasDestroy = false;
         initPos = transform.position;
         ServiceLocator.getManager(scenarioId).GetBlocksManager().addBlock(this);
-        grid.enableObjectOnGrid(stateType, GetGridPosition());
+        
+
+        if (randomStart)
+        {
+            gameObject.SetActive(assortedActivation);
+            if (assortedActivation)
+                grid.enableObjectOnGrid(stateType, GetGridPosition());
+            else
+                grid.disableObjectOnGrid(stateType, GetGridPosition());
+        }
+        else
+        {
+            gameObject.SetActive(true);
+            grid.enableObjectOnGrid(stateType, GetGridPosition());
+        }
     }
 
     public Vector2 GetGridPosition()
@@ -33,10 +69,42 @@ public class Destructable : MonoBehaviour {
 
     public void reset()
     {
-        gameObject.SetActive(true);
         wasDestroy = false;
         transform.position = initPos;
-        grid.enableObjectOnGrid(stateType, GetGridPosition());
+
+        if (randomReset)
+        {
+            int randomNumber = Random.Range(0, 2);
+            if (randomNumber == 0)
+            {
+                gameObject.SetActive(false);
+                grid.disableObjectOnGrid(stateType, GetGridPosition());
+            }
+            else
+            {
+                gameObject.SetActive(true);
+                grid.enableObjectOnGrid(stateType, GetGridPosition());
+            }
+        }
+        else
+        {
+            if (randomStart)
+            {
+                gameObject.SetActive(assortedActivation);
+                if (assortedActivation)
+                    grid.enableObjectOnGrid(stateType, GetGridPosition());
+                else
+                    grid.disableObjectOnGrid(stateType, GetGridPosition());
+            }
+            else
+            {
+                gameObject.SetActive(initialActivation);
+                if (initialActivation)
+                    grid.enableObjectOnGrid(stateType, GetGridPosition());
+                else
+                    grid.disableObjectOnGrid(stateType, GetGridPosition());
+            }
+        }
     }
 
     public void attackByHammer(Player hammerman)
@@ -47,11 +115,7 @@ public class Destructable : MonoBehaviour {
             
             if (hammerman != null)
             {
-                if (hammerman.forceReward || !hammerman.isMimicking)
-                {
-                    hammerman.AddReward(Config.REWARD_BLOCK_DESTROY);
-                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + hammerman.playerNumber + " destruiu um bloco", Config.REWARD_BLOCK_DESTROY);
-                }
+                Player.AddRewardToAgent(hammerman, Config.REWARD_BLOCK_DESTROY, "Agente" + hammerman.playerNumber + " destruiu um bloco");
             }
             else
             {
@@ -75,11 +139,7 @@ public class Destructable : MonoBehaviour {
                 Player bomberman = other.gameObject.GetComponent<DestroySelf>().bomberman;
                 if (bomberman != null)
                 {
-                    if (bomberman.forceReward || !bomberman.isMimicking)
-                    {
-                        bomberman.AddReward(Config.REWARD_BLOCK_DESTROY);
-                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Agente" + bomberman.playerNumber + " destruiu um bloco", Config.REWARD_BLOCK_DESTROY);
-                    }
+                    Player.AddRewardToAgent(bomberman, Config.REWARD_BLOCK_DESTROY, "Agente" + bomberman.playerNumber + " destruiu um bloco");
                 }
                 else
                 {

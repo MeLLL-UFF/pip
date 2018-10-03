@@ -52,6 +52,7 @@ public class Managers
 public class ServiceLocator : Singleton<ServiceLocator>
 {
     bool hasImitation = true;
+    static Dictionary<int, Managers> dictManagers = new Dictionary<int, Managers>();
     static Managers manager1 = null;
     static Managers manager2 = null;
 
@@ -59,7 +60,7 @@ public class ServiceLocator : Singleton<ServiceLocator>
     {
         DontDestroyOnLoad(this);
 
-        if (hasImitation)
+        /*if (hasImitation)
         {
             manager1 = new Managers(1);
             manager2 = new Managers(2);
@@ -67,24 +68,26 @@ public class ServiceLocator : Singleton<ServiceLocator>
         else
         {
             manager1 = new Managers(1);
-        }
+        }*/
     }
 
     public static Managers getManager(int id)
     {
-        if (id == 1)
-            return manager1;
-        else if (id == 2)
-            return manager2;
+        if (!dictManagers.ContainsKey(id))
+        {
+            Managers m = new Managers(id);
+            dictManagers.Add(id, m);
+            Debug.Log("Managers " + id.ToString() + " foi criado");
+        }
 
-        return null;
+        return dictManagers[id];
     }
 
     void OnApplicationQuit()
     {
-        getManager(1).GetLogManager().finish();
-
-        if (getManager(2) != null)
-            getManager(2).GetLogManager().finish();
+        foreach(KeyValuePair<int, Managers> m in dictManagers)
+        {
+            m.Value.GetLogManager().finish();
+        }
     }
 }

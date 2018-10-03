@@ -62,6 +62,11 @@ public class Grid : MonoBehaviour {
         CreateGrid();
     }
 
+    private void Start()
+    {
+        //CreateGrid();
+    }
+
     public int MaxSize
     {
         get

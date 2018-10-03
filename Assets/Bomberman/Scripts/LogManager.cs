@@ -7,6 +7,11 @@ using System;
 public class LogManager {
 
     bool initialized = false;
+
+    // variável foi criada porque agora tem muitos cenários, se não tivermos controle vai gerar muito log
+    bool disabled = false;
+
+
     private string fileName = "./logdir/logtest_scenario_";
     private StreamWriter sw;
     private long countStep;
@@ -21,100 +26,143 @@ public class LogManager {
                 Directory.CreateDirectory("./logdir/");
             }
 
-            sw = new StreamWriter(fileName + scenarioId + DateTime.Now.ToString("_yyyy_MM_dd_HH_mm_ss_fff") + ".txt", true);
-            countStep = 0;
-            tabFormat = "\t\t";
-            initialized = true;
+            if (!disabled)
+            {
+                sw = new StreamWriter(fileName + scenarioId + DateTime.Now.ToString("_yyyy_MM_dd_HH_mm_ss_fff") + ".txt", true);
+                countStep = 0;
+                tabFormat = "\t\t";
+                initialized = true;
+            }
+            
         }
     }
 
     public void separator()
     {
-        sw.WriteLine("-------------------------------------------------------------------------------------");
+        if (!disabled)
+        {
+            sw.WriteLine("-------------------------------------------------------------------------------------");
+        }
     }
 
     public void simplePrint(string message)
     {
-        sw.WriteLine(message);
+        if (!disabled)
+        {
+            sw.WriteLine(message);
+        }
     }
 
     public void print(string message)
     {
-        sw.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + message);
+        if (!disabled)
+        {
+            sw.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + message);
+        }
     }
 
     public void print(string message, string prefix)
     {
-        sw.WriteLine(DateTime.Now.ToString(prefix + "yyyy-MM-dd HH:mm:ss.fff") + " " + message);
+        if (!disabled)
+        {
+            sw.WriteLine(DateTime.Now.ToString(prefix + "yyyy-MM-dd HH:mm:ss.fff") + " " + message);
+        }
     }
 
     public void rewardPrint(string message, float reward)
     {
-        string result = "R: " + reward + " -> " + message;
-        print(result);
+        if (!disabled)
+        {
+            string result = "R: " + reward + " -> " + message;
+            print(result);
+        }
     }
 
     public void rewardResumePrint(float stepReward, float episodeReward)
     {
-        simplePrint("\t\t stepReward: " + stepReward + " episodeReward: " + episodeReward);
+        if (!disabled)
+        {
+            simplePrint("\t\t stepReward: " + stepReward + " episodeReward: " + episodeReward);
+        }
     }
 
     public void globalStepPrint(int academyStep)
     {
-        if (countStep != 0 && countStep % 50000 == 0)
+        if (!disabled)
         {
-            sw.Close();
-            sw = new StreamWriter(fileName + DateTime.Now.ToString("_yyyy_MM_dd_HH_mm_ss_fff") + ".txt", true);
-        }
+            if (countStep != 0 && countStep % 50000 == 0)
+            {
+                sw.Close();
+                sw = new StreamWriter(fileName + DateTime.Now.ToString("_yyyy_MM_dd_HH_mm_ss_fff") + ".txt", true);
+            }
 
-        /*print("Global Step " + countStep);
-        print("Academy Step " + academyStep);*/
-        ++countStep;
+            /*print("Global Step " + countStep);
+            print("Academy Step " + academyStep);*/
+            ++countStep;
+        }
     }
 
     public void localStepPrint(Player player)
     {
-        print("Agent " + player.playerNumber + " Step " + player.getLocalStep());
-        //print("Recompensas:", "\n");
+        if (!disabled)
+        {
+            print("Agent " + player.playerNumber + " Step " + player.getLocalStep());
+            //print("Recompensas:", "\n");
+        }
     }
 
     public void episodePrint(int epCount)
     {
-        print("Global Episode " + epCount, "\n");
+        if (!disabled)
+        {
+            print("Global Episode " + epCount, "\n");
+        }
     }
 
     public void localEpisodePrint(int epCount, Player player)
     {
-        print("Local Episode of agent " + player.playerNumber + ": " + epCount);
+        if (!disabled)
+        {
+            print("Local Episode of agent " + player.playerNumber + ": " + epCount);
+        }
     }
 
     public void statePrint(string agentName, Vector2 agentGridPos, Vector2 targetGridPos, /*Vector2 velocity,*/ string grid, bool canDropBombs, bool isInDanger, bool existBombs)
     {
-        string result = "Estado Atual - " + agentName + "\n";
-        result += tabFormat + "pos: " + agentGridPos + "\n";
-        result += tabFormat + "tar: " + targetGridPos + "\n";
-        //result += tabFormat + "vel: " + velocity + "\n";
-        result += tabFormat + "canDropBombs: " + canDropBombs + "\n";
-        result += tabFormat + "isInDanger: " + isInDanger + "\n";
-        result += tabFormat + "existBombs: " + existBombs + "\n";
-        result += tabFormat + "grid:" + "\n" + grid;
+        if (!disabled)
+        {
+            string result = "Estado Atual - " + agentName + "\n";
+            result += tabFormat + "pos: " + agentGridPos + "\n";
+            result += tabFormat + "tar: " + targetGridPos + "\n";
+            //result += tabFormat + "vel: " + velocity + "\n";
+            result += tabFormat + "canDropBombs: " + canDropBombs + "\n";
+            result += tabFormat + "isInDanger: " + isInDanger + "\n";
+            result += tabFormat + "existBombs: " + existBombs + "\n";
+            result += tabFormat + "grid:" + "\n" + grid;
 
 
-        separator();
-        print(result);
+            separator();
+            print(result);
+        }
     }
 
     public void actionPrint(string agentName, ActionType action)
     {
-        string result = "Acoes Atuais - " + agentName + "\n";
-        result += tabFormat + "Acao: " + action.ToString() + "\n";
+        if (!disabled)
+        {
+            string result = "Acoes Atuais - " + agentName + "\n";
+            result += tabFormat + "Acao: " + action.ToString() + "\n";
 
-        print(result, "\n");
+            print(result, "\n");
+        }
     }
 
     public void finish()
     {
-        sw.WriteLine("Fechou");
-        sw.Close();
+        if (!disabled)
+        {
+            sw.WriteLine("Fechou");
+            sw.Close();
+        }
     }
 }

@@ -37,7 +37,7 @@ using System.Collections;
 /// </summary>
 public class DestroySelf : MonoBehaviour
 {
-    public int scenarioId;
+    //public int scenarioId;
     public Bomb myBomb = null;
     public int id;
 
