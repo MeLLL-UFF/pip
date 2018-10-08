@@ -83,6 +83,8 @@ public class Player : Agent
     private Vector2 myGridPosition;
     private Vector2 targetGridPosition;
 
+    private bool alreadyWasReseted = false;
+    public bool randomizeResetPosition = false;
     public bool randomizeInitialPosition = false;
     public bool forceInitialPosition = false;
     [Range(0, 3)]
@@ -209,6 +211,34 @@ public class Player : Agent
         }
     }
 
+    private void randomizeResetPositionFunction()
+    {
+        if (randomizeResetPosition)
+        {
+            grid.clearAgentOnGrid(this);
+
+            int number = UnityEngine.Random.Range(0, initialPositions.Length);
+
+            initialPosition = initialPositions[number];
+            oldLocalPosition = initialPosition;
+            transform.localPosition = initialPosition;
+            grid.updateAgentOnGrid(this);
+
+            Vector3 gridTarget3d = Target.transform.localPosition;
+            Vector2 oldGridTarget2d = new Vector2(Mathf.RoundToInt(gridTarget3d.x), Mathf.RoundToInt(gridTarget3d.z));
+            grid.disableObjectOnGrid(StateType.ST_Target, oldGridTarget2d);
+
+            Vector3 targetGridPosition3d = Player.getOppositeInitialPosition(number);
+            targetGridPosition = new Vector2(Mathf.RoundToInt(targetGridPosition3d.x), Mathf.RoundToInt(targetGridPosition3d.z));
+            grid.enableObjectOnGrid(StateType.ST_Target, targetGridPosition);
+            Target.transform.localPosition = targetGridPosition3d;
+        }
+        else
+        {
+            grid.updateAgentOnGrid(this);
+        }
+    }
+
     public override void InitializeAgent()
     {
         Debug.Log("InitializeAgent foi chamado");
@@ -232,6 +262,7 @@ public class Player : Agent
 
         isReady = true;
         targetReached = false;
+        alreadyWasReseted = false;
 
         bombCount = 0;
 
@@ -318,8 +349,14 @@ public class Player : Agent
         bombermanVillain = null;
         wasFilledTeacherObservations = false;
 
-        grid.updateAgentOnGrid(this);
+        if (alreadyWasReseted)
+            randomizeResetPositionFunction();
+        else
+            grid.updateAgentOnGrid(this);
+
         oldLocalPosition = transform.localPosition;
+
+        alreadyWasReseted = true;
     }
 
     private void AddVectorObsForGrid()
