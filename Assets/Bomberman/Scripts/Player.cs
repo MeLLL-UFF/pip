@@ -59,20 +59,20 @@ public class Player : Agent
     public GameObject hammerEffect;
 
     //Player parameters
-    [Range (1, 2)] //Enables a nifty slider in the editor. Indicates what player this is: P1 or P2
-    public int playerNumber = 1;
+    //[Range (1, 4)] //Enables a nifty slider in the editor. Indicates what player this is: P1 or P2
+    private int playerNumber = 1;
     private StateType stateType;
 
     public bool canDropBombs;
     public bool dead = false;
-    public bool targetReached = false;
+    public bool lastMan = false;
+
     public bool isInDanger;
     public bool isReady = true;
     [HideInInspector]
     public bool wasInitialized = false;
 
     public GameObject bombPrefab;
-    public Transform Target;
     public Grid grid;
 
     private Animator animator;
@@ -81,15 +81,12 @@ public class Player : Agent
     private Vector3 initialPosition;
     private Vector3 oldLocalPosition;
     private Vector2 myGridPosition;
-    private Vector2 targetGridPosition;
 
     private bool alreadyWasReseted = false;
     public bool randomizeResetPosition = false;
     public bool randomizeInitialPosition = false;
-    public bool forceInitialPosition = false;
-    [Range(0, 3)]
-    public int indexInitialPosition = 0;
-    private static Vector3[] initialPositions = new Vector3[] {  new Vector3(1.0f, 0.5f, 9.0f),
+    
+    public static Vector3[] initialPositions = new Vector3[] {  new Vector3(1.0f, 0.5f, 9.0f),
                                                                  new Vector3(9.0f, 0.5f, 9.0f) ,
                                                                  new Vector3(9.0f, 0.5f, 1.0f) ,
                                                                  new Vector3(1.0f, 0.5f, 1.0f)};
@@ -100,10 +97,6 @@ public class Player : Agent
     private int localEpisode = 1;
     private int localStep = 1;
     private int totalLocalStep = 1;
-    
-    public float timeBetweenDecisionsAtInference;
-    private float timeSinceDecision;
-
 
     private GameObject playerModel;
 
@@ -113,12 +106,38 @@ public class Player : Agent
     private string observationGridString;
     private string actionIdString;
 
-    public bool myIterationActionWasExecuted;
     public PlayerManager myPlayerManager;
     public BombManager myBombManager;
     Player bombermanVillain;
 
     int bombCount = 0;
+
+    private MapController myMapController;
+
+    public int getPlayerNumber()
+    {
+        return playerNumber;
+    }
+
+    public Vector3 getInitialPosition()
+    {
+        return initialPosition;
+    }
+
+    public void setInitialPosition(Vector3 p)
+    {
+        initialPosition = p;
+    }
+
+    public Vector3 getOldLocalPosition()
+    {
+        return oldLocalPosition;
+    }
+
+    public void setOldLocalPosition(Vector3 p)
+    {
+        oldLocalPosition = p;
+    }
 
     static Vector3 getOppositeInitialPosition(int index)
     {
@@ -160,111 +179,59 @@ public class Player : Agent
         return localStep;
     }
 
-    private void Start()
+    private StateType convertPlayerNumberToStateType(int pNumber)
     {
-        Debug.Log("Start foi chamado");
+        StateType stateType = 0;
+
+        if (pNumber == 1)
+            stateType = StateType.ST_Agent1;
+        else if (pNumber == 2)
+            stateType = StateType.ST_Agent2;
+        else if (pNumber == 3)
+            stateType = StateType.ST_Agent3;
+        else if (pNumber == 4)
+            stateType = StateType.ST_Agent4;
+
+        return stateType;
+    }
+
+    //Função foi criada para inicializar atributos do agente após a instanciação. Porque ao usar a instanciação, automaticamente é chamado InitializeAgent e Start.
+    public void init(Grid g, int pNumber, MapController mapController)
+    {
+        //Debug.Log("Init foi chamado");
+        myMapController = mapController;
+        grid = g;
         scenarioId = grid.scenarioId;
-        academy = FindObjectOfType(typeof(BombermanAcademy)) as BombermanAcademy;
-        if (isSpecialist)
-            bcTeacherHelper = GetComponent<BCTeacherHelper>();
-
-        myPlayerManager = ServiceLocator.getManager(scenarioId).GetPlayerManager();
-        myBombManager = ServiceLocator.getManager(scenarioId).GetBombManager();
-
-        if (playerNumber == 1)
-        {
-            myPlayerManager.setAgent1(this);
-        }
-        else if (playerNumber == 2)
-        {
-            myPlayerManager.setAgent2(this);
-        }
-
-        randomizeInitialPositionFunction();
-    }
-
-    private void randomizeInitialPositionFunction()
-    {
-        if (randomizeInitialPosition)
-        {
-            grid.clearAgentOnGrid(this);
-
-            int number;
-            if (!forceInitialPosition)
-                number = UnityEngine.Random.Range(0, initialPositions.Length);
-            else
-                number = indexInitialPosition;
-
-            initialPosition = initialPositions[number];
-            oldLocalPosition = initialPosition;
-            transform.localPosition = initialPosition;
-            grid.updateAgentOnGrid(this);
-
-            Vector3 gridTarget3d = Target.transform.localPosition;
-            Vector2 oldGridTarget2d = new Vector2(Mathf.RoundToInt(gridTarget3d.x), Mathf.RoundToInt(gridTarget3d.z));
-            grid.disableObjectOnGrid(StateType.ST_Target, oldGridTarget2d);
-
-            Vector3 targetGridPosition3d = Player.getOppositeInitialPosition(number);
-            targetGridPosition = new Vector2(Mathf.RoundToInt(targetGridPosition3d.x), Mathf.RoundToInt(targetGridPosition3d.z));
-            grid.enableObjectOnGrid(StateType.ST_Target, targetGridPosition);
-            Target.transform.localPosition = targetGridPosition3d;
-        }
-    }
-
-    private void randomizeResetPositionFunction()
-    {
-        if (randomizeResetPosition)
-        {
-            grid.clearAgentOnGrid(this);
-
-            int number = UnityEngine.Random.Range(0, initialPositions.Length);
-
-            initialPosition = initialPositions[number];
-            oldLocalPosition = initialPosition;
-            transform.localPosition = initialPosition;
-            grid.updateAgentOnGrid(this);
-
-            Vector3 gridTarget3d = Target.transform.localPosition;
-            Vector2 oldGridTarget2d = new Vector2(Mathf.RoundToInt(gridTarget3d.x), Mathf.RoundToInt(gridTarget3d.z));
-            grid.disableObjectOnGrid(StateType.ST_Target, oldGridTarget2d);
-
-            Vector3 targetGridPosition3d = Player.getOppositeInitialPosition(number);
-            targetGridPosition = new Vector2(Mathf.RoundToInt(targetGridPosition3d.x), Mathf.RoundToInt(targetGridPosition3d.z));
-            grid.enableObjectOnGrid(StateType.ST_Target, targetGridPosition);
-            Target.transform.localPosition = targetGridPosition3d;
-        }
-        else
-        {
-            grid.updateAgentOnGrid(this);
-        }
-    }
-
-    public override void InitializeAgent()
-    {
-        Debug.Log("InitializeAgent foi chamado");
-        base.InitializeAgent();
-        scenarioId = grid.scenarioId;
+        playerNumber = pNumber;
+        stateType = convertPlayerNumberToStateType(playerNumber);
 
         countSeq = 0;
-
+        bombCount = 0;
         isInDanger = false;
         canDropBombs = true;
+        isReady = true;
+        lastMan = false;
+        alreadyWasReseted = false;
         closestDistance = float.MaxValue;
         previousDistance = float.MaxValue;
+
+        if (saveReplay)
+        {
+            if (replayWriter == null)
+                replayWriter = new ReplayWriter(playerNumber, scenarioId);
+
+            replayWriter.initSeq(localEpisode);
+        }
+
+
+        localStep = 1;
+
+        ServiceLocator.getManager(scenarioId).GetLogManager().localEpisodePrint(localEpisode++, this);
 
         //------------------------------------------------------ São atualizadas no Start, que é chamado depois
         initialPosition = transform.localPosition;
         oldLocalPosition = transform.localPosition;
-        Vector3 gridTarget3d = Target.transform.localPosition;
-        targetGridPosition = new Vector2(Mathf.RoundToInt(gridTarget3d.x), Mathf.RoundToInt(gridTarget3d.z));
         // -----------------------------------------------------------------------------------------------------
-
-
-        isReady = true;
-        targetReached = false;
-        alreadyWasReseted = false;
-
-        bombCount = 0;
 
         playerModel = transform.Find("PlayerModel").gameObject;
         animator = transform.Find("PlayerModel").GetComponent<Animator>();
@@ -274,89 +241,52 @@ public class Player : Agent
             bombermanDecision = brain.GetComponent<BombermanOnlyOneDecision>();
             teacherAgentObservations = new List<float>();
         }
-            
 
-        if (playerNumber == 1)
-        {
-            stateType = StateType.ST_Agent1;
-        }
-        else if (playerNumber == 2)
-        {
-            stateType = StateType.ST_Agent2;
-        }
-
-        myIterationActionWasExecuted = false;
         bombermanVillain = null;
         wasFilledTeacherObservations = false;
 
         wasInitialized = true;
+
+        myPlayerManager = ServiceLocator.getManager(scenarioId).GetPlayerManager();
+        myBombManager = ServiceLocator.getManager(scenarioId).GetBombManager();
     }
 
-    /*public override void AgentOnDone()
+    private void Start()
     {
-        Debug.Log("AgentOnDone foi chamado");
-        base.AgentOnDone();
+        //Debug.Log("Start foi chamado");
+        
+        academy = FindObjectOfType(typeof(BombermanAcademy)) as BombermanAcademy;
+        if (isSpecialist)
+            bcTeacherHelper = GetComponent<BCTeacherHelper>();
+
+    }
+
+
+    public override void InitializeAgent()
+    {
+        // Debug.Log("InitializeAgent foi chamado");
+        // ---------------------------------------------- Observação
+        //    Todo código que era colocado aqui agora está na função init().
+        //
+    }
+
+    public override void AgentOnDone()
+    {
+        //Debug.Log("AgentOnDone foi chamado");
+        //base.AgentOnDone();
 
         //ver como recriar agente que não reseta automaticamente. https://github.com/Unity-Technologies/ml-agents/blob/master/docs/Learning-Environment-Design-Agents.md
         //Instantiating an Agent at Runtime
 
+        grid.clearAgentOnGrid(this);
+        myPlayerManager.removePlayer(playerNumber);
+
         Destroy(gameObject);
-    }*/
+    }
 
     public override void AgentReset()
     {
-        //Debug.Log("AgentReset foi chamado");
-        this.transform.localPosition = initialPosition;
-        
-        targetReached = false;
-        canDropBombs = true;
-        isInDanger = false;
-        closestDistance = float.MaxValue;
-        previousDistance = float.MaxValue;
-        playerModel.SetActive(true);
-
-        bombCount = 0;
-
-        if (saveReplay)
-        {
-            if (replayWriter == null)
-                replayWriter = new ReplayWriter(playerNumber, scenarioId);
-
-            replayWriter.initSeq(localEpisode);
-        }
-        
-
-        localStep = 1;
-        
-        ServiceLocator.getManager(scenarioId).GetLogManager().localEpisodePrint(localEpisode++, this);
-
-        if (playerNumber == 1)
-        {
-            //Debug.Log("Agente 1 resetou a fase");
-            myBombManager.clearBombs();
-            ServiceLocator.getManager(scenarioId).GetBlocksManager().resetBlocks();
-            //grid.refreshNodesInGrid();
-            isReady = true;
-        }
-        else
-        {
-            //Debug.Log("Agente 2 nao resetou a fase");
-            isReady = true;
-        }
-
-        dead = false;
-        myIterationActionWasExecuted = false;
-        bombermanVillain = null;
-        wasFilledTeacherObservations = false;
-
-        if (alreadyWasReseted)
-            randomizeResetPositionFunction();
-        else
-            grid.updateAgentOnGrid(this);
-
-        oldLocalPosition = transform.localPosition;
-
-        alreadyWasReseted = true;
+        // Não precisamos usar essa função, pois o agente não é mais resetado quando entra em estado Done. 
     }
 
     private void AddVectorObsForGrid()
@@ -389,21 +319,71 @@ public class Player : Agent
                         BaseNode node = grid.NodeFromPos(x, y);
                         StateType nodeStateType = (StateType)node.getBinary();
 
-                        if (playerNumber == 2)
+                        if (playerNumber == 1)
                         {
-                            //se é um nó com stateType agent
                             if (node.hasFlag(StateType.ST_Agent1))
                             {
                                 nodeStateType = nodeStateType & (~StateType.ST_Agent1);
-                                nodeStateType = nodeStateType | StateType.ST_Agent2;
+                                nodeStateType = nodeStateType | StateType.ST_Agent;
                             }
-                            else if (node.hasFlag(StateType.ST_Agent2))
+
+                            if (node.hasSomeFlag(StateType.ST_Agent2 | StateType.ST_Agent3 | StateType.ST_Agent4))
                             {
                                 nodeStateType = nodeStateType & (~StateType.ST_Agent2);
-                                nodeStateType = nodeStateType | StateType.ST_Agent1;
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent3);
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent4);
+                                nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
                             }
                         }
-                        
+                        else if (playerNumber == 2)
+                        {
+                            if (node.hasFlag(StateType.ST_Agent2))
+                            {
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent2);
+                                nodeStateType = nodeStateType | StateType.ST_Agent;
+                            }
+
+                            if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent3 | StateType.ST_Agent4))
+                            {
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent1);
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent3);
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent4);
+                                nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
+                            }
+                        }
+                        else if (playerNumber == 3)
+                        {
+                            if (node.hasFlag(StateType.ST_Agent3))
+                            {
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent3);
+                                nodeStateType = nodeStateType | StateType.ST_Agent;
+                            }
+
+                            if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent2 | StateType.ST_Agent4))
+                            {
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent1);
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent2);
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent4);
+                                nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
+                            }
+                        }
+                        else if (playerNumber == 4)
+                        {
+                            if (node.hasFlag(StateType.ST_Agent4))
+                            {
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent4);
+                                nodeStateType = nodeStateType | StateType.ST_Agent;
+                            }
+
+                            if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent2 | StateType.ST_Agent3))
+                            {
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent1);
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent2);
+                                nodeStateType = nodeStateType & (~StateType.ST_Agent3);
+                                nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
+                            }
+                        }
+
                         int cell = (int)nodeStateType;
 
                         AddVectorObs(cell);
@@ -495,6 +475,8 @@ public class Player : Agent
         clearReplayVars();
         myGridPosition = GetGridPosition();
 
+        AddVectorObs(myGridPosition);
+
         //adicionando grid de observação da posição dos agentes
         if (isSpecialist)
         {
@@ -514,18 +496,10 @@ public class Player : Agent
             else
             {
                 //Debug.Log("Nao era pra eu ter entrado aqui.");
-                teacherAgent.wasFilledTeacherObservations = false;
+                //teacherAgent.wasFilledTeacherObservations = false;
                 AddVectorObsForGrid();
             }
         }
-
-        ServiceLocator.getManager(scenarioId).GetLogManager().statePrint("Agent " + playerNumber,
-                                                    myGridPosition,
-                                                    targetGridPosition,
-                                                    grid.gridToString(playerNumber),
-                                                    canDropBombs,
-                                                    isInDanger,
-                                                    myBombManager.existsBombOrDanger());
         
     }
 
@@ -600,9 +574,18 @@ public class Player : Agent
     {
         if (!dead)
         {
+            ServiceLocator.getManager(scenarioId).GetLogManager().statePrint("Agent " + playerNumber,
+                                                    myGridPosition,
+
+                                                    grid.gridToString(playerNumber),
+                                                    canDropBombs,
+                                                    isInDanger,
+                                                    myBombManager.existsBombOrDanger());
+
 
             if (!isMimicking)
             {
+                // talvez seria melhor passar esse código para o playerManager.
                 if (getLocalStep() >= Config.MAX_STEP_PER_AGENT)
                 {
                     AddRewardToAgent(this, Config.REWARD_MAX_STEP_REACHED, "Agente" + playerNumber + " alcancou max step");
@@ -644,47 +627,17 @@ public class Player : Agent
 
             if (!IsDone())
             {
-                if (!targetReached)
+                if (!lastMan)
                 {
-                    //Testar objetivo final e target aqui porque foi observado que ao chegar ao destino final, o estado não é atualizado.
-                    if (grid.checkTarget(myGridPosition))
+                    if (grid.checkFire(myGridPosition)) //Bomb code
                     {
-                        AddRewardToAgent(this, Config.REWARD_GOAL, "Agente" + playerNumber + " alcancou o objetivo");
-
-                        targetReached = true;
-                        myPlayerManager.addTargetCount();
-
-                        if (isSpecialist)
-                        {
-                            countSeq++;
-                        }
-
-                        if (myPlayerManager.getNumPlayers() <= 1)
-                        {
-                            targetReached = false;
-                            myPlayerManager.clearTargetCount();
-
-                            if (isSpecialist && countSeq == numSeqCompleted)
-                            {
-                                bcTeacherHelper.forceStopRecord();
-                                bombermanDecision.finishSeqs1 = true;
-                            }
-
-                            Done();
-                            //doneAnother();
-                        }
-                    }
-                    else if (grid.checkFire(myGridPosition)) //Bomb code
-                    {
-
                         AddRewardToAgent(this, Config.REWARD_DIE, "Agente" + playerNumber + " atingido por explosao");
 
                         if (bombermanVillain != null)
                         {
                             if (bombermanVillain.playerNumber != playerNumber)
                             {
-                                //penalizando amigo por fogo amigo
-                                AddRewardToAgent(bombermanVillain, Config.REWARD_KILL_FRIEND, "Agente" + bombermanVillain.playerNumber + " matou amigo");
+                                AddRewardToAgent(bombermanVillain, Config.REWARD_KILL_ENEMY, "Agente" + bombermanVillain.playerNumber + " matou inimigo");
                             }
                         }
 
@@ -826,23 +779,8 @@ public class Player : Agent
                     //recompensas
                     myGridPosition = GetGridPosition();
 
-                    float distanceToTarget = Vector2.Distance(myGridPosition, targetGridPosition);
-
-                    //se aproximando ainda mais. Melhor aproximação
-                    if (distanceToTarget < closestDistance)
-                    {
-                        closestDistance = distanceToTarget;
-                        AddRewardToAgent(this, Config.REWARD_CLOSEST_DISTANCE, "Agente" + playerNumber + " melhor aproximacao do objetivo");
-                    }
-
-                    if (distanceToTarget < previousDistance)
-                    {
-                        AddRewardToAgent(this, Config.REWARD_APPROACHED_DISTANCE, "Agente" + playerNumber + " se aproximou");
-                    }
-                    else if (distanceToTarget > previousDistance)
-                    {
-                        AddRewardToAgent(this, Config.REWARD_FAR_DISTANCE, "Agente" + playerNumber + " se distanciou");
-                    }
+                    // testar aproximação para cada inimigo 
+                    myPlayerManager.calculateDistanceEnemyPosition(this);
 
                     if (ServiceLocator.getManager(scenarioId).GetBombManager().existsBombOrDanger())
                     {
@@ -853,35 +791,6 @@ public class Player : Agent
                         else
                         {
                             AddRewardToAgent(this, Config.REWARD_DANGER_AREA, "Agente" + playerNumber + " continua em area de perigo");
-                        }
-                    }
-
-
-
-                    previousDistance = distanceToTarget;
-                }
-                else
-                {
-                    if (playerNumber == 1)
-                    {
-                        if (myPlayerManager.getTargetCount() >= 2)
-                        {
-                            AddRewardToAgent(this, Config.REWARD_TEAM_GOAL, "Agente" + playerNumber + ": time alcancou o objetivo");
-                            AddRewardToAgent(myPlayerManager.getAgent2(), Config.REWARD_TEAM_GOAL, "Agente" + myPlayerManager.getAgent2().playerNumber + ": time alcancou o objetivo");
-
-                            targetReached = false;
-
-                            Done();
-                            doneAnotherWithoutDeath();
-
-                            if (isSpecialist && countSeq == numSeqCompleted)
-                            {
-                                myPlayerManager.getAgent2().bcTeacherHelper.forceStopRecord();
-                                bcTeacherHelper.forceStopRecord();
-                                bombermanDecision.finishSeqs1 = true;
-                                //playerManager.getAgent2().bombermanDecision.finishSeqs2 = true;
-                            }
-
                         }
                     }
                 }
@@ -942,7 +851,7 @@ public class Player : Agent
 
     public void OnTriggerEnter (Collider other)
     {
-        /*if (other.CompareTag ("Explosion"))
+        if (other.CompareTag ("Explosion"))
         {
             if (!dead)
             {
@@ -950,6 +859,7 @@ public class Player : Agent
             }
         }
 
+        /*
         //Agente toma muita recompensa negativa e desiste de colocar bomba muito rápido
         if (other.CompareTag("Danger"))
         {
@@ -970,8 +880,8 @@ public class Player : Agent
 
         // tentando corrigir problema da bomba explodir após agente ser reiniciado por tempo
         //Bomb code
-        if (!academy.GetIsInference())
-            myBombManager.clearBombs();
+        /*if (!academy.GetIsInference())
+            myBombManager.clearBombs();*/
     }
 
     private void killAgentOnly()
@@ -980,20 +890,12 @@ public class Player : Agent
         //Debug.Log("Morri force - agente " + playerNumber);
     }
 
-    private void killAgentBoth()
-    {
-        defaultKillCode();
-        //Debug.Log("Morri both - agente " + playerNumber);
-
-        Invoke("DoneWithDelay", 2.5f);
-    }
-
     private void killAgent()
     {
         defaultKillCode();
         //Debug.Log("Morri - agente " + playerNumber);
 
-        myPlayerManager.clearDeadCount();
+        myPlayerManager.addDeadCount();
         Done();
 
         /* Comentado porque começou a dar pau com apenas um agente após várias iterações
@@ -1002,190 +904,42 @@ public class Player : Agent
             myPlayerManager.addDeadCount();
             Invoke("VerifyDeadCount", 0.5f);
         }*/
-
-    }
-
-    void VerifyDeadCount()
-    {
-        /*if (playerManager.getDeadCount() >= 2)
-        {
-            Debug.Log("DeadCount2");
-            //playerManager.clearDeadCount();
-            Invoke("DoneWithDelay", 2.5f);
-        }
-        else */if (myPlayerManager.getDeadCount() >= 1)
-        {
-            //playerManager.clearDeadCount();
-            if (myPlayerManager.getAgent1() != null && myPlayerManager.getAgent1().dead)
-            {
-                //Debug.Log("DeadCount1 ag1");
-                Invoke("DoneWithDelay", 2.5f);
-            }
-            else if (myPlayerManager.getAgent2() != null && myPlayerManager.getAgent2().dead)
-            {
-                //Debug.Log("DeadCount1 ag2");
-                Invoke("DoneWithDelay", 0.0f);
-            }
-        }
-    }
-
-    private void doneAnother()
-    {
-        isReady = false;
-        if (playerNumber == 1)
-        {
-            Player another = myPlayerManager.getAgent2();
-            if (another != null)
-            {
-                //Debug.Log("Matei o agente2");
-                another.killAgentOnly();
-                another.Done();
-                another.isReady = false;
-                myPlayerManager.clearDeadCount();
-            }
-
-            if (myPlayerManager.getNumPlayers() == 1)
-            {
-                myPlayerManager.clearDeadCount();
-            }
-        }
-        else if (playerNumber == 2)
-        {
-            dead = true;
-            Player another = myPlayerManager.getAgent1();
-            if (another != null)
-            {
-                //Debug.Log("Matei o agente1");
-                another.killAgentBoth();
-                another.isReady = false;
-            }
-        }
-    }
-
-    private void doneAnotherWithoutDeath()
-    {
-        isReady = false;
-        if (playerNumber == 1)
-        {
-            Player another = ServiceLocator.getManager(scenarioId).GetPlayerManager().getAgent2();
-            if (another != null)
-            {
-                another.Done();
-                another.isReady = false;
-                ServiceLocator.getManager(scenarioId).GetPlayerManager().clearDeadCount();
-                ServiceLocator.getManager(scenarioId).GetPlayerManager().clearTargetCount();
-                //another.targetReached = false;
-            }
-
-            if (ServiceLocator.getManager(scenarioId).GetPlayerManager().getNumPlayers() == 1)
-            {
-                ServiceLocator.getManager(scenarioId).GetPlayerManager().clearDeadCount();
-            }
-        }
-    }
-
-    private void DoneWithDelay()
-    {
-        if (playerNumber == 1)
-            Done();
-
-        doneAnother();
-    }
-
-    public void FixedUpdate()
-    {
-        //WaitTimeInference();
-        WaitIterationActions();
     }
 
     private void internalUpdate()
     {
-        if (myPlayerManager.isReadyForNewIteration())
+        if (isMimicking)
         {
-            myPlayerManager.addIterationCount();
-            myBombManager.timeIterationUpdate();
-        }
-
-        if (!myIterationActionWasExecuted)
-        {
-            if (isMimicking)
+            if (teacherAgent != null && teacherAgent.wasFilledTeacherObservations)
             {
-                if (teacherAgent != null && teacherAgent.wasFilledTeacherObservations)
+                RequestDecision();
+            }
+        }
+        else
+        {
+            if (isSpecialist)
+            {
+                if (!wasFilledTeacherObservations)
                 {
                     RequestDecision();
-                    myIterationActionWasExecuted = true;
                 }
             }
             else
             {
-                if (isSpecialist)
-                {
-                    if (!wasFilledTeacherObservations)
-                    {
-                        RequestDecision();
-                        myIterationActionWasExecuted = true;
-                    }
-                }
-                else
-                {
-                    RequestDecision();
-                    myIterationActionWasExecuted = true;
-                }
+                RequestDecision();
             }
         }
     }
 
-    private void WaitIterationActions()
+    public bool WaitIterationActions()
     {
-        if (wasInitialized)
+        if (wasInitialized && !dead)
         {
-            if (!dead && myPlayerManager.getDeadCount() == 0)
-            {
-                if (!academy.GetIsInference())
-                {
-                    internalUpdate();
-                }
-                else
-                {
-                    if (timeSinceDecision >= timeBetweenDecisionsAtInference)
-                    {
-                        timeSinceDecision = 0f;
-                        internalUpdate();
-                    }
-                    else
-                    {
-                        timeSinceDecision += Time.fixedDeltaTime;
-                    }
-                }
-                
-            }
+            internalUpdate();
+            return true;
         }
-    }
 
-    private void WaitTimeInference()
-    {
-        if (wasInitialized)
-        {
-            if (!dead && myPlayerManager.getDeadCount() == 0)
-            {
-                if (!academy.GetIsInference())
-                {
-                    RequestDecision();
-                }
-                else
-                {
-                    if (timeSinceDecision >= timeBetweenDecisionsAtInference)
-                    {
-                        timeSinceDecision = 0f;      
-                        RequestDecision();
-                    }
-                    else
-                    {
-                        timeSinceDecision += Time.fixedDeltaTime;
-                    }
-                }
-            }
-        }
+        return false;
     }
 
     void OnApplicationQuit()

@@ -2,17 +2,30 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public class DistanceStructure
+{
+    public float previousDistance;
+    public float closestDistance;
+
+    public DistanceStructure()
+    {
+        previousDistance = Mathf.Infinity;
+        closestDistance = Mathf.Infinity;
+    }
+}
+
 public class PlayerManager {
 
     bool initialized = false;
-    private Player agent1;
-    private Player agent2;
 
     private int deadCount;
-    private int targetCount;
     private int iterationCount;
+    private int episodeCount;
 
-    List<Player> playerList = new List<Player>();
+    Dictionary<int, Player> playerDict = new Dictionary<int, Player>();
+    List<Vector3> initPosList = new List<Vector3>();
+
+    Dictionary<int, Dictionary<int, DistanceStructure>> distanceStructureDict = new Dictionary<int, Dictionary<int, DistanceStructure> >();
 
     public PlayerManager()
     {
@@ -20,20 +33,70 @@ public class PlayerManager {
         {
             //Debug.Log("PlayerManager inicializado");
             deadCount = 0;
-            targetCount = 0;
             iterationCount = 0;
+            episodeCount = 1;
+            restartInitList();
             initialized = true;
         }
     }
 
-    private void addPlayer(Player p)
+    public void clear()
     {
-        playerList.Add(p);
+        foreach (KeyValuePair<int, Player> entry in playerDict)
+        {
+            GameObject.Destroy(entry.Value.gameObject);
+        }
+
+        playerDict.Clear();
+        clearDistanceStructuresForReward();
+        clearDeadCount();
+        restartInitList();
+
+        iterationCount = 0;
+
+        addEpisodeCount();
+    }
+
+    private void restartInitList()
+    {
+        initPosList.Clear();
+        for (int i = 0; i < Player.initialPositions.Length; i++)
+        {
+            initPosList.Add(Player.initialPositions[i]);
+        }
+    }
+
+    public Vector3 getNextRandomInitPosition()
+    {
+        if (initPosList.Count == 0)
+            restartInitList();
+
+        int number = UnityEngine.Random.Range(0, initPosList.Count);
+
+        Vector3 randomPos = initPosList[number];
+        initPosList.RemoveAt(number);
+
+        return randomPos;
+    }
+
+    public bool containsPlayer(int playerNumber)
+    {
+        return playerDict.ContainsKey(playerNumber);
+    }
+
+    public void addPlayer(Player p, int playerNumber)
+    {
+        playerDict.Add(playerNumber, p);
+    }
+
+    public void removePlayer(int playerNumber)
+    {
+        playerDict.Remove(playerNumber);
     }
 
     public int getNumPlayers()
     {
-        return playerList.Count;
+        return playerDict.Count;
     }
 
     public void addDeadCount()
@@ -51,29 +114,9 @@ public class PlayerManager {
         deadCount = 0;
     }
 
-    public void addTargetCount()
-    {
-        targetCount++;
-    }
-
-    public int getTargetCount()
-    {
-        return targetCount;
-    }
-
-    public void clearTargetCount()
-    {
-        targetCount = 0;
-    }
-
     public void addIterationCount()
     {
         iterationCount++;
-
-        for (int i = 0; i < playerList.Count; ++i)
-        {
-            playerList[i].myIterationActionWasExecuted = false;
-        }
     }
 
     public int getIterationCount()
@@ -81,38 +124,124 @@ public class PlayerManager {
         return iterationCount;
     }
 
-    public bool isReadyForNewIteration()
+    public void addEpisodeCount()
     {
-        for (int i = 0; i < playerList.Count; ++i)
+        episodeCount++;
+    }
+
+    public int getEpisodeCount()
+    {
+        return episodeCount;
+    }
+
+    public Player getAgent(int playerNumber)
+    {
+        if (playerDict.ContainsKey(playerNumber))
         {
-            if (!playerList[i].myIterationActionWasExecuted)
-            {
-                return false;
-            }
+            return playerDict[playerNumber];
         }
 
+        return null;
+    }
+
+    public void calculateDistanceEnemyPosition(Player agent)
+    {
+        foreach (KeyValuePair<int, Player> entry in playerDict)
+        {
+            Player enemy = entry.Value;
+            if (!enemy.dead && enemy.getPlayerNumber() != agent.getPlayerNumber())
+            {
+                float distance = Vector2.Distance(agent.GetGridPosition(), entry.Value.GetGridPosition());
+                if (distance < distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].closestDistance)
+                {
+                    distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].closestDistance = distance;
+                    Player.AddRewardToAgent(agent, Config.REWARD_CLOSEST_DISTANCE, "Agente" + agent.getPlayerNumber() + " melhor aproximacao do inimigo " + enemy.getPlayerNumber());
+                }
+
+                if (distance < distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].previousDistance)
+                {
+                    Player.AddRewardToAgent(agent, Config.REWARD_APPROACHED_DISTANCE, "Agente" + agent.getPlayerNumber() + " se aproximou do inimigo " + enemy.getPlayerNumber());
+                }
+                else if (distance > distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].previousDistance)
+                {
+                    Player.AddRewardToAgent(agent, Config.REWARD_FAR_DISTANCE, "Agente" + agent.getPlayerNumber() + " se distanciou do inimigo " + enemy.getPlayerNumber());
+                }
+
+                distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].previousDistance = distance;
+            }
+        }
+    }
+
+    public void createDistanceStructuresForReward()
+    {
+        foreach (KeyValuePair<int, Player> entry in playerDict)
+        {
+            int playerNumber = entry.Value.getPlayerNumber();
+
+            foreach (KeyValuePair<int, Player> enemyEntry in playerDict)
+            {
+                int playerNumberEnemy = enemyEntry.Value.getPlayerNumber();
+                if (playerNumber != playerNumberEnemy)
+                {
+                    if (!distanceStructureDict.ContainsKey(playerNumber))
+                    {
+                        Dictionary<int, DistanceStructure> enemyDistance = new Dictionary<int, DistanceStructure>();
+                        distanceStructureDict.Add(playerNumber, enemyDistance);
+                    }
+
+                    distanceStructureDict[playerNumber].Add(playerNumberEnemy, new DistanceStructure());
+                }
+            }
+        }
+    }
+
+    public void clearDistanceStructuresForReward()
+    {
+        distanceStructureDict.Clear();
+    }
+
+    public void verifyLastMan()
+    {
+        if (playerDict.Count == 1)
+        {
+            int lastManIndex = -1;
+            foreach (KeyValuePair<int, Player> entry in playerDict)
+            {
+                lastManIndex = entry.Key;
+            }
+
+            if (lastManIndex != -1)
+            {
+                Player.AddRewardToAgent(playerDict[lastManIndex], Config.REWARD_LAST_MAN, "Agente" + playerDict[lastManIndex].getPlayerNumber() + ": foi o único sobrevivente");
+                playerDict[lastManIndex].Done();
+            }
+        }
+        
+    }
+
+    public bool updateAgents()
+    {
+        bool areThereUpdate = false;
+        foreach (KeyValuePair<int, Player> entry in playerDict)
+        {
+            if (entry.Value.WaitIterationActions())
+                areThereUpdate = true;
+        }
+
+        verifyLastMan();
+
+        // se há algum agente vivo na cena
+        if (areThereUpdate)
+        {
+            addIterationCount();
+        }
+        else
+        {
+            // precisamos resetar a cena
+            return false;
+        }
+
+
         return true;
-    }
-
-    public void setAgent1(Player p)
-    {
-        agent1 = p;
-        addPlayer(p);
-    }
-
-    public void setAgent2(Player p)
-    {
-        agent2 = p;
-        addPlayer(p);
-    }
-
-    public Player getAgent1()
-    {
-        return agent1;
-    }
-
-    public Player getAgent2()
-    {
-        return agent2;
     }
 }

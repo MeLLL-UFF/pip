@@ -7,14 +7,16 @@ public class Config {
     //Recompensas
     //public static float REWARD_DIE = -1f;
     public static float REWARD_DIE = -0.5f;
-    public static float REWARD_KILL_FRIEND = -1f;
+
+    public static float REWARD_KILL_ENEMY = 1f;
 
     //public static float REWARD_GOAL = 1f;
     public static float REWARD_GOAL = 1f;
     public static float REWARD_TEAM_GOAL = 1f;
+    public static float REWARD_LAST_MAN = 1f;
 
     public static float REWARD_BLOCK_DESTROY = 0.08f;
-    //public static float REWARD_BLOCK_DESTROY = 0.06f;
+    //public static float REWARD_BLOCK_DESTROY = 0.08f;
     public static float REWARD_CLOSEST_DISTANCE = 0.08f; //pode ser visto como subgoals
     //public static float REWARD_CLOSEST_DISTANCE = 0.06f;
     //public static float REWARD_APPROACHED_DISTANCE = 0.001f;
@@ -42,9 +44,9 @@ public class Config {
     //public static float REWARD_VALID_BOMB_ACTION = 0.02f;
     public static float REWARD_VALID_BOMB_ACTION = 0.00f;
 
-    //public static float REWARD_DANGER_AREA = -0.02f;
+    //public static float REWARD_DANGER_AREA = -0.0002f;
     public static float REWARD_DANGER_AREA = -0.0002f;
-    //public static float REWARD_SAFE_AREA = 0.08f;
+    //public static float REWARD_SAFE_AREA = 0.0008f;
     public static float REWARD_SAFE_AREA = 0.0008f;
 
     public static float REWARD_MAX_STEP_REACHED = -1.0f;

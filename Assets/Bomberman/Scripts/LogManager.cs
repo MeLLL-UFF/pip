@@ -29,7 +29,7 @@ public class LogManager {
             if (!disabled)
             {
                 sw = new StreamWriter(fileName + scenarioId + DateTime.Now.ToString("_yyyy_MM_dd_HH_mm_ss_fff") + ".txt", true);
-                countStep = 0;
+                countStep = 1;
                 tabFormat = "\t\t";
                 initialized = true;
             }
@@ -96,8 +96,8 @@ public class LogManager {
                 sw = new StreamWriter(fileName + DateTime.Now.ToString("_yyyy_MM_dd_HH_mm_ss_fff") + ".txt", true);
             }
 
-            /*print("Global Step " + countStep);
-            print("Academy Step " + academyStep);*/
+            print("Global Step " + countStep);
+            print("Academy Step " + academyStep);
             ++countStep;
         }
     }
@@ -106,7 +106,7 @@ public class LogManager {
     {
         if (!disabled)
         {
-            print("Agent " + player.playerNumber + " Step " + player.getLocalStep());
+            print("Agent " + player.getPlayerNumber() + " Step " + player.getLocalStep());
             //print("Recompensas:", "\n");
         }
     }
@@ -123,17 +123,17 @@ public class LogManager {
     {
         if (!disabled)
         {
-            print("Local Episode of agent " + player.playerNumber + ": " + epCount);
+            print("Local Episode of agent " + player.getPlayerNumber() + ": " + epCount);
         }
     }
 
-    public void statePrint(string agentName, Vector2 agentGridPos, Vector2 targetGridPos, /*Vector2 velocity,*/ string grid, bool canDropBombs, bool isInDanger, bool existBombs)
+    public void statePrint(string agentName, Vector2 agentGridPos, /*Vector2 velocity,*/ string grid, bool canDropBombs, bool isInDanger, bool existBombs)
     {
         if (!disabled)
         {
             string result = "Estado Atual - " + agentName + "\n";
             result += tabFormat + "pos: " + agentGridPos + "\n";
-            result += tabFormat + "tar: " + targetGridPos + "\n";
+
             //result += tabFormat + "vel: " + velocity + "\n";
             result += tabFormat + "canDropBombs: " + canDropBombs + "\n";
             result += tabFormat + "isInDanger: " + isInDanger + "\n";

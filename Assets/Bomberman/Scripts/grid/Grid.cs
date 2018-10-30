@@ -284,13 +284,13 @@ public class Grid : MonoBehaviour {
         {
             if (hit.collider.CompareTag("Player"))
             {
-                int number = hit.collider.gameObject.GetComponent<Player>().playerNumber;
+                int number = hit.collider.gameObject.GetComponent<Player>().getPlayerNumber();
                 if (number == 1)
-                    nodeStateType = StateType.ST_Agent1;
+                    nodeStateType = StateType.ST_Agent;
                 else if (number == 2)
                 {
                     //como o agente está imitando o outro, logo é necessário que o espaço de estados seja representado da mesma forma
-                    nodeStateType = StateType.ST_Agent2;
+                    nodeStateType = StateType.ST_EnemyAgent;
                 }
                     
             }
@@ -643,18 +643,68 @@ public class Grid : MonoBehaviour {
                 BaseNode node = grid[x, y];
                 StateType nodeStateType = (StateType)node.getBinary();
 
-                if (playerNumber == 2)
+                if (playerNumber == 1)
                 {
-                    //se é um nó com stateType agent
                     if (node.hasFlag(StateType.ST_Agent1))
                     {
                         nodeStateType = nodeStateType & (~StateType.ST_Agent1);
-                        nodeStateType = nodeStateType | StateType.ST_Agent2;
+                        nodeStateType = nodeStateType | StateType.ST_Agent;
                     }
-                    else if (node.hasFlag(StateType.ST_Agent2))
+
+                    if (node.hasSomeFlag(StateType.ST_Agent2 | StateType.ST_Agent3 | StateType.ST_Agent4))
                     {
                         nodeStateType = nodeStateType & (~StateType.ST_Agent2);
-                        nodeStateType = nodeStateType | StateType.ST_Agent1;
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent3);
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent4);
+                        nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
+                    }
+                }
+                else if (playerNumber == 2)
+                {
+                    if (node.hasFlag(StateType.ST_Agent2))
+                    {
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent2);
+                        nodeStateType = nodeStateType | StateType.ST_Agent;
+                    }
+
+                    if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent3 | StateType.ST_Agent4))
+                    {
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent1);
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent3);
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent4);
+                        nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
+                    }
+                }
+                else if (playerNumber == 3)
+                {
+                    if (node.hasFlag(StateType.ST_Agent3))
+                    {
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent3);
+                        nodeStateType = nodeStateType | StateType.ST_Agent;
+                    }
+
+                    if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent2 | StateType.ST_Agent4))
+                    {
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent1);
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent2);
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent4);
+                        nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
+                    }
+                }
+                else if (playerNumber == 4)
+                {
+                    if (node.hasFlag(StateType.ST_Agent4))
+                    {
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent4);
+                        nodeStateType = nodeStateType | StateType.ST_Agent;
+                    }
+
+                    if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent2 | StateType.ST_Agent3))
+                    {
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent1);
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent2);
+                        nodeStateType = nodeStateType & (~StateType.ST_Agent3);
+                        nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
                     }
                 }
 

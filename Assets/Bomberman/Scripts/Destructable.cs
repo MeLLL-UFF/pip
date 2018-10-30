@@ -115,7 +115,7 @@ public class Destructable : MonoBehaviour {
             
             if (hammerman != null)
             {
-                Player.AddRewardToAgent(hammerman, Config.REWARD_BLOCK_DESTROY, "Agente" + hammerman.playerNumber + " destruiu um bloco");
+                Player.AddRewardToAgent(hammerman, Config.REWARD_BLOCK_DESTROY, "Agente" + hammerman.getPlayerNumber() + " destruiu um bloco");
             }
             else
             {
@@ -139,7 +139,7 @@ public class Destructable : MonoBehaviour {
                 Player bomberman = other.gameObject.GetComponent<DestroySelf>().bomberman;
                 if (bomberman != null)
                 {
-                    Player.AddRewardToAgent(bomberman, Config.REWARD_BLOCK_DESTROY, "Agente" + bomberman.playerNumber + " destruiu um bloco");
+                    Player.AddRewardToAgent(bomberman, Config.REWARD_BLOCK_DESTROY, "Agente" + bomberman.getPlayerNumber() + " destruiu um bloco");
                 }
                 else
                 {
