@@ -55,12 +55,6 @@ public class BaseNode : IHeapItem<BaseNode> {
         return 0;
     }
 
-    //0=empty, 1=position contain the player
-    public virtual int getPositionAgent(int playerNumber)
-    {
-        return 0;
-    }
-
     //0 ou 1. Calculo de perigo é feito depois.
     public virtual bool getDangerPosition()
     {

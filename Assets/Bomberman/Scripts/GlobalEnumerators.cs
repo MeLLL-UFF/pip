@@ -154,15 +154,10 @@ public class StateTypeExtension
     }
 }
 
-public enum GridType
+public enum GridViewType
 {
-    GT_Binary = 0,
-    //GT_OneHot = 1,
-    GT_Hybrid = 2
-}
-
-public enum GridSentData
-{
-    GSD_All = 0,     //somente um grid é passado para o espaço de observações
-    GSD_Divided = 1  //3 grids específicos são enviados para o espaço de observações
+    GVT_Binary = 0,
+    //GVT_OneHot = 1,
+    GVT_Hybrid = 2,
+    GVT_ICAART = 3      // paper: Exploration Methods for Connectionist Q-Learning in Bomberman
 }

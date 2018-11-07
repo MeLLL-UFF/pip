@@ -4,31 +4,36 @@ using UnityEngine;
 
 public class CameraMovement : MonoBehaviour {
 
-    float step;
+    float stepX;
+    float stepZ;
 
 	// Use this for initialization
 	void Start () {
-        step = 15;
-
+        stepX = 15;
+        stepZ = 20;
     }
 
     private void Update()
     {
         if (Input.GetKeyUp(KeyCode.UpArrow))
         {
-            transform.position = transform.position + new Vector3(0, 0, step);
+            if(transform.position.z <= 55)
+                transform.position = transform.position + new Vector3(0, 0, stepZ);
         }
         else if (Input.GetKeyUp(KeyCode.DownArrow))
         {
-            transform.position = transform.position - new Vector3(0, 0, step);
+            if (transform.position.z >= 15)
+                transform.position = transform.position - new Vector3(0, 0, stepZ);
         }
         else if (Input.GetKeyUp(KeyCode.LeftArrow))
         {
-            transform.position = transform.position - new Vector3(step, 0, 0);
+            if (transform.position.x >= 20)
+                transform.position = transform.position - new Vector3(stepX, 0, 0);
         }
         else if (Input.GetKeyUp(KeyCode.RightArrow))
         {
-            transform.position = transform.position + new Vector3(step, 0, 0);
+            if (transform.position.x <= 50)
+                transform.position = transform.position + new Vector3(stepX, 0, 0);
         }
     }
 }

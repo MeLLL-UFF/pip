@@ -44,7 +44,6 @@ public class Player : Agent
     private BombermanOnlyOneDecision bombermanDecision;
     private BCTeacherHelper bcTeacherHelper;
     public int numSeqCompleted = 4;
-    private int countSeq = 0;
     public bool isSpecialist;
 
     // Variáveis usadas para se utilizar a técnica da mímica 
@@ -205,7 +204,6 @@ public class Player : Agent
         playerNumber = pNumber;
         stateType = convertPlayerNumberToStateType(playerNumber);
 
-        countSeq = 0;
         bombCount = 0;
         isInDanger = false;
         canDropBombs = true;
@@ -291,104 +289,91 @@ public class Player : Agent
 
     private void AddVectorObsForGrid()
     {
-        if (grid.gridType == GridType.GT_Hybrid)
+        if (grid.gridViewType == GridViewType.GVT_Hybrid)
         {
-            if (grid.gridSentData == GridSentData.GSD_All)
+            for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
             {
-                for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
+                for (int x = 0; x < grid.GetGridSizeX(); ++x)
                 {
-                    for (int x = 0; x < grid.GetGridSizeX(); ++x)
-                    {
-                        BaseNode node = grid.NodeFromPos(x, y);
-                        StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
-                        float[] temp = StateTypeExtension.convertStateTypeToHybrid(nodeStateType);
-                        AddVectorObs(temp);
-                    }
+                    BaseNode node = grid.NodeFromPos(x, y);
+                    StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
+                    float[] temp = StateTypeExtension.convertStateTypeToHybrid(nodeStateType);
+                    AddVectorObs(temp);
                 }
-            }
-            else if (grid.gridSentData == GridSentData.GSD_Divided)
-            {
-
             }
         }
-        else if (grid.gridType == GridType.GT_Binary)
+        else if (grid.gridViewType == GridViewType.GVT_Binary)
         {
-            if (grid.gridSentData == GridSentData.GSD_All)
+            for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
             {
-                for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
+                for (int x = 0; x < grid.GetGridSizeX(); ++x)
                 {
-                    for (int x = 0; x < grid.GetGridSizeX(); ++x)
+                    BaseNode node = grid.NodeFromPos(x, y);
+                    StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
+                    int cell = (int)nodeStateType;
+
+                    AddVectorObs(cell);
+
+                    if (isSpecialist)
+                        teacherAgentObservations.Add(cell);
+
+                    if (saveReplay)
                     {
-                        BaseNode node = grid.NodeFromPos(x, y);
-                        StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
-                        int cell = (int)nodeStateType;
-
-                        AddVectorObs(cell);
-
-                        if (isSpecialist)
-                            teacherAgentObservations.Add(cell);
-
-                        if (saveReplay)
-                        {
-                            if (observationGridString.Length > 0)
-                                observationGridString += "," + cell;
-                            else
-                                observationGridString = cell.ToString();
-                        }
-                    }
-                }
-            }
-            else if (grid.gridSentData == GridSentData.GSD_Divided)
-            {
-                //enviar grid que representa posições livres, com blocos ou com paredes
-                for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
-                {
-                    for (int x = 0; x < grid.GetGridSizeX(); ++x)
-                    {
-                        AddVectorObs(grid.NodeFromPos(x, y).getFreeBreakableObstructedCell());
-                    }
-                }
-
-                //enviar grid que representa posição do agente
-                for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
-                {
-                    for (int x = 0; x < grid.GetGridSizeX(); ++x)
-                    {
-                        AddVectorObs(grid.NodeFromPos(x, y).getPositionAgent(playerNumber));
-                    }
-                }
-
-                //enviar grid que representa áreas de perigo
-                for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
-                {
-                    for (int x = 0; x < grid.GetGridSizeX(); ++x)
-                    {
-                        bool hasDanger = grid.NodeFromPos(x, y).getDangerPosition();
-                        if (!hasDanger)
-                            AddVectorObs(0.0f);
+                        if (observationGridString.Length > 0)
+                            observationGridString += "," + cell;
                         else
-                        {
-                            Danger danger = myBombManager.getDanger(x, y);
-                            if (danger != null)
-                            {
-                                float dangerLevel = danger.GetDangerLevelOfPosition(this);
-                                AddVectorObs(dangerLevel);
-                            }
-                            else
-                                AddVectorObs(0.0f);
-                        }
-                    }   
-                }
-
-                //enviar grid que representa posição do target
-                for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
-                {
-                    for (int x = 0; x < grid.GetGridSizeX(); ++x)
-                    {
-                        AddVectorObs(grid.NodeFromPos(x, y).getPositionTarget());
+                            observationGridString = cell.ToString();
                     }
                 }
             }
+        }
+        else if (grid.gridViewType == GridViewType.GVT_ICAART)
+        {
+            List<float> freeBreakableObstructedCells = new List<float>();
+            List<float> positionAgentCells = new List<float>();
+            List<float> positionEnemyCells = new List<float>();
+            List<float> dangerLevelOfPositionsCells = new List<float>();
+
+            for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
+            {
+                for (int x = 0; x < grid.GetGridSizeX(); ++x)
+                {
+                    BaseNode node = grid.NodeFromPos(x, y);
+                    StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
+
+                    //enviar grid que representa posições livres, com blocos ou com paredes
+                    freeBreakableObstructedCells.Add(node.getFreeBreakableObstructedCell());
+
+                    //enviar grid que representa posição do agente
+                    int hasAgent = StateTypeExtension.stateTypeHasFlag(nodeStateType, StateType.ST_Agent) ? 1 : 0;
+                    positionAgentCells.Add(hasAgent);
+
+                    //enviar grid que representa posição dos inimigos
+                    hasAgent = StateTypeExtension.stateTypeHasFlag(nodeStateType, StateType.ST_EnemyAgent) ? 1 : 0;
+                    positionEnemyCells.Add(hasAgent);
+
+                    //enviar grid que representa áreas de perigo
+                    bool hasDanger = grid.NodeFromPos(x, y).getDangerPosition();
+                    if (!hasDanger)
+                        dangerLevelOfPositionsCells.Add(0.0f);
+                    else
+                    {
+                        Danger danger = myBombManager.getDanger(x, y);
+                        if (danger != null)
+                        {
+                            float dangerLevel = danger.GetDangerLevelOfPosition(this);
+                            dangerLevelOfPositionsCells.Add(dangerLevel);
+                        }
+                        else
+                            dangerLevelOfPositionsCells.Add(0.0f);
+                    }
+                }
+            }
+
+            AddVectorObs(freeBreakableObstructedCells);
+            AddVectorObs(positionAgentCells);
+            AddVectorObs(positionEnemyCells);
+            AddVectorObs(dangerLevelOfPositionsCells);
         }
     }
 
@@ -598,7 +583,7 @@ public class Player : Agent
                     //-----------------------------------------------------------------------------------------------------
                     if (!dead && !IsDone())
                     {
-                        Vector2 newPos, hammerPos;
+                        Vector2 newPos;// hammerPos;
                         switch (action)
                         {
                             //cima

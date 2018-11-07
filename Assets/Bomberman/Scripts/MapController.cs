@@ -22,6 +22,9 @@ public class MapController : MonoBehaviour {
     public bool randomizeNumberOfAgents = true;
     public bool randomizeIterationOfAgents = true;
 
+    public GameObject monitorPrefab;
+    private GameObject myMonitor;
+
 	// Use this for initialization
 	void Start () {
         grid = gameObject.GetComponent<Grid>();
@@ -35,6 +38,13 @@ public class MapController : MonoBehaviour {
         ServiceLocator.getManager(scenarioId).GetLogManager().episodePrint(playerManager.getEpisodeCount());
 
         playerManager.setRandomizeIterationOfAgents(randomizeIterationOfAgents);
+
+        Vector3 monitorPosition = transform.position + new Vector3(-3, 4, 1);
+        myMonitor = Instantiate(monitorPrefab, monitorPosition, Quaternion.identity, transform.parent);
+        Monitor.Log("Ult. Vitorioso:", "draw", myMonitor.transform);
+        Monitor.Log("Iteração:", "0", myMonitor.transform);
+        Monitor.Log("Episódio:", "1", myMonitor.transform);
+        Monitor.Log("Cenário:", transform.parent.gameObject.name, myMonitor.transform);
 
         //Debug.Log("Criando MapController");
         createAgents();
@@ -93,6 +103,8 @@ public class MapController : MonoBehaviour {
             createAgents();
             blocksManager.resetBlocks();
             ServiceLocator.getManager(scenarioId).GetLogManager().episodePrint(playerManager.getEpisodeCount());
+            Monitor.Log("Episódio:", playerManager.getEpisodeCount().ToString(), myMonitor.transform);
+            Monitor.Log("Ult. Vitorioso:", playerManager.lastManAgent, myMonitor.transform);
             reseting = false;
         }
     }
@@ -139,6 +151,7 @@ public class MapController : MonoBehaviour {
             {
                 if (playerManager.updateAgents())
                 {
+                    Monitor.Log("Iteração:", playerManager.getIterationCount().ToString(), myMonitor.transform);
                     bombManager.timeIterationUpdate();
                     ServiceLocator.getManager(scenarioId).GetLogManager().globalStepPrint(playerManager.getIterationCount());
                 }
@@ -156,8 +169,15 @@ public class MapController : MonoBehaviour {
                     bool updateFlag = playerManager.updateAgents();
                     if (updateFlag)
                     {
+                        Monitor.Log("Iteração:", playerManager.getIterationCount().ToString(), myMonitor.transform);
                         bombManager.timeIterationUpdate();
                         ServiceLocator.getManager(scenarioId).GetLogManager().globalStepPrint(playerManager.getIterationCount());
+
+                        //Criando chuva de bombas após atingir limite de iterações
+                        /*if (playerManager.getIterationCount() >= Config.MAX_STEP_PER_AGENT)
+                        {
+
+                        }*/
                     }
                     else
                     {

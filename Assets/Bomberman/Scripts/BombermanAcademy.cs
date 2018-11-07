@@ -13,7 +13,7 @@ public class BombermanAcademy : Academy {
         if (agent2 != null)
             ServiceLocator.getManager(2).GetLogManager().episodePrint(GetEpisodeCount());*/
 
-        Debug.Log("Academy Resetado");
+        //Debug.Log("Academy Resetado");
     }
 
     public override void AcademyStep()

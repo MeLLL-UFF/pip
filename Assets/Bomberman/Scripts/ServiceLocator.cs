@@ -77,7 +77,7 @@ public class ServiceLocator : Singleton<ServiceLocator>
         {
             Managers m = new Managers(id);
             dictManagers.Add(id, m);
-            Debug.Log("Managers " + id.ToString() + " foi criado");
+            //Debug.Log("Managers " + id.ToString() + " foi criado");
         }
 
         return dictManagers[id];

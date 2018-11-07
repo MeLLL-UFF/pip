@@ -21,34 +21,17 @@ public class BinaryNode : BaseNode {
 
     public override int getFreeBreakableObstructedCell()
     {
-        if (hasFlag(StateType.ST_Wall))
+        if (hasFlag(StateType.ST_Wall) || hasFlag(StateType.ST_Bomb))
         {
             return -1;
         }
         else if (hasFlag(StateType.ST_Block))
         {
-            return 1;
+            return 0;
         }
         else
         {
-            return 0;
-        }
-    }
-
-    public override int getPositionAgent(int playerNumber)
-    {
-        StateType testFlag = StateType.ST_EnemyAgent;
-
-        if (playerNumber == 1)
-            testFlag = StateType.ST_Agent;
-
-        if (hasFlag(testFlag))
-        {
-            return 1;
-        }
-        else
-        {
-            return 0;
+            return -1;
         }
     }
 
@@ -66,8 +49,8 @@ public class BinaryNode : BaseNode {
 
     public override bool getDangerPosition()
     {
-        /*if (hasFlag(StateType.ST_Danger))
-            return true;*/
+        if (hasFlag(StateType.ST_Danger))
+            return true;
 
         return false;
     }

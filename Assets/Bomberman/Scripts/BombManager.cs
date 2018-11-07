@@ -81,7 +81,7 @@ public class BombManager {
         foreach (KeyValuePair<int, Danger> entry in dangerZone)
         {
             Vector2 pos = entry.Value.GetGridPosition();
-            if (pos.x == x && pos.y == y)
+            if ((int)pos.x == x && (int)pos.y == y)
                 return entry.Value;
         }
 

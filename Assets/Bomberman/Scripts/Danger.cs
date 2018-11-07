@@ -31,14 +31,14 @@ public class Danger : MonoBehaviour
         //Invoke("myDestroy", Config.BOMB_TIMER);
 
         discrete_timer = 0;
-        dangerLevelOfPosition = discrete_timer / Config.BOMB_TIMER_DISCRETE;
+        dangerLevelOfPosition = (float)discrete_timer / (float)Config.BOMB_TIMER_DISCRETE;
     }
 
     public bool iterationUpdate()
     {
         discrete_timer += 1;
 
-        dangerLevelOfPosition = discrete_timer / Config.BOMB_TIMER_DISCRETE;
+        dangerLevelOfPosition = (float)discrete_timer / (float)Config.BOMB_TIMER_DISCRETE;
 
         if (discrete_timer >= Config.BOMB_TIMER_DISCRETE)
         {

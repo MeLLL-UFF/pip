@@ -19,10 +19,13 @@ public class PlayerManager {
     bool initialized = false;
     bool updating = false;
     bool randomizeIterationOfAgents = false;
+    bool lastManFound = false;
 
     private int deadCount;
     private int iterationCount;
     private int episodeCount;
+
+    public string lastManAgent = "null";
 
     Dictionary<int, Player> playerDict = new Dictionary<int, Player>();
     List<Vector3> initPosList = new List<Vector3>();
@@ -40,6 +43,8 @@ public class PlayerManager {
             restartInitList();
             initialized = true;
             updating = false;
+            lastManAgent = "null";
+            lastManFound = false;
         }
     }
 
@@ -58,6 +63,8 @@ public class PlayerManager {
         iterationCount = 0;
 
         addEpisodeCount();
+
+        lastManFound = false;
     }
 
     private void restartInitList()
@@ -217,9 +224,10 @@ public class PlayerManager {
             {
                 Player.AddRewardToAgent(playerDict[lastManIndex], Config.REWARD_LAST_MAN, "Agente" + playerDict[lastManIndex].getPlayerNumber() + ": foi o único sobrevivente");
                 playerDict[lastManIndex].Done();
+                lastManAgent = "Agente " + playerDict[lastManIndex].getPlayerNumber();
+                lastManFound = true;
             }
         }
-        
     }
 
     public bool isUpdating()
@@ -269,6 +277,8 @@ public class PlayerManager {
         }
         else
         {
+            if (!lastManFound)
+                lastManAgent = "draw";
             // precisamos resetar a cena
             updating = false;
             return false;

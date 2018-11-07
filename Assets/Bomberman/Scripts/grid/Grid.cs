@@ -18,8 +18,7 @@ public class Grid : MonoBehaviour {
     public LayerMask defaultLayer;
     public LayerMask agentsLayer;
 
-    public GridType gridType = GridType.GT_Hybrid;
-    public GridSentData gridSentData = GridSentData.GSD_All;
+    public GridViewType gridViewType = GridViewType.GVT_Hybrid;
     BaseNode[,] grid;
 
     float nodeDiameter;
@@ -556,61 +555,6 @@ public class Grid : MonoBehaviour {
         Debug.Log(saida);
     }
 
-    public void printGridDivided()
-    {
-        string saida = "";
-        for (int y = gridSizeY - 1; y >= 0; --y)
-        {
-            for (int x = 0; x < gridSizeX; ++x)
-            {
-                saida += (grid[x, y].getFreeBreakableObstructedCell()) + "\t";
-            }
-            saida += "\n";
-        }
-        Debug.Log(saida);
-
-        saida = "";
-        for (int y = gridSizeY - 1; y >= 0; --y)
-        {
-            for (int x = 0; x < gridSizeX; ++x)
-            {
-                saida += (grid[x, y].getPositionAgent(1));
-            }
-            saida += "\n";
-        }
-        Debug.Log(saida);
-
-        saida = "";
-        for (int y = gridSizeY - 1; y >= 0; --y)
-        {
-            for (int x = 0; x < gridSizeX; ++x)
-            {
-                saida += (grid[x, y].getPositionTarget());
-            }
-            saida += "\n";
-        }
-        Debug.Log(saida);
-
-        saida = "";
-        for (int y = gridSizeY - 1; y >= 0; --y)
-        {
-            for (int x = 0; x < gridSizeX; ++x)
-            {
-                bool hasDanger = grid[x, y].getDangerPosition();
-                if (!hasDanger)
-                    saida += (0.0f).ToString("0.000") + "\t";
-                else
-                {
-                    Danger danger = ServiceLocator.getManager(scenarioId).GetBombManager().getDanger(x, y);
-                    string dangerLevel = danger.GetDangerLevelOfPositionToPrint();
-                    saida += (dangerLevel) + "\t";
-                }
-            }
-            saida += "\n";
-        }
-        Debug.Log(saida);
-    }
-
     public StateType adjustAgentStateTypeForBinaryNode(BaseNode node, int playerNumber)
     {
         StateType nodeStateType = (StateType)node.getBinary();
@@ -699,11 +643,11 @@ public class Grid : MonoBehaviour {
                 BaseNode node = grid[x, y];
                 StateType nodeStateType = adjustAgentStateTypeForBinaryNode(node, playerNumber);
 
-                if (gridType == GridType.GT_Binary)
+                if (gridViewType == GridViewType.GVT_Binary)
                 {
                     saida += StateTypeExtension.getIntBinaryString(nodeStateType) + " | ";
                 }
-                else if (gridType == GridType.GT_Hybrid)
+                else if (gridViewType == GridViewType.GVT_Hybrid)
                 {
                     string hybridString = convertBinaryToHybridString(nodeStateType);
 
