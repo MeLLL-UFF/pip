@@ -39,7 +39,8 @@ public class HybridNode : BaseNode {
     {
         if (stateType != StateType.ST_Empty && StateTypeExtension.existsFlag(stateType))
         {
-            binaryArray[StateTypeExtension.convertToIntOrdinal(stateType) - 1] = 0;
+            int temp = StateTypeExtension.convertToIntOrdinal(stateType) - 1;
+            binaryArray[temp] = 0;
         }
     }
 
@@ -99,5 +100,28 @@ public class HybridNode : BaseNode {
         addFlags(stateTypes);
 
         cost = _penalty;
+    }
+
+    private void copyAllFlags(HybridNode hybridNode)
+    {
+
+        for (int i = 0; i < hybridNode.binaryArray.Length; i++)
+        {
+            binaryArray[i] = hybridNode.binaryArray[i];
+        }
+    }
+
+    // para cópia
+    public HybridNode(HybridNode hybridNode)
+    {
+        walkable = hybridNode.walkable;
+        worldPosition = hybridNode.worldPosition;
+        gridX = hybridNode.gridX;
+        gridY = hybridNode.gridY;
+        movementPenalty = hybridNode.movementPenalty;
+
+        copyAllFlags(hybridNode);
+
+        cost = hybridNode.cost;
     }
 }

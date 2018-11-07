@@ -19,6 +19,8 @@ public class MapController : MonoBehaviour {
     public List<GameObject> playerPrefabs;
     public Brain brain;
     public Brain staticBrain;
+    public bool randomizeNumberOfAgents = true;
+    public bool randomizeIterationOfAgents = true;
 
 	// Use this for initialization
 	void Start () {
@@ -32,6 +34,8 @@ public class MapController : MonoBehaviour {
 
         ServiceLocator.getManager(scenarioId).GetLogManager().episodePrint(playerManager.getEpisodeCount());
 
+        playerManager.setRandomizeIterationOfAgents(randomizeIterationOfAgents);
+
         //Debug.Log("Criando MapController");
         createAgents();
 
@@ -42,7 +46,9 @@ public class MapController : MonoBehaviour {
     private void createAgents()
     {
         // sorteando para ver quantos agentes serão criados para o cenário
-        int numberOfAgents = UnityEngine.Random.Range(2, 5);
+        int numberOfAgents = 4;
+        if (randomizeNumberOfAgents)
+            numberOfAgents = UnityEngine.Random.Range(2, 5);
 
         for (int i = 0; i < numberOfAgents; ++i)
         {
@@ -126,7 +132,7 @@ public class MapController : MonoBehaviour {
     // Aqui terei o controle de todo fluxo dos agentes: RequestAction e RequestDecision
     private void FixedUpdate()
     {
-        if (wasInitialized && !reseting)
+        if (wasInitialized && !reseting && !playerManager.isUpdating())
         {
             // se está em treinamento
             if (!academy.GetIsInference())
@@ -147,7 +153,8 @@ public class MapController : MonoBehaviour {
                 {
                     timeSinceDecision = 0f;
 
-                    if (playerManager.updateAgents())
+                    bool updateFlag = playerManager.updateAgents();
+                    if (updateFlag)
                     {
                         bombManager.timeIterationUpdate();
                         ServiceLocator.getManager(scenarioId).GetLogManager().globalStepPrint(playerManager.getIterationCount());
@@ -163,6 +170,10 @@ public class MapController : MonoBehaviour {
                     timeSinceDecision += Time.fixedDeltaTime;
                 }
             }
+        }
+        else
+        {
+            Debug.Log("Esta atualizando");
         }
     }
 }

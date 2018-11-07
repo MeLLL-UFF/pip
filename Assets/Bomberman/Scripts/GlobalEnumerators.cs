@@ -71,6 +71,73 @@ public class StateTypeExtension
         return ((int)log2 + 1);
     }
 
+    public static bool stateTypeHasFlag(StateType stateType, StateType flag)
+    {
+        if (stateType != StateType.ST_Empty)
+        {
+            return ((stateType & flag) == flag ? true : false);
+        }
+        else
+        {
+            if (stateType == flag)
+                return true;
+        }
+        return false;
+    }
+
+    public static float[] convertStateTypeToHybrid(StateType stateType)
+    {
+        float[] binaryArray = new float[(int)StateType.ST_Size - 1];
+
+        if (stateTypeHasFlag(stateType, StateType.ST_Wall))
+        {
+            binaryArray[convertToIntOrdinal(StateType.ST_Wall) - 1] = 1;
+        }
+
+        if (stateTypeHasFlag(stateType, StateType.ST_Block))
+        {
+            binaryArray[convertToIntOrdinal(StateType.ST_Block) - 1] = 1;
+        }
+
+        if (stateTypeHasFlag(stateType, StateType.ST_Agent))
+        {
+            binaryArray[convertToIntOrdinal(StateType.ST_Agent) - 1] = 1;
+        }
+
+        if (stateTypeHasFlag(stateType, StateType.ST_EnemyAgent))
+        {
+            binaryArray[convertToIntOrdinal(StateType.ST_EnemyAgent) - 1] = 1;
+        }
+
+        if (stateTypeHasFlag(stateType, StateType.ST_Target))
+        {
+            binaryArray[convertToIntOrdinal(StateType.ST_Target) - 1] = 1;
+        }
+
+        if (stateTypeHasFlag(stateType, StateType.ST_Bomb))
+        {
+            binaryArray[convertToIntOrdinal(StateType.ST_Bomb) - 1] = 1;
+        }
+
+        if (stateTypeHasFlag(stateType, StateType.ST_Fire))
+        {
+            binaryArray[convertToIntOrdinal(StateType.ST_Fire) - 1] = 1;
+        }
+
+        if (stateTypeHasFlag(stateType, StateType.ST_Danger))
+        {
+            binaryArray[convertToIntOrdinal(StateType.ST_Danger) - 1] = 1;
+        }
+
+        return binaryArray;
+    }
+
+    public static string convertBinaryArrayToString(float[] binaryArray)
+    {
+        string s = "[" + string.Join("", binaryArray) + "]";
+        return s;
+    }
+
     public static bool existsFlag(StateType stateType)
     {
         if ((stateType & StateType.ST_All) != 0)

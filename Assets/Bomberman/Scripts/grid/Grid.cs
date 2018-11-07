@@ -26,7 +26,6 @@ public class Grid : MonoBehaviour {
     int gridSizeX;
     int gridSizeY;
 
-    private List<StateType> blockFlagsList = new List<StateType>();
     private StateType blockFlags;
 
     private void Update()
@@ -42,11 +41,6 @@ public class Grid : MonoBehaviour {
         nodeDiameter = nodeRadius * 2;
         gridSizeX = Mathf.RoundToInt(gridWorldSize.x / nodeDiameter);
         gridSizeY = Mathf.RoundToInt(gridWorldSize.y / nodeDiameter);
-
-        blockFlagsList.Add(StateType.ST_Block);
-        blockFlagsList.Add(StateType.ST_Wall);
-        //Bomb code
-        blockFlagsList.Add(StateType.ST_Bomb);
 
         blockFlags = StateType.ST_Block | StateType.ST_Wall | StateType.ST_Bomb;
 
@@ -129,16 +123,8 @@ public class Grid : MonoBehaviour {
 
         BaseNode node = NodeFromPos(x, y);
 
-        if (gridType == GridType.GT_Hybrid)
-        {
-            if (node.hasSomeFlag(blockFlagsList))
-                return false;
-        }
-        else if (gridType == GridType.GT_Binary)
-        {
-            if (node.hasSomeFlag(blockFlags))
-                return false;
-        }
+        if (node.hasSomeFlag(blockFlags))
+            return false;
 
         return true;
     }
@@ -171,6 +157,22 @@ public class Grid : MonoBehaviour {
         BaseNode node = NodeFromPos(x, y);
 
         if (node.hasFlag(StateType.ST_Fire))
+            return true;
+
+        return false;
+    }
+
+    public bool checkBomb(Vector2 pos)
+    {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+
+        if (!isOnGrid(x, y))
+            return false;
+
+        BaseNode node = NodeFromPos(x, y);
+
+        if (node.hasFlag(StateType.ST_Bomb))
             return true;
 
         return false;
@@ -299,46 +301,22 @@ public class Grid : MonoBehaviour {
         return nodeStateType;
     }
 
-    void CreateGridAccordingToType()
+    void CreateGridFunction()
     {
-        switch(gridType)
-        {
-            case GridType.GT_Hybrid:
-                grid = new HybridNode[gridSizeX, gridSizeY];
-                break;
-            case GridType.GT_Binary:
-                grid = new BinaryNode[gridSizeX, gridSizeY];
-                break;
-            /*case GridType.GT_OneHot:
-                break;*/
-            default:
-                break;
-        }
+       grid = new BinaryNode[gridSizeX, gridSizeY];
     }
 
     BaseNode CreateNodeAccordingToType(bool walkable, Vector3 worldPos, int gridX, int gridY, int penalty, List<StateType> stateTypes)
     {
         BaseNode node = null;
-        switch (gridType)
-        {
-            case GridType.GT_Hybrid:
-                node = new HybridNode(walkable, worldPos, gridX, gridY, penalty, stateTypes);
-                break;
-            case GridType.GT_Binary:
-                node = new BinaryNode(walkable, worldPos, gridX, gridY, penalty, stateTypes);
-                break;
-            /*case GridType.GT_OneHot:
-                break;*/
-            default:
-                break;
-        }
+        node = new BinaryNode(walkable, worldPos, gridX, gridY, penalty, stateTypes);
 
         return node;
     }
 
     void CreateGrid()
     {
-        CreateGridAccordingToType();
+        CreateGridFunction();
         Vector3 worldBottomLeft = transform.position - Vector3.right * gridWorldSize.x / 2 - Vector3.forward * gridWorldSize.y / 2;
 
         for (int x = 0; x < gridSizeX; x++)
@@ -633,6 +611,84 @@ public class Grid : MonoBehaviour {
         Debug.Log(saida);
     }
 
+    public StateType adjustAgentStateTypeForBinaryNode(BaseNode node, int playerNumber)
+    {
+        StateType nodeStateType = (StateType)node.getBinary();
+        if (playerNumber == 1)
+        {
+            if (node.hasFlag(StateType.ST_Agent1))
+            {
+                nodeStateType = nodeStateType & (~StateType.ST_Agent1);
+                nodeStateType = nodeStateType | StateType.ST_Agent;
+            }
+
+            if (node.hasSomeFlag(StateType.ST_Agent2 | StateType.ST_Agent3 | StateType.ST_Agent4))
+            {
+                nodeStateType = nodeStateType & (~StateType.ST_Agent2);
+                nodeStateType = nodeStateType & (~StateType.ST_Agent3);
+                nodeStateType = nodeStateType & (~StateType.ST_Agent4);
+                nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
+            }
+        }
+        else if (playerNumber == 2)
+        {
+            if (node.hasFlag(StateType.ST_Agent2))
+            {
+                nodeStateType = nodeStateType & (~StateType.ST_Agent2);
+                nodeStateType = nodeStateType | StateType.ST_Agent;
+            }
+
+            if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent3 | StateType.ST_Agent4))
+            {
+                nodeStateType = nodeStateType & (~StateType.ST_Agent1);
+                nodeStateType = nodeStateType & (~StateType.ST_Agent3);
+                nodeStateType = nodeStateType & (~StateType.ST_Agent4);
+                nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
+            }
+        }
+        else if (playerNumber == 3)
+        {
+            if (node.hasFlag(StateType.ST_Agent3))
+            {
+                nodeStateType = nodeStateType & (~StateType.ST_Agent3);
+                nodeStateType = nodeStateType | StateType.ST_Agent;
+            }
+
+            if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent2 | StateType.ST_Agent4))
+            {
+                nodeStateType = nodeStateType & (~StateType.ST_Agent1);
+                nodeStateType = nodeStateType & (~StateType.ST_Agent2);
+                nodeStateType = nodeStateType & (~StateType.ST_Agent4);
+                nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
+            }
+        }
+        else if (playerNumber == 4)
+        {
+            if (node.hasFlag(StateType.ST_Agent4))
+            {
+                nodeStateType = nodeStateType & (~StateType.ST_Agent4);
+                nodeStateType = nodeStateType | StateType.ST_Agent;
+            }
+
+            if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent2 | StateType.ST_Agent3))
+            {
+                nodeStateType = nodeStateType & (~StateType.ST_Agent1);
+                nodeStateType = nodeStateType & (~StateType.ST_Agent2);
+                nodeStateType = nodeStateType & (~StateType.ST_Agent3);
+                nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
+            }
+        }
+
+        return nodeStateType;
+    }
+
+    private string convertBinaryToHybridString(StateType nodeStateType)
+    {
+        float[] binaryArray = StateTypeExtension.convertStateTypeToHybrid(nodeStateType);
+
+        return StateTypeExtension.convertBinaryArrayToString(binaryArray);
+    }
+
     public string gridToString(int playerNumber)
     {
         string saida = "";
@@ -641,74 +697,18 @@ public class Grid : MonoBehaviour {
             for (int x = 0; x < gridSizeX; ++x)
             {
                 BaseNode node = grid[x, y];
-                StateType nodeStateType = (StateType)node.getBinary();
+                StateType nodeStateType = adjustAgentStateTypeForBinaryNode(node, playerNumber);
 
-                if (playerNumber == 1)
+                if (gridType == GridType.GT_Binary)
                 {
-                    if (node.hasFlag(StateType.ST_Agent1))
-                    {
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent1);
-                        nodeStateType = nodeStateType | StateType.ST_Agent;
-                    }
-
-                    if (node.hasSomeFlag(StateType.ST_Agent2 | StateType.ST_Agent3 | StateType.ST_Agent4))
-                    {
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent2);
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent3);
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent4);
-                        nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
-                    }
+                    saida += StateTypeExtension.getIntBinaryString(nodeStateType) + " | ";
                 }
-                else if (playerNumber == 2)
+                else if (gridType == GridType.GT_Hybrid)
                 {
-                    if (node.hasFlag(StateType.ST_Agent2))
-                    {
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent2);
-                        nodeStateType = nodeStateType | StateType.ST_Agent;
-                    }
+                    string hybridString = convertBinaryToHybridString(nodeStateType);
 
-                    if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent3 | StateType.ST_Agent4))
-                    {
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent1);
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent3);
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent4);
-                        nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
-                    }
+                    saida += hybridString;
                 }
-                else if (playerNumber == 3)
-                {
-                    if (node.hasFlag(StateType.ST_Agent3))
-                    {
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent3);
-                        nodeStateType = nodeStateType | StateType.ST_Agent;
-                    }
-
-                    if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent2 | StateType.ST_Agent4))
-                    {
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent1);
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent2);
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent4);
-                        nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
-                    }
-                }
-                else if (playerNumber == 4)
-                {
-                    if (node.hasFlag(StateType.ST_Agent4))
-                    {
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent4);
-                        nodeStateType = nodeStateType | StateType.ST_Agent;
-                    }
-
-                    if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent2 | StateType.ST_Agent3))
-                    {
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent1);
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent2);
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent3);
-                        nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
-                    }
-                }
-
-                saida += StateTypeExtension.getIntBinaryString(nodeStateType) + " | ";
             }
             saida += "\n";
         }

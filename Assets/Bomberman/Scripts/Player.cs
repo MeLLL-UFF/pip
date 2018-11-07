@@ -299,7 +299,10 @@ public class Player : Agent
                 {
                     for (int x = 0; x < grid.GetGridSizeX(); ++x)
                     {
-                        AddVectorObs(grid.NodeFromPos(x, y).getBinaryArray());
+                        BaseNode node = grid.NodeFromPos(x, y);
+                        StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
+                        float[] temp = StateTypeExtension.convertStateTypeToHybrid(nodeStateType);
+                        AddVectorObs(temp);
                     }
                 }
             }
@@ -317,73 +320,7 @@ public class Player : Agent
                     for (int x = 0; x < grid.GetGridSizeX(); ++x)
                     {
                         BaseNode node = grid.NodeFromPos(x, y);
-                        StateType nodeStateType = (StateType)node.getBinary();
-
-                        if (playerNumber == 1)
-                        {
-                            if (node.hasFlag(StateType.ST_Agent1))
-                            {
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent1);
-                                nodeStateType = nodeStateType | StateType.ST_Agent;
-                            }
-
-                            if (node.hasSomeFlag(StateType.ST_Agent2 | StateType.ST_Agent3 | StateType.ST_Agent4))
-                            {
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent2);
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent3);
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent4);
-                                nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
-                            }
-                        }
-                        else if (playerNumber == 2)
-                        {
-                            if (node.hasFlag(StateType.ST_Agent2))
-                            {
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent2);
-                                nodeStateType = nodeStateType | StateType.ST_Agent;
-                            }
-
-                            if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent3 | StateType.ST_Agent4))
-                            {
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent1);
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent3);
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent4);
-                                nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
-                            }
-                        }
-                        else if (playerNumber == 3)
-                        {
-                            if (node.hasFlag(StateType.ST_Agent3))
-                            {
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent3);
-                                nodeStateType = nodeStateType | StateType.ST_Agent;
-                            }
-
-                            if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent2 | StateType.ST_Agent4))
-                            {
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent1);
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent2);
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent4);
-                                nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
-                            }
-                        }
-                        else if (playerNumber == 4)
-                        {
-                            if (node.hasFlag(StateType.ST_Agent4))
-                            {
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent4);
-                                nodeStateType = nodeStateType | StateType.ST_Agent;
-                            }
-
-                            if (node.hasSomeFlag(StateType.ST_Agent1 | StateType.ST_Agent2 | StateType.ST_Agent3))
-                            {
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent1);
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent2);
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent3);
-                                nodeStateType = nodeStateType | StateType.ST_EnemyAgent;
-                            }
-                        }
-
+                        StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
                         int cell = (int)nodeStateType;
 
                         AddVectorObs(cell);
@@ -472,6 +409,7 @@ public class Player : Agent
 
     public override void CollectObservations()
     {
+        //Debug.Log("agent" + playerNumber + " observacoes");
         clearReplayVars();
         myGridPosition = GetGridPosition();
 
@@ -572,6 +510,7 @@ public class Player : Agent
 
     public override void AgentAction(float[] vectorAction, string textAction)
     {
+        //Debug.Log("agent" + playerNumber + " acoes");
         if (!dead)
         {
             ServiceLocator.getManager(scenarioId).GetLogManager().statePrint("Agent " + playerNumber,
@@ -724,7 +663,7 @@ public class Player : Agent
                                 break;
                             //Drop bomb
                             case ActionType.AT_Bomb:
-                                if (canDropBombs && !dead)
+                                if (canDropBombs && !dead && !grid.checkBomb(myGridPosition))
                                 {
                                     DropBomb();
                                 }
@@ -778,9 +717,12 @@ public class Player : Agent
 
                     //recompensas
                     myGridPosition = GetGridPosition();
+                    Vector2 oldGridPosition = GetOldGridPosition();
 
-                    // testar aproximação para cada inimigo 
-                    myPlayerManager.calculateDistanceEnemyPosition(this);
+                    // testar aproximação para cada inimigo. Recompensas só serão dadas caso o agente tenta mudado de posição
+                    if (!myGridPosition.Equals(oldGridPosition))
+                        myPlayerManager.calculateDistanceEnemyPosition(this);
+
 
                     if (ServiceLocator.getManager(scenarioId).GetBombManager().existsBombOrDanger())
                     {

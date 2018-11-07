@@ -404,7 +404,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1363806589032702}
   m_LocalRotation: {x: -0, y: -1, z: -0, w: -0.00000010430813}
-  m_LocalPosition: {x: 9, y: 0.5, z: 9}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4402469987891684}
@@ -624,10 +624,9 @@ MonoBehaviour:
   forceReward: 0
   monitorFocus: {fileID: 0}
   hammerEffect: {fileID: 177540, guid: c7622de0e625ae94689b98ff9a0af519, type: 2}
-  playerNumber: 2
   canDropBombs: 1
   dead: 0
-  targetReached: 0
+  lastMan: 0
   isInDanger: 0
   isReady: 0
   wasInitialized: 0
@@ -635,9 +634,7 @@ MonoBehaviour:
   grid: {fileID: 0}
   randomizeResetPosition: 1
   randomizeInitialPosition: 1
-  timeBetweenDecisionsAtInference: 0.5
   saveReplay: 0
-  myIterationActionWasExecuted: 0
 --- !u!136 &136913599803054012
 CapsuleCollider:
   m_ObjectHideFlags: 1

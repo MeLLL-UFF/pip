@@ -17,6 +17,8 @@ public class DistanceStructure
 public class PlayerManager {
 
     bool initialized = false;
+    bool updating = false;
+    bool randomizeIterationOfAgents = false;
 
     private int deadCount;
     private int iterationCount;
@@ -37,6 +39,7 @@ public class PlayerManager {
             episodeCount = 1;
             restartInitList();
             initialized = true;
+            updating = false;
         }
     }
 
@@ -219,13 +222,40 @@ public class PlayerManager {
         
     }
 
+    public bool isUpdating()
+    {
+        return updating;
+    }
+
     public bool updateAgents()
     {
+        updating = true;
         bool areThereUpdate = false;
-        foreach (KeyValuePair<int, Player> entry in playerDict)
+
+        if (randomizeIterationOfAgents)
         {
-            if (entry.Value.WaitIterationActions())
-                areThereUpdate = true;
+            List<Player> playerList = new List<Player>(playerDict.Values);
+            List<Player> randomList = new List<Player>();
+            while (playerList.Count > 0)
+            {
+                int rand = Random.Range(0, playerList.Count);
+                randomList.Add(playerList[rand]);
+                playerList.RemoveAt(rand);
+            }
+
+            for (int i = 0; i < randomList.Count; ++i)
+            {
+                if (randomList[i].WaitIterationActions())
+                    areThereUpdate = true;
+            }
+        }
+        else
+        {
+            foreach (KeyValuePair<int, Player> entry in playerDict)
+            {
+                if (entry.Value.WaitIterationActions())
+                    areThereUpdate = true;
+            }
         }
 
         verifyLastMan();
@@ -234,14 +264,19 @@ public class PlayerManager {
         if (areThereUpdate)
         {
             addIterationCount();
+            updating = false;
+            return true;
         }
         else
         {
             // precisamos resetar a cena
+            updating = false;
             return false;
         }
+    }
 
-
-        return true;
+    public void setRandomizeIterationOfAgents(bool value)
+    {
+        randomizeIterationOfAgents = value;
     }
 }
