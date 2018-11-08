@@ -507,7 +507,7 @@ public class Player : Agent
                                                     myBombManager.existsBombOrDanger());
 
 
-            if (!isMimicking)
+            /*if (!isMimicking)
             {
                 // talvez seria melhor passar esse código para o playerManager.
                 if (getLocalStep() >= Config.MAX_STEP_PER_AGENT)
@@ -515,7 +515,7 @@ public class Player : Agent
                     AddRewardToAgent(this, Config.REWARD_MAX_STEP_REACHED, "Agente" + playerNumber + " alcancou max step");
                     killAgent();
                 }
-            }
+            }*/
 
             ServiceLocator.getManager(scenarioId).GetLogManager().localStepPrint(this);
             localStep++;

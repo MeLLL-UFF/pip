@@ -55,7 +55,7 @@ public class Config {
     public static float REWARD_WRONG_TEACHER_ACTION = -0.6f;
 
     //Max step per agent
-    public static int MAX_STEP_PER_AGENT = 300;   // nosso cenário é maior que do ICAART, logo esse valor precisa ser maior
+    public static int MAX_STEP_PER_AGENT = 300;   // 300 default. Nosso cenário é maior que do ICAART (150), logo esse valor precisa ser maior
 
     //tempo para a bomba explodir (contínuo)
     //public static float BOMB_TIMER = 3.0f;

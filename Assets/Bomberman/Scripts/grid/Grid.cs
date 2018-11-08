@@ -660,6 +660,25 @@ public class Grid : MonoBehaviour {
         return saida;
     }
 
+    public List<Vector2> listFreePositions()
+    {
+        List<Vector2> freePositions = new List<Vector2>();
+        for (int y = gridSizeY - 1; y >= 0; --y)
+        {
+            for (int x = 0; x < gridSizeX; ++x)
+            {
+                BaseNode node = grid[x, y];
+                if (node.hasFlag(StateType.ST_Empty))
+                {
+                    freePositions.Add(new Vector2(node.gridX, node.gridY));
+                }
+            }
+        }
+
+        return freePositions;
+    }
+
+
     public void enableObjectOnGrid(StateType stateType, Vector2 gridPos)
     {
         int x = (int)gridPos.x;

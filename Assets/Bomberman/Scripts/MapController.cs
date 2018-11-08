@@ -22,11 +22,15 @@ public class MapController : MonoBehaviour {
     public bool randomizeNumberOfAgents = true;
     public bool randomizeIterationOfAgents = true;
 
+    public GameObject bombPrefab;
     public GameObject monitorPrefab;
     private GameObject myMonitor;
+    int iterationWhereWasCreatedBombs;
+    int numberOfBombsByCreation;
+    string maxIterationString = Config.MAX_STEP_PER_AGENT.ToString();
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start () {
         grid = gameObject.GetComponent<Grid>();
         scenarioId = grid.scenarioId;
         academy = FindObjectOfType(typeof(BombermanAcademy)) as BombermanAcademy;
@@ -42,9 +46,12 @@ public class MapController : MonoBehaviour {
         Vector3 monitorPosition = transform.position + new Vector3(-3, 4, 1);
         myMonitor = Instantiate(monitorPrefab, monitorPosition, Quaternion.identity, transform.parent);
         Monitor.Log("Ult. Vitorioso:", "draw", myMonitor.transform);
-        Monitor.Log("Iteração:", "0", myMonitor.transform);
+        Monitor.Log("Iteração:", "0 / " + maxIterationString, myMonitor.transform);
         Monitor.Log("Episódio:", "1", myMonitor.transform);
         Monitor.Log("Cenário:", transform.parent.gameObject.name, myMonitor.transform);
+
+        iterationWhereWasCreatedBombs = 0;
+        numberOfBombsByCreation = 1;
 
         //Debug.Log("Criando MapController");
         createAgents();
@@ -105,6 +112,8 @@ public class MapController : MonoBehaviour {
             ServiceLocator.getManager(scenarioId).GetLogManager().episodePrint(playerManager.getEpisodeCount());
             Monitor.Log("Episódio:", playerManager.getEpisodeCount().ToString(), myMonitor.transform);
             Monitor.Log("Ult. Vitorioso:", playerManager.lastManAgent, myMonitor.transform);
+            iterationWhereWasCreatedBombs = 0;
+            numberOfBombsByCreation = 1;
             reseting = false;
         }
     }
@@ -141,6 +150,65 @@ public class MapController : MonoBehaviour {
         }
     }
 
+    // call this function only after test if iterationCount is greater or equal to MAX_STEP_PER_AGENT
+    private bool isToCreateBombs()
+    {
+        bool isToCreateBombs = false;
+        if (iterationWhereWasCreatedBombs == 0)
+        {
+            iterationWhereWasCreatedBombs = playerManager.getIterationCount();
+            isToCreateBombs = true;
+        }
+        else
+        {
+            if ((playerManager.getIterationCount() - iterationWhereWasCreatedBombs) == 7)
+            {
+                iterationWhereWasCreatedBombs = playerManager.getIterationCount();
+                isToCreateBombs = true;
+                numberOfBombsByCreation++;
+            }
+        }
+
+        return isToCreateBombs;
+    }
+
+    private void verifyAndCreateBombs()
+    {
+        //Criando chuva de bombas após atingir limite de iterações
+        if (playerManager.getIterationCount() >= Config.MAX_STEP_PER_AGENT)
+        {
+            if (isToCreateBombs())
+            {
+                //grid recupera posições vazias.
+                List<Vector2> freePositions = grid.listFreePositions();
+                int maxBombByCreation = Mathf.Min(numberOfBombsByCreation, freePositions.Count);
+
+                for (int i = 0; i < maxBombByCreation; ++i)
+                {
+                    int randomIndex = UnityEngine.Random.Range(0, freePositions.Count);
+                    Vector2 ramdomPos = freePositions[randomIndex];
+
+                    freePositions.RemoveAt(randomIndex);
+                    maxBombByCreation = Mathf.Min(numberOfBombsByCreation, freePositions.Count);
+
+                    GameObject bomb = Instantiate(bombPrefab,
+                                                  new Vector3(Mathf.RoundToInt(ramdomPos.x),
+                                                              transform.parent.transform.position.y + 0.5f,
+                                                              Mathf.RoundToInt(ramdomPos.y)),
+                                                  bombPrefab.transform.rotation,
+                                                  transform.parent);
+
+                    bomb.GetComponent<Bomb>().grid = grid;
+                    bomb.GetComponent<Bomb>().scenarioId = scenarioId;
+                    bombManager.addBomb(bomb);
+                    grid.enableObjectOnGrid(StateType.ST_Bomb, bomb.GetComponent<Bomb>().GetGridPosition());
+                    grid.enableObjectOnGrid(StateType.ST_Danger, bomb.GetComponent<Bomb>().GetGridPosition());
+                    bomb.GetComponent<Bomb>().CreateDangerZone();
+                }
+            }
+        }
+    }
+
     // Aqui terei o controle de todo fluxo dos agentes: RequestAction e RequestDecision
     private void FixedUpdate()
     {
@@ -151,9 +219,11 @@ public class MapController : MonoBehaviour {
             {
                 if (playerManager.updateAgents())
                 {
-                    Monitor.Log("Iteração:", playerManager.getIterationCount().ToString(), myMonitor.transform);
+                    Monitor.Log("Iteração:", playerManager.getIterationCount().ToString() + " / " + maxIterationString, myMonitor.transform);
                     bombManager.timeIterationUpdate();
                     ServiceLocator.getManager(scenarioId).GetLogManager().globalStepPrint(playerManager.getIterationCount());
+
+                    verifyAndCreateBombs();
                 }
                 else
                 {
@@ -169,15 +239,11 @@ public class MapController : MonoBehaviour {
                     bool updateFlag = playerManager.updateAgents();
                     if (updateFlag)
                     {
-                        Monitor.Log("Iteração:", playerManager.getIterationCount().ToString(), myMonitor.transform);
+                        Monitor.Log("Iteração:", playerManager.getIterationCount().ToString() + " / " + maxIterationString, myMonitor.transform);
                         bombManager.timeIterationUpdate();
                         ServiceLocator.getManager(scenarioId).GetLogManager().globalStepPrint(playerManager.getIterationCount());
 
-                        //Criando chuva de bombas após atingir limite de iterações
-                        /*if (playerManager.getIterationCount() >= Config.MAX_STEP_PER_AGENT)
-                        {
-
-                        }*/
+                        verifyAndCreateBombs();
                     }
                     else
                     {
