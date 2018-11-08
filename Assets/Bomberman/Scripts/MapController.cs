@@ -161,7 +161,7 @@ public class MapController : MonoBehaviour {
         }
         else
         {
-            if ((playerManager.getIterationCount() - iterationWhereWasCreatedBombs) == 7)
+            if ((playerManager.getIterationCount() - iterationWhereWasCreatedBombs) == (Config.BOMB_TIMER_DISCRETE + 1))
             {
                 iterationWhereWasCreatedBombs = playerManager.getIterationCount();
                 isToCreateBombs = true;
