@@ -84,7 +84,8 @@ public class Player : Agent
     private bool alreadyWasReseted = false;
     public bool randomizeResetPosition = false;
     public bool randomizeInitialPosition = false;
-    
+    public GridViewType myGridViewType;
+
     public static Vector3[] initialPositions = new Vector3[] {  new Vector3(1.0f, 0.5f, 9.0f),
                                                                  new Vector3(9.0f, 0.5f, 9.0f) ,
                                                                  new Vector3(9.0f, 0.5f, 1.0f) ,
@@ -203,6 +204,7 @@ public class Player : Agent
         scenarioId = grid.scenarioId;
         playerNumber = pNumber;
         stateType = convertPlayerNumberToStateType(playerNumber);
+        myGridViewType = grid.getGridViewType();
 
         bombCount = 0;
         isInDanger = false;
@@ -289,7 +291,7 @@ public class Player : Agent
 
     private void AddVectorObsForGrid()
     {
-        if (grid.gridViewType == GridViewType.GVT_Hybrid)
+        if (myGridViewType == GridViewType.GVT_Hybrid)
         {
             for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
             {
@@ -302,7 +304,7 @@ public class Player : Agent
                 }
             }
         }
-        else if (grid.gridViewType == GridViewType.GVT_Binary)
+        else if (myGridViewType == GridViewType.GVT_Binary)
         {
             for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
             {
@@ -327,7 +329,7 @@ public class Player : Agent
                 }
             }
         }
-        else if (grid.gridViewType == GridViewType.GVT_ICAART)
+        else if (myGridViewType == GridViewType.GVT_ICAART)
         {
             List<float> freeBreakableObstructedCells = new List<float>();
             List<float> positionAgentCells = new List<float>();
@@ -375,6 +377,36 @@ public class Player : Agent
             AddVectorObs(positionEnemyCells);
             AddVectorObs(dangerLevelOfPositionsCells);
         }
+        else if (myGridViewType == GridViewType.GVT_BinaryDecimal)
+        {
+            for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
+            {
+                for (int x = 0; x < grid.GetGridSizeX(); ++x)
+                {
+                    BaseNode node = grid.NodeFromPos(x, y);
+                    StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
+
+                    string cellString = StateTypeExtension.getIntBinaryString(nodeStateType);
+                    int cell = Convert.ToInt32(cellString);
+
+                    AddVectorObs(cell);
+                }
+            }
+        }
+        else if (myGridViewType == GridViewType.GVT_BinaryNormalized)
+        {
+            for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
+            {
+                for (int x = 0; x < grid.GetGridSizeX(); ++x)
+                {
+                    BaseNode node = grid.NodeFromPos(x, y);
+                    StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
+
+                    float cell = StateTypeExtension.normalizeBinaryFlag(nodeStateType);
+                    AddVectorObs(cell);
+                }
+            }
+        }
     }
 
     //função usada apenas com teacher.getTeacherAgentObservations()
@@ -398,7 +430,8 @@ public class Player : Agent
         clearReplayVars();
         myGridPosition = GetGridPosition();
 
-        AddVectorObs(myGridPosition);
+        Vector2 normalizedGridPosition = (myGridPosition) / (grid.GetGridMaxValue());
+        AddVectorObs(normalizedGridPosition);
 
         //adicionando grid de observação da posição dos agentes
         if (isSpecialist)

@@ -56,6 +56,7 @@ public class ActionTypeExtension
 
 
     ST_All = (ST_Wall | ST_Block | ST_Agent | ST_EnemyAgent | ST_Target | ST_Bomb | ST_Fire | ST_Danger | ST_Agent1 | ST_Agent2 | ST_Agent3 | ST_Agent4),
+    ST_ALL_TO_NORMALIZATION = (ST_Wall | ST_Block | ST_Agent | ST_EnemyAgent | ST_Target | ST_Bomb | ST_Fire | ST_Danger),
     ST_Size = 9
 }
 
@@ -152,12 +153,25 @@ public class StateTypeExtension
     {
         return Convert.ToString((int)stateType, 2).PadLeft((int)StateType.ST_Size - 1, '0');
     }
+
+    public static float normalizeBinaryFlag(StateType flag)
+    {
+        float flagFloat = (float)flag;
+        float maxValue = (float)StateType.ST_ALL_TO_NORMALIZATION;
+
+        // float result = (flagFloat - 0.0f) / (maxValue - 0.0f);
+        float result = (flagFloat) / (maxValue);
+
+        return result;
+    }
 }
 
 public enum GridViewType
 {
-    GVT_Binary = 0,
-    //GVT_OneHot = 1,
-    GVT_Hybrid = 2,
-    GVT_ICAART = 3      // paper: Exploration Methods for Connectionist Q-Learning in Bomberman
+    GVT_Binary              = 0,
+    //GVT_OneHot            = 1,
+    GVT_Hybrid              = 2,
+    GVT_ICAART              = 3,      // paper: Exploration Methods for Connectionist Q-Learning in Bomberman
+    GVT_BinaryDecimal       = 4,
+    GVT_BinaryNormalized    = 5
 }

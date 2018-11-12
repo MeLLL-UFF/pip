@@ -18,7 +18,7 @@ public class Grid : MonoBehaviour {
     public LayerMask defaultLayer;
     public LayerMask agentsLayer;
 
-    public GridViewType gridViewType = GridViewType.GVT_Hybrid;
+    private GridViewType gridViewType = GridViewType.GVT_Binary;
     BaseNode[,] grid;
 
     float nodeDiameter;
@@ -52,7 +52,13 @@ public class Grid : MonoBehaviour {
             walkableRegionsDictionary.Add((int)Mathf.Log(region.terrainMask.value, 2), region.teerainPenalty);
         }
 
+        gridViewType = GridViewType.GVT_Binary;
         CreateGrid();
+    }
+
+    public GridViewType getGridViewType()
+    {
+        return gridViewType;
     }
 
     private void Start()
@@ -76,6 +82,11 @@ public class Grid : MonoBehaviour {
     public int GetGridSizeY()
     {
         return gridSizeY;
+    }
+
+    public Vector2 GetGridMaxValue()
+    {
+        return new Vector2(gridSizeX - 1, gridSizeY - 1);
     }
 
     private bool isOnGrid(int x, int y)

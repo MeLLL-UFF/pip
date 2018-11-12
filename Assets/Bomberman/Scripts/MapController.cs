@@ -17,10 +17,10 @@ public class MapController : MonoBehaviour {
 
     public float timeBetweenDecisionsAtInference;
     public List<GameObject> playerPrefabs;
-    public Brain brain;
-    public Brain staticBrain;
+    public List<Brain> brains;
     public bool randomizeNumberOfAgents = true;
     public bool randomizeIterationOfAgents = true;
+    
 
     public GameObject bombPrefab;
     public GameObject monitorPrefab;
@@ -71,25 +71,23 @@ public class MapController : MonoBehaviour {
         {
             if (!playerManager.containsPlayer(i + 1))
             {
-                createAgent(playerPrefabs[i], brain, i + 1);
+                createAgent(playerPrefabs[i], i + 1);
             }
         }
 
         playerManager.createDistanceStructuresForReward();
     }
 
-    private void createAgent(GameObject agentPrefab, Brain brain, int playerNumber)
+    private void createAgent(GameObject agentPrefab, int playerNumber)
     {
         
         GameObject AgentObj = Instantiate(agentPrefab, transform.parent);
         Player agent = AgentObj.GetComponent<Player>();
 
-        if (playerNumber == 1)
-            agent.GiveBrain(brain);
-        else
-            agent.GiveBrain(staticBrain);
-
         agent.init(grid, playerNumber, this);
+
+        agent.myGridViewType = brains[playerNumber-1].gameObject.GetComponent<BrainCustomData>().gridViewType;
+        agent.GiveBrain(brains[playerNumber-1]);
 
         randomizeInitialPositionFunction(agent);
 
@@ -192,9 +190,9 @@ public class MapController : MonoBehaviour {
                     maxBombByCreation = Mathf.Min(numberOfBombsByCreation, freePositions.Count);
 
                     GameObject bomb = Instantiate(bombPrefab,
-                                                  new Vector3(Mathf.RoundToInt(ramdomPos.x),
+                                                  new Vector3(Mathf.RoundToInt(ramdomPos.x) + transform.parent.transform.position.x,
                                                               transform.parent.transform.position.y + 0.5f,
-                                                              Mathf.RoundToInt(ramdomPos.y)),
+                                                              Mathf.RoundToInt(ramdomPos.y) + transform.parent.transform.position.z),
                                                   bombPrefab.transform.rotation,
                                                   transform.parent);
 
