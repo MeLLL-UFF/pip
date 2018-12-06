@@ -7,19 +7,19 @@ public class BinaryNode : BaseNode {
 
     private StateType binary;
 
-    public override int getBinary()
+    public int getBinary()
     {
         return (int)binary;
     }
 
-    public override string getStringBinaryArray()
+    public string getStringBinaryArray()
     {
         string s = StateTypeExtension.getIntBinaryString(binary);
 
         return s;
     }
 
-    public override int getFreeBreakableObstructedCell()
+    public int getFreeBreakableObstructedCell()
     {
         if (hasFlag(StateType.ST_Wall) || hasFlag(StateType.ST_Bomb))
         {
@@ -31,11 +31,23 @@ public class BinaryNode : BaseNode {
         }
         else
         {
-            return -1;
+            return 1;
         }
     }
 
-    public override int getPositionTarget()
+    public int getFreeCell()
+    {
+        if (hasFlag(StateType.ST_Wall) || hasFlag(StateType.ST_Bomb) || hasFlag(StateType.ST_Block))
+        {
+            return 0;
+        }
+        else
+        {
+            return 1;
+        }
+    }
+
+    /*public int getPositionTarget()
     {
         if (hasFlag(StateType.ST_Target))
         {
@@ -45,9 +57,9 @@ public class BinaryNode : BaseNode {
         {
             return 0;
         }
-    }
+    }*/
 
-    public override bool getDangerPosition()
+    public bool getDangerPosition()
     {
         if (hasFlag(StateType.ST_Danger))
             return true;
@@ -55,13 +67,13 @@ public class BinaryNode : BaseNode {
         return false;
     }
 
-    public override void addFlags(List<StateType> flags)
+    public void addFlags(List<StateType> flags)
     {
         for (int i = 0; i < flags.Count; ++i)
             addFlag(flags[i]);
     }
 
-    public override void addFlag(StateType stateType)
+    public void addFlag(StateType stateType)
     {
         if (StateTypeExtension.existsFlag(stateType))
         {
@@ -69,7 +81,7 @@ public class BinaryNode : BaseNode {
         }
     }
 
-    public override void removeFlag(StateType stateType)
+    public void removeFlag(StateType stateType)
     {
         if (StateTypeExtension.existsFlag(stateType))
         {
@@ -77,12 +89,12 @@ public class BinaryNode : BaseNode {
         }
     }
 
-    public override void clearAllFlags()
+    public void clearAllFlags()
     {
         binary = StateType.ST_Empty;
     }
 
-    public override bool hasFlag(StateType stateType)
+    public bool hasFlag(StateType stateType)
     {
         if (stateType != StateType.ST_Empty)
         {
@@ -100,7 +112,7 @@ public class BinaryNode : BaseNode {
     }
 
     //função não testa ST_Empty
-    public override bool hasSomeFlag(StateType flags)
+    public bool hasSomeFlag(StateType flags)
     {
         if (StateTypeExtension.existsFlag(flags))
         {

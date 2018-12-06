@@ -9,7 +9,7 @@ public class CameraMovement : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        stepX = 15;
+        stepX = 20;
         stepZ = 20;
     }
 
@@ -32,7 +32,7 @@ public class CameraMovement : MonoBehaviour {
         }
         else if (Input.GetKeyUp(KeyCode.RightArrow))
         {
-            if (transform.position.x <= 50)
+            if (transform.position.x <= 166)
                 transform.position = transform.position + new Vector3(stepX, 0, 0);
         }
     }

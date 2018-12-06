@@ -1,9 +1,13 @@
 ﻿using MLAgents;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 public class MapController : MonoBehaviour {
+
+    static uint countCreatedStatistics = 0;
 
     private bool wasInitialized = false;
     private bool reseting = false;
@@ -29,8 +33,19 @@ public class MapController : MonoBehaviour {
     int numberOfBombsByCreation;
     string maxIterationString = Config.MAX_STEP_PER_AGENT.ToString();
 
+    public bool generateStatistic;
+    public uint matchMaxQuant;
+    private bool alreadyGenerateStatistic;
+
+    //0 = draw, 1 = agent1, 2 = agent 2, ...
+    private List<uint> matchResults;
+
+
     // Use this for initialization
     void Start () {
+        alreadyGenerateStatistic = false;
+        matchResults = new List<uint>();
+
         grid = gameObject.GetComponent<Grid>();
         scenarioId = grid.scenarioId;
         academy = FindObjectOfType(typeof(BombermanAcademy)) as BombermanAcademy;
@@ -38,6 +53,8 @@ public class MapController : MonoBehaviour {
         playerManager = ServiceLocator.getManager(scenarioId).GetPlayerManager();
         bombManager = ServiceLocator.getManager(scenarioId).GetBombManager();
         blocksManager = ServiceLocator.getManager(scenarioId).GetBlocksManager();
+
+        playerManager.initInitialPositions(grid);
 
         ServiceLocator.getManager(scenarioId).GetLogManager().episodePrint(playerManager.getEpisodeCount());
 
@@ -96,6 +113,59 @@ public class MapController : MonoBehaviour {
         playerManager.addPlayer(agent, playerNumber);
     }
 
+    private void createStatisticFiles()
+    {
+        string folderName = "./statistics/";
+        if (!Directory.Exists(folderName))
+        {
+            Directory.CreateDirectory(folderName);
+        }
+
+        string fileName = folderName + "cenario_" + scenarioId + "_matches_results";
+        StreamWriter sw = new StreamWriter(fileName + ".csv", false);
+        sw.WriteLine("chave;valor;porcentagem");
+
+        uint[] counts = new uint[5];
+        for (int i = 0; i < matchResults.Count; ++i)
+        {
+            if (matchResults[i] == 0)
+            {
+                counts[0] += 1;
+            }
+            else if (matchResults[i] == 1)
+            {
+                counts[1] += 1;
+            }
+            else if (matchResults[i] == 2)
+            {
+                counts[2] += 1;
+            }
+            else if (matchResults[i] == 3)
+            {
+                counts[3] += 1;
+            }
+            else if (matchResults[i] == 4)
+            {
+                counts[4] += 1;
+            }
+        }
+
+        for (int i = 0; i < counts.Length; ++i)
+        {
+            if (i != 0)
+            {
+                float percent = (float)counts[i] / (float)matchResults.Count;
+                sw.WriteLine("Agente_" + i + ";" + counts[i] + ";" + String.Format("{0:P}", percent));
+            }
+            else
+            {
+                float percent = (float)counts[i] / (float)matchResults.Count;
+                sw.WriteLine("Empate;" + counts[i] + ";" + String.Format("{0:P}", percent));
+            }
+        }
+        sw.WriteLine("Total;" + matchResults.Count + ";100%");
+        sw.Close();
+    }
     
     private void resetStage()
     {
@@ -107,11 +177,44 @@ public class MapController : MonoBehaviour {
             bombManager.clearBombs();
             createAgents();
             blocksManager.resetBlocks();
+
+            // gerando informações para estatística
+            if (generateStatistic == true)
+            {
+                //+1 porque a verificação de ultimo homem vivo acontece uma iteração após o fim do ep
+                if (playerManager.getEpisodeCount() <= matchMaxQuant+1)
+                {
+                    matchResults.Add(playerManager.lastManAgentResult);
+                }
+                else
+                {
+                    if (!alreadyGenerateStatistic)
+                    {
+                        //gravar em arquivo
+                        Debug.Log("Estatisticas do cenario: " + transform.parent.gameObject.name + " foram geradas");
+                        createStatisticFiles();
+                        MapController.countCreatedStatistics++;
+
+                        alreadyGenerateStatistic = true;
+
+                        if (MapController.countCreatedStatistics == 10) // 10 cenários
+                        {
+                            #if UNITY_EDITOR
+                                  UnityEditor.EditorApplication.isPlaying = false;
+                            #else
+                                  Application.Quit();
+                            #endif
+                        }
+                    }
+                }
+            }
+
             ServiceLocator.getManager(scenarioId).GetLogManager().episodePrint(playerManager.getEpisodeCount());
             Monitor.Log("Episódio:", playerManager.getEpisodeCount().ToString(), myMonitor.transform);
             Monitor.Log("Ult. Vitorioso:", playerManager.lastManAgent, myMonitor.transform);
             iterationWhereWasCreatedBombs = 0;
             numberOfBombsByCreation = 1;
+
             reseting = false;
         }
     }

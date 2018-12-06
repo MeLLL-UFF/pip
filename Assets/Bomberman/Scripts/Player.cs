@@ -86,11 +86,6 @@ public class Player : Agent
     public bool randomizeInitialPosition = false;
     public GridViewType myGridViewType;
 
-    public static Vector3[] initialPositions = new Vector3[] {  new Vector3(1.0f, 0.5f, 9.0f),
-                                                                 new Vector3(9.0f, 0.5f, 9.0f) ,
-                                                                 new Vector3(9.0f, 0.5f, 1.0f) ,
-                                                                 new Vector3(1.0f, 0.5f, 1.0f)};
-
     private float closestDistance = float.MaxValue;
     private float previousDistance = float.MaxValue;
 
@@ -139,18 +134,6 @@ public class Player : Agent
         oldLocalPosition = p;
     }
 
-    static Vector3 getOppositeInitialPosition(int index)
-    {
-        if (index == 0)
-            return initialPositions[2];
-        else if (index == 1)
-            return initialPositions[3];
-        else if (index == 2)
-            return initialPositions[0];
-        else
-            return initialPositions[1];
-    }
-
     private void clearReplayVars()
     {
         observationGridString = "";
@@ -164,13 +147,13 @@ public class Player : Agent
 
     public Vector2 GetGridPosition()
     {
-        BaseNode n = grid.NodeFromWorldPoint(transform.localPosition);
+        BinaryNode n = grid.NodeFromWorldPoint(transform.localPosition);
         return new Vector2(n.gridX, n.gridY);
     }
 
     public Vector2 GetOldGridPosition()
     {
-        BaseNode n = grid.NodeFromWorldPoint(oldLocalPosition);
+        BinaryNode n = grid.NodeFromWorldPoint(oldLocalPosition);
         return new Vector2(n.gridX, n.gridY);
     }
 
@@ -297,7 +280,7 @@ public class Player : Agent
             {
                 for (int x = 0; x < grid.GetGridSizeX(); ++x)
                 {
-                    BaseNode node = grid.NodeFromPos(x, y);
+                    BinaryNode node = grid.NodeFromPos(x, y);
                     StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
                     float[] temp = StateTypeExtension.convertStateTypeToHybrid(nodeStateType);
                     AddVectorObs(temp);
@@ -310,7 +293,7 @@ public class Player : Agent
             {
                 for (int x = 0; x < grid.GetGridSizeX(); ++x)
                 {
-                    BaseNode node = grid.NodeFromPos(x, y);
+                    BinaryNode node = grid.NodeFromPos(x, y);
                     StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
                     int cell = (int)nodeStateType;
 
@@ -340,7 +323,7 @@ public class Player : Agent
             {
                 for (int x = 0; x < grid.GetGridSizeX(); ++x)
                 {
-                    BaseNode node = grid.NodeFromPos(x, y);
+                    BinaryNode node = grid.NodeFromPos(x, y);
                     StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
 
                     //enviar grid que representa posições livres, com blocos ou com paredes
@@ -376,6 +359,11 @@ public class Player : Agent
             AddVectorObs(positionAgentCells);
             AddVectorObs(positionEnemyCells);
             AddVectorObs(dangerLevelOfPositionsCells);
+
+            freeBreakableObstructedCells.Clear();
+            positionAgentCells.Clear();
+            positionEnemyCells.Clear();
+            dangerLevelOfPositionsCells.Clear();
         }
         else if (myGridViewType == GridViewType.GVT_BinaryDecimal)
         {
@@ -383,7 +371,7 @@ public class Player : Agent
             {
                 for (int x = 0; x < grid.GetGridSizeX(); ++x)
                 {
-                    BaseNode node = grid.NodeFromPos(x, y);
+                    BinaryNode node = grid.NodeFromPos(x, y);
                     StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
 
                     string cellString = StateTypeExtension.getIntBinaryString(nodeStateType);
@@ -399,13 +387,68 @@ public class Player : Agent
             {
                 for (int x = 0; x < grid.GetGridSizeX(); ++x)
                 {
-                    BaseNode node = grid.NodeFromPos(x, y);
+                    BinaryNode node = grid.NodeFromPos(x, y);
                     StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
 
                     float cell = StateTypeExtension.normalizeBinaryFlag(nodeStateType);
                     AddVectorObs(cell);
                 }
             }
+        }
+        else if (myGridViewType == GridViewType.GVT_ZeroOrOneForeachStateType)
+        {
+            List<float> freeCells = new List<float>();
+            List<float> destructibleCells = new List<float>();
+            List<float> positionAgentCells = new List<float>();
+            List<float> positionEnemyCells = new List<float>();
+            List<float> bombCells = new List<float>();
+            List<float> dangerCells = new List<float>();
+            List<float> fireCells = new List<float>();
+
+            for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
+            {
+                for (int x = 0; x < grid.GetGridSizeX(); ++x)
+                {
+                    BinaryNode node = grid.NodeFromPos(x, y);
+                    StateType nodeStateType = grid.adjustAgentStateTypeForBinaryNode(node, playerNumber);
+
+                    freeCells.Add(node.getFreeCell());
+
+                    int hasThis = StateTypeExtension.stateTypeHasFlag(nodeStateType, StateType.ST_Block) ? 1 : 0;
+                    destructibleCells.Add(hasThis);
+
+                    hasThis = StateTypeExtension.stateTypeHasFlag(nodeStateType, StateType.ST_Agent) ? 1 : 0;
+                    positionAgentCells.Add(hasThis);
+
+                    hasThis = StateTypeExtension.stateTypeHasFlag(nodeStateType, StateType.ST_EnemyAgent) ? 1 : 0;
+                    positionEnemyCells.Add(hasThis);
+
+                    hasThis = StateTypeExtension.stateTypeHasFlag(nodeStateType, StateType.ST_Bomb) ? 1 : 0;
+                    bombCells.Add(hasThis);
+
+                    hasThis = StateTypeExtension.stateTypeHasFlag(nodeStateType, StateType.ST_Danger) ? 1 : 0;
+                    dangerCells.Add(hasThis);
+
+                    hasThis = StateTypeExtension.stateTypeHasFlag(nodeStateType, StateType.ST_Fire) ? 1 : 0;
+                    fireCells.Add(hasThis);
+                }
+            }
+
+            AddVectorObs(freeCells);
+            AddVectorObs(destructibleCells);
+            AddVectorObs(positionAgentCells);
+            AddVectorObs(positionEnemyCells);
+            AddVectorObs(bombCells);
+            AddVectorObs(dangerCells);
+            AddVectorObs(fireCells);
+
+            freeCells.Clear();
+            destructibleCells.Clear();
+            positionAgentCells.Clear();
+            positionEnemyCells.Clear();
+            bombCells.Clear();
+            dangerCells.Clear();
+            fireCells.Clear();
         }
     }
 

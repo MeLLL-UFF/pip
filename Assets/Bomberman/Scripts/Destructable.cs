@@ -63,7 +63,7 @@ public class Destructable : MonoBehaviour {
 
     public Vector2 GetGridPosition()
     {
-        BaseNode n = grid.NodeFromWorldPoint(transform.localPosition);
+        BinaryNode n = grid.NodeFromWorldPoint(transform.localPosition);
         return new Vector2(n.gridX, n.gridY);
     }
 

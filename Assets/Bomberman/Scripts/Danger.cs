@@ -63,7 +63,7 @@ public class Danger : MonoBehaviour
     public float GetDangerLevelOfPosition(Player player)
     {
         //penalty The danger value is negative if the bomb has been placed by the player and positive if it has been placed by an opponent(or environment)
-        float penalty = -1.0f;
+        float penalty = 1.0f;
         if (myBomb.bomberman != null)
         {
             penalty = myBomb.bomberman.getPlayerNumber() == player.getPlayerNumber() ? -1.0f : 1.0f;
@@ -79,7 +79,7 @@ public class Danger : MonoBehaviour
 
     public Vector2 GetGridPosition()
     {
-        BaseNode n = grid.NodeFromWorldPoint(transform.localPosition);
+        BinaryNode n = grid.NodeFromWorldPoint(transform.localPosition);
         return new Vector2(n.gridX, n.gridY);
     }
 

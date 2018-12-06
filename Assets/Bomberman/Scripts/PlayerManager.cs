@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -26,11 +27,14 @@ public class PlayerManager {
     private int episodeCount;
 
     public string lastManAgent = "null";
+    public uint lastManAgentResult = 0;
 
     Dictionary<int, Player> playerDict = new Dictionary<int, Player>();
     List<Vector3> initPosList = new List<Vector3>();
 
     Dictionary<int, Dictionary<int, DistanceStructure>> distanceStructureDict = new Dictionary<int, Dictionary<int, DistanceStructure> >();
+
+    public Vector3[] staticInitialPositions; 
 
     public PlayerManager()
     {
@@ -40,12 +44,26 @@ public class PlayerManager {
             deadCount = 0;
             iterationCount = 0;
             episodeCount = 1;
-            restartInitList();
             initialized = true;
             updating = false;
             lastManAgent = "null";
+            lastManAgentResult = 0;
             lastManFound = false;
         }
+    }
+
+    public void initInitialPositions(Grid grid)
+    {
+        //porque as bordas são paredes
+        float maxX = grid.GetGridSizeX() - 2.0f;
+        float maxY = grid.GetGridSizeY() - 2.0f;
+
+        staticInitialPositions  = new Vector3[] {  new Vector3(1.0f, 0.5f, maxY),
+                                             new Vector3(maxX, 0.5f, maxY) ,
+                                             new Vector3(maxX, 0.5f, 1.0f) ,
+                                             new Vector3(1.0f, 0.5f, 1.0f)};
+
+        restartInitList();
     }
 
     public void clear()
@@ -67,12 +85,24 @@ public class PlayerManager {
         lastManFound = false;
     }
 
+    Vector3 getOppositeInitialPosition(int index)
+    {
+        if (index == 0)
+            return staticInitialPositions[2];
+        else if (index == 1)
+            return staticInitialPositions[3];
+        else if (index == 2)
+            return staticInitialPositions[0];
+        else
+            return staticInitialPositions[1];
+    }
+
     private void restartInitList()
     {
         initPosList.Clear();
-        for (int i = 0; i < Player.initialPositions.Length; i++)
+        for (int i = 0; i < staticInitialPositions.Length; i++)
         {
-            initPosList.Add(Player.initialPositions[i]);
+            initPosList.Add(staticInitialPositions[i]);
         }
     }
 
@@ -225,6 +255,7 @@ public class PlayerManager {
                 Player.AddRewardToAgent(playerDict[lastManIndex], Config.REWARD_LAST_MAN, "Agente" + playerDict[lastManIndex].getPlayerNumber() + ": foi o único sobrevivente");
                 playerDict[lastManIndex].Done();
                 lastManAgent = "Agente " + playerDict[lastManIndex].getPlayerNumber();
+                lastManAgentResult = (uint)playerDict[lastManIndex].getPlayerNumber();
                 lastManFound = true;
             }
         }
@@ -246,7 +277,7 @@ public class PlayerManager {
             List<Player> randomList = new List<Player>();
             while (playerList.Count > 0)
             {
-                int rand = Random.Range(0, playerList.Count);
+                int rand = UnityEngine.Random.Range(0, playerList.Count);
                 randomList.Add(playerList[rand]);
                 playerList.RemoveAt(rand);
             }
@@ -278,7 +309,10 @@ public class PlayerManager {
         else
         {
             if (!lastManFound)
+            {
                 lastManAgent = "draw";
+                lastManAgentResult = 0;
+            }
             // precisamos resetar a cena
             updating = false;
             return false;

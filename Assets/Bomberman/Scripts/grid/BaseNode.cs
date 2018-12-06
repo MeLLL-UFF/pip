@@ -1,6 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 
 public class Pair<T, U>
 {
@@ -36,77 +34,6 @@ public class BaseNode : IHeapItem<BaseNode> {
     public BaseNode parent;
     protected int heapIndex;
 
-    //função usada para retornar hybrid vector
-    public virtual float[] getBinaryArray()
-    {
-        float[] t = new float[1];
-        return t;
-    }
-
-    //função usada retornar flags do modo Binary
-    public virtual int getBinary()
-    {
-        return (int)StateType.ST_Empty;
-    }
-
-    //0=free, 1=breakable, -1=obstructed
-    public virtual int getFreeBreakableObstructedCell()
-    {
-        return 0;
-    }
-
-    //0 ou 1. Calculo de perigo é feito depois.
-    public virtual bool getDangerPosition()
-    {
-        return false;
-    }
-
-    public virtual int getPositionTarget()
-    {
-        return 0;
-    }
-
-    public virtual string getStringBinaryArray()
-    {
-        return "";
-    }
-
-    public virtual void addFlags(List<StateType> flags)
-    {
-        
-    }
-
-    public virtual void addFlag(StateType stateType)
-    {
-        
-    }
-
-    public virtual void removeFlag(StateType stateType)
-    {
-        
-    }
-
-    public virtual void clearAllFlags()
-    {
-        
-    }
-
-    public virtual bool hasFlag(StateType stateType)
-    {
-        return false;
-    }
-
-    //função não testa ST_Empty
-    public virtual bool hasSomeFlag(List<StateType> flags)
-    {
-        return false;
-    }
-
-    public virtual bool hasSomeFlag(StateType flags)
-    {
-        return false;
-    }
-
     public void InitDStarParams(double _rhs, double _g)
     {
         rhs = _rhs;
@@ -117,19 +44,6 @@ public class BaseNode : IHeapItem<BaseNode> {
     {
         k.First = f;
         k.Second = s;
-    }
-
-    public BaseNode(bool _walkable, Vector3 _worldPos, int _gridX, int _gridY, int _penalty, List<StateType> stateTypes)
-    {
-        walkable = _walkable;
-        worldPosition = _worldPos;
-        gridX = _gridX;
-        gridY = _gridY;
-        movementPenalty = _penalty;
-
-        addFlags(stateTypes);
-
-        cost = _penalty;
     }
 
     //construtor usado apenas para o cálculo do kOld em ComputeClosestPath

@@ -19,7 +19,7 @@ public class Grid : MonoBehaviour {
     public LayerMask agentsLayer;
 
     private GridViewType gridViewType = GridViewType.GVT_Binary;
-    BaseNode[,] grid;
+    BinaryNode[,] grid;
 
     float nodeDiameter;
     int gridSizeX;
@@ -105,7 +105,7 @@ public class Grid : MonoBehaviour {
         if (!isOnGrid(x, y))
             return;
 
-        BaseNode node = NodeFromPos(x, y);
+        BinaryNode node = NodeFromPos(x, y);
 
         List<StateType> nodeStateTypes = new List<StateType>();
         Ray ray = new Ray(node.worldPosition + Vector3.up * 6, Vector3.down);
@@ -131,7 +131,7 @@ public class Grid : MonoBehaviour {
         if (!isOnGrid(x, y))
             return false;
 
-        BaseNode node = NodeFromPos(x, y);
+        BinaryNode node = NodeFromPos(x, y);
 
         if (node.hasSomeFlag(blockFlags))
             return false;
@@ -139,7 +139,7 @@ public class Grid : MonoBehaviour {
         return true;
     }
 
-    public bool checkTarget(Vector2 pos)
+    /*public bool checkTarget(Vector2 pos)
     {
         int x = (int)pos.x;
         int y = (int)pos.y;
@@ -147,13 +147,13 @@ public class Grid : MonoBehaviour {
         if (!isOnGrid(x, y))
             return false;
 
-        BaseNode node = NodeFromPos(x, y);
+        BinaryNode node = NodeFromPos(x, y);
 
         if (node.hasFlag(StateType.ST_Target))
             return true;
        
         return false;
-    }
+    }*/
 
     // Bomb code
     public bool checkFire(Vector2 pos)
@@ -164,7 +164,7 @@ public class Grid : MonoBehaviour {
         if (!isOnGrid(x, y))
             return false;
 
-        BaseNode node = NodeFromPos(x, y);
+        BinaryNode node = NodeFromPos(x, y);
 
         if (node.hasFlag(StateType.ST_Fire))
             return true;
@@ -180,7 +180,7 @@ public class Grid : MonoBehaviour {
         if (!isOnGrid(x, y))
             return false;
 
-        BaseNode node = NodeFromPos(x, y);
+        BinaryNode node = NodeFromPos(x, y);
 
         if (node.hasFlag(StateType.ST_Bomb))
             return true;
@@ -196,7 +196,7 @@ public class Grid : MonoBehaviour {
         if (!isOnGrid(x, y))
             return false;
 
-        BaseNode node = NodeFromPos(x, y);
+        BinaryNode node = NodeFromPos(x, y);
 
         if (node.hasFlag(StateType.ST_Danger))
             return true;
@@ -212,7 +212,7 @@ public class Grid : MonoBehaviour {
         if (!isOnGrid(x, y))
             return false;
 
-        BaseNode node = NodeFromPos(x, y);
+        BinaryNode node = NodeFromPos(x, y);
 
         if (node.hasFlag(StateType.ST_Block))
             return true;
@@ -228,7 +228,7 @@ public class Grid : MonoBehaviour {
         if (!isOnGrid(x, y))
             return null;
 
-        BaseNode node = NodeFromPos(x, y);
+        BinaryNode node = NodeFromPos(x, y);
 
         Ray ray = new Ray(node.worldPosition + Vector3.up * 6, Vector3.down);
         RaycastHit[] hits;
@@ -279,10 +279,10 @@ public class Grid : MonoBehaviour {
             {
                 nodeStateType = StateType.ST_Bomb;
             }
-            else if (hit.collider.CompareTag("Target"))
+            /*else if (hit.collider.CompareTag("Target"))
             {
                 nodeStateType = StateType.ST_Target;
-            }
+            }*/
             else if (hit.collider.CompareTag("Danger"))
             {
                 nodeStateType = StateType.ST_Danger;
@@ -316,9 +316,9 @@ public class Grid : MonoBehaviour {
        grid = new BinaryNode[gridSizeX, gridSizeY];
     }
 
-    BaseNode CreateNodeAccordingToType(bool walkable, Vector3 worldPos, int gridX, int gridY, int penalty, List<StateType> stateTypes)
+    BinaryNode CreateNodeAccordingToType(bool walkable, Vector3 worldPos, int gridX, int gridY, int penalty, List<StateType> stateTypes)
     {
-        BaseNode node = null;
+        BinaryNode node = null;
         node = new BinaryNode(walkable, worldPos, gridX, gridY, penalty, stateTypes);
 
         return node;
@@ -397,9 +397,9 @@ public class Grid : MonoBehaviour {
         }
     }
 
-    public List<BaseNode> ListUpdateNodesInGrid()
+    public List<BinaryNode> ListUpdateNodesInGrid()
     {
-        List<BaseNode> updatedNodes = new List<BaseNode>();
+        List<BinaryNode> updatedNodes = new List<BinaryNode>();
         Vector3 worldBottomLeft = transform.position - Vector3.right * gridWorldSize.x / 2 - Vector3.forward * gridWorldSize.y / 2;
 
         for (int x = 0; x < gridSizeX; x++)
@@ -452,9 +452,9 @@ public class Grid : MonoBehaviour {
         }
     }
 
-    public List<BaseNode> GetSucc(BaseNode node)
+    public List<BinaryNode> GetSucc(BinaryNode node)
     {
-        List<BaseNode> neghbours = new List<BaseNode>();
+        List<BinaryNode> neghbours = new List<BinaryNode>();
 
         if (!node.walkable || double.IsPositiveInfinity(node.cost))
             return neghbours;
@@ -480,9 +480,9 @@ public class Grid : MonoBehaviour {
         return neghbours;
     }
 
-    public List<BaseNode> GetPred(BaseNode node)
+    public List<BinaryNode> GetPred(BinaryNode node)
     {
-        List<BaseNode> neghbours = new List<BaseNode>();
+        List<BinaryNode> neghbours = new List<BinaryNode>();
 
         for (int x = -1; x <= 1; x++)
         {
@@ -505,9 +505,9 @@ public class Grid : MonoBehaviour {
         return neghbours;
     }
 
-    public List<BaseNode> GetNeighbours(BaseNode node)
+    public List<BinaryNode> GetNeighbours(BinaryNode node)
     {
-        List<BaseNode> neghbours = new List<BaseNode>();
+        List<BinaryNode> neghbours = new List<BinaryNode>();
 
         for (int x = -1; x <= 1; x++)
         {
@@ -529,7 +529,7 @@ public class Grid : MonoBehaviour {
         return neghbours;
     }
 
-    public BaseNode NodeFromWorldPoint(Vector3 worldPosition)
+    public BinaryNode NodeFromWorldPoint(Vector3 worldPosition)
     {
         //minus one because first line and column are wall always
         // worldPosition = worldPosition - Vector3.one;
@@ -546,7 +546,7 @@ public class Grid : MonoBehaviour {
         return grid[x, y];
     }
 
-    public BaseNode NodeFromPos(int x, int y)
+    public BinaryNode NodeFromPos(int x, int y)
     {
         return grid[x, y];
     }
@@ -566,7 +566,7 @@ public class Grid : MonoBehaviour {
         Debug.Log(saida);
     }
 
-    public StateType adjustAgentStateTypeForBinaryNode(BaseNode node, int playerNumber)
+    public StateType adjustAgentStateTypeForBinaryNode(BinaryNode node, int playerNumber)
     {
         StateType nodeStateType = (StateType)node.getBinary();
         if (playerNumber == 1)
@@ -651,7 +651,7 @@ public class Grid : MonoBehaviour {
         {
             for (int x = 0; x < gridSizeX; ++x)
             {
-                BaseNode node = grid[x, y];
+                BinaryNode node = grid[x, y];
                 StateType nodeStateType = adjustAgentStateTypeForBinaryNode(node, playerNumber);
 
                 if (gridViewType == GridViewType.GVT_Binary)
@@ -678,7 +678,7 @@ public class Grid : MonoBehaviour {
         {
             for (int x = 0; x < gridSizeX; ++x)
             {
-                BaseNode node = grid[x, y];
+                BinaryNode node = grid[x, y];
                 if (node.hasFlag(StateType.ST_Empty))
                 {
                     freePositions.Add(new Vector2(node.gridX, node.gridY));
@@ -740,7 +740,7 @@ public class Grid : MonoBehaviour {
         if (grid != null && displayGridGizmos)
         {
             // Node playerNode = NodeFromWorldPoint(player.position);
-            foreach (BaseNode n in grid)
+            foreach (BinaryNode n in grid)
             {
                 Gizmos.color = (n.walkable) ? Color.white : Color.red;
                 /*if (playerNode == n)
