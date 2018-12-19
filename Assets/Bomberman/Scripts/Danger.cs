@@ -9,7 +9,7 @@ public class Danger : MonoBehaviour
 {
     //public int scenarioId;
     public Bomb myBomb = null;
-    public int id;
+    public ulong id;
 
     public Grid grid;
     private StateType stateType;
@@ -22,14 +22,6 @@ public class Danger : MonoBehaviour
     private void Awake()
     {
         stateType = StateType.ST_Danger;
-    }
-
-    void Start()
-    {
-        //timePassed = 0;
-        //dangerLevelOfPosition = timePassed / Config.BOMB_TIMER;
-        //Invoke("myDestroy", Config.BOMB_TIMER);
-
         discrete_timer = 0;
         dangerLevelOfPosition = (float)discrete_timer / (float)Config.BOMB_TIMER_DISCRETE;
     }

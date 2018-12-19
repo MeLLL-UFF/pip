@@ -51,7 +51,7 @@ public class Managers
 
 public class ServiceLocator : Singleton<ServiceLocator>
 {
-    bool hasImitation = true;
+    //bool hasImitation = true;
     static Dictionary<int, Managers> dictManagers = new Dictionary<int, Managers>();
     //static Managers manager1 = null;
     //static Managers manager2 = null;

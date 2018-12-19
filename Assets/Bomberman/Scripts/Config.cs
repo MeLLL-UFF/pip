@@ -63,7 +63,7 @@ public class Config {
     public static float BOMB_TIMER_AFTER_DESTROY = 0.3f;
     //tempo para o fogo da explosão sumir após explosão
     public static float EXPLOSION_TIMER = 0.55f;
-    public static float EXPLOSION_TIMER_DISCRETE = 2;
+    public static int EXPLOSION_TIMER_DISCRETE = 2;
     //tempo para a bomba explodir (discreto). Número de iterações
     public static int BOMB_TIMER_DISCRETE = 6;
 }

@@ -6,14 +6,14 @@ public class BombManager {
 
     bool initialized = false;
 
-    private Dictionary<int, GameObject> bombs = new Dictionary<int, GameObject>();
-    private static int count = 1;
+    private Dictionary<ulong, GameObject> bombs = new Dictionary<ulong, GameObject>();
+    private static ulong count = 1;
 
-    public Dictionary<int, DestroySelf> explosions = new Dictionary<int, DestroySelf>();
-    private static int explosionCount = 1;
+    public Dictionary<ulong, DestroySelf> explosions = new Dictionary<ulong, DestroySelf>();
+    private static ulong explosionCount = 1;
 
-    public Dictionary<int, Danger> dangerZone = new Dictionary<int, Danger>();
-    private static int dangerCount = 1;
+    public Dictionary<ulong, Danger> dangerZone = new Dictionary<ulong, Danger>();
+    private static ulong dangerCount = 1;
 
     internal BombManager()
     {
@@ -38,7 +38,7 @@ public class BombManager {
         count++;
     }
 
-    public void removeBomb(int bombId)
+    public void removeBomb(ulong bombId)
     {
         if (bombs.ContainsKey(bombId))
         {
@@ -53,7 +53,7 @@ public class BombManager {
         explosionCount++;
     }
 
-    public void removeExplosion(int exId)
+    public void removeExplosion(ulong exId)
     {
         if (explosions.ContainsKey(exId))
         {
@@ -68,7 +68,7 @@ public class BombManager {
         dangerCount++;
     }
 
-    public void removeDanger(int dId)
+    public void removeDanger(ulong dId)
     {
         if (dangerZone.ContainsKey(dId))
         {
@@ -78,7 +78,7 @@ public class BombManager {
 
     public Danger getDanger(int x, int y)
     {
-        foreach (KeyValuePair<int, Danger> entry in dangerZone)
+        foreach (KeyValuePair<ulong, Danger> entry in dangerZone)
         {
             Vector2 pos = entry.Value.GetGridPosition();
             if ((int)pos.x == x && (int)pos.y == y)
@@ -90,19 +90,19 @@ public class BombManager {
 
     public void clearBombs()
     {
-        foreach (KeyValuePair<int, DestroySelf> entry in explosions)
+        foreach (KeyValuePair<ulong, DestroySelf> entry in explosions)
         {
             entry.Value.forceDestroy();
         }
         explosions.Clear();
 
-        foreach (KeyValuePair<int, Danger> entry in dangerZone)
+        foreach (KeyValuePair<ulong, Danger> entry in dangerZone)
         {
             entry.Value.forceDestroy();
         }
         dangerZone.Clear();
 
-        foreach (KeyValuePair<int, GameObject> entry in bombs)
+        foreach (KeyValuePair<ulong, GameObject> entry in bombs)
         {
             entry.Value.GetComponent<Bomb>().autoDestroy();
         }
@@ -113,7 +113,7 @@ public class BombManager {
     public void timeIterationUpdate()
     {
         List<Bomb> list = new List<Bomb>();
-        foreach (KeyValuePair<int, GameObject> entry in bombs)
+        foreach (KeyValuePair<ulong, GameObject> entry in bombs)
         {
             if (entry.Value.GetComponent<Bomb>().iterationUpdate())
                 list.Add(entry.Value.GetComponent<Bomb>());
@@ -125,7 +125,7 @@ public class BombManager {
         }
 
         List<Danger> listDanger = new List<Danger>();
-        foreach (KeyValuePair<int, Danger> entry in dangerZone)
+        foreach (KeyValuePair<ulong, Danger> entry in dangerZone)
         {
             if (entry.Value.iterationUpdate())
                 listDanger.Add(entry.Value);
@@ -137,7 +137,7 @@ public class BombManager {
         }
 
         List<DestroySelf> listExplosions = new List<DestroySelf>();
-        foreach (KeyValuePair<int, DestroySelf> entry in explosions)
+        foreach (KeyValuePair<ulong, DestroySelf> entry in explosions)
         {
             if (entry.Value.iterationUpdate())
                 listExplosions.Add(entry.Value);
@@ -153,7 +153,7 @@ public class BombManager {
     {
         List<Bomb> list = new List<Bomb>();
 
-        foreach (KeyValuePair<int, GameObject> entry in bombs)
+        foreach (KeyValuePair<ulong, GameObject> entry in bombs)
         {
             list.Add(entry.Value.GetComponent<Bomb>());
         }

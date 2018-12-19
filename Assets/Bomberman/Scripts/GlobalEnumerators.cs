@@ -13,12 +13,6 @@ public enum ActionType
 
     AT_Bomb =         5,
 
-    /*AT_Hammer_Up =      5,
-    AT_Hammer_Down =    6,
-    AT_Hammer_Left =    7,
-    AT_Hammer_Right =   8,*/
-
-
     AT_Size = 6
 }
 
@@ -58,35 +52,6 @@ public class ActionTypeExtension
     ST_ALL_TO_NORMALIZATION = (ST_Wall | ST_Block | ST_Agent | ST_EnemyAgent | ST_Bomb | ST_Fire | ST_Danger),
     ST_Size = 8
 }
-
-/* Tivemos que remover o Target que existia aqui. Para otimizar o treinamento no modo batalha, pois no modo batalha não há objetivo principal
- * [Flags] public enum StateType
-{
-    ST_Empty = 0,          // 0        00000000
-    ST_Wall = 1 << 0,     // 1        00000001
-    ST_Block = 1 << 1,     // 2        00000010
-
-    ST_Agent = 1 << 2,     // 4        00000100
-    ST_EnemyAgent = 1 << 3,     // 8        00001000
-    ST_Target = 1 << 4,     // 16       00010000
-
-    //apenas quando há bomba
-    ST_Bomb = 1 << 5,     // 32        
-    ST_Fire = 1 << 6,     // 64
-    ST_Danger = 1 << 7,     // 128     
-    // -------------------------------
-
-    //usamos apenas essas flags para troca de flag no momento da observação
-    ST_Agent1 = 1 << 8,
-    ST_Agent2 = 1 << 9,
-    ST_Agent3 = 1 << 10,
-    ST_Agent4 = 1 << 11,
-
-
-    ST_All = (ST_Wall | ST_Block | ST_Agent | ST_EnemyAgent | ST_Target | ST_Bomb | ST_Fire | ST_Danger | ST_Agent1 | ST_Agent2 | ST_Agent3 | ST_Agent4),
-    ST_ALL_TO_NORMALIZATION = (ST_Wall | ST_Block | ST_Agent | ST_EnemyAgent | ST_Target | ST_Bomb | ST_Fire | ST_Danger),
-    ST_Size = 9
-}*/
 
 public class StateTypeExtension
 {
@@ -137,11 +102,6 @@ public class StateTypeExtension
         {
             binaryArray[convertToIntOrdinal(StateType.ST_EnemyAgent) - 1] = 1;
         }
-
-        /*if (stateTypeHasFlag(stateType, StateType.ST_Target))
-        {
-            binaryArray[convertToIntOrdinal(StateType.ST_Target) - 1] = 1;
-        }*/
 
         if (stateTypeHasFlag(stateType, StateType.ST_Bomb))
         {
@@ -203,4 +163,17 @@ public enum GridViewType
     GVT_BinaryDecimal               = 4,
     GVT_BinaryNormalized            = 5,
     GVT_ZeroOrOneForeachStateType   = 6       // similar to hybrid but, it insert the gridSize*gridSize foreach statetype
+}
+
+public enum ReplayCommandLine
+{
+    RCL_Episode = 0,
+    RCL_End = 1,
+    RCL_NumberOfAgents = 2,
+    RCL_InitialPositions = 3,
+    RCL_BombPositions = 4,
+    RCL_Actions = 5,
+    RCL_Corrupted = 6,
+    RCL_Size = 7
+
 }

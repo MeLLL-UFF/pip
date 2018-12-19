@@ -1,7 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
-using System;
 
 public class Grid : MonoBehaviour {
 
@@ -17,6 +15,7 @@ public class Grid : MonoBehaviour {
     public LayerMask blockLayer;
     public LayerMask defaultLayer;
     public LayerMask agentsLayer;
+    public LayerMask bombLayer;
 
     private GridViewType gridViewType = GridViewType.GVT_Binary;
     BinaryNode[,] grid;
@@ -26,14 +25,6 @@ public class Grid : MonoBehaviour {
     int gridSizeY;
 
     private StateType blockFlags;
-
-    private void Update()
-    {
-        /*if (Input.GetKeyUp(KeyCode.I))
-        {
-            printGrid();
-        }*/
-    }
 
     void Awake()
     {
@@ -268,16 +259,19 @@ public class Grid : MonoBehaviour {
                 nodeStateType = StateType.ST_Block;
             }
         }
+        else if ((1 << hit.collider.gameObject.layer & bombLayer) != 0)
+        {
+            if (hit.collider.CompareTag("Bomb"))
+            {
+                nodeStateType = StateType.ST_Bomb;
+            }
+        }
         else if ((1 << hit.collider.gameObject.layer & defaultLayer) != 0)
         {
             //Bomb code
             if (hit.collider.CompareTag("Explosion"))
             {
                 nodeStateType = StateType.ST_Fire;
-            }
-            else if (hit.collider.CompareTag("Bomb"))
-            {
-                nodeStateType = StateType.ST_Bomb;
             }
             /*else if (hit.collider.CompareTag("Target"))
             {

@@ -24,7 +24,6 @@ public class MapController : MonoBehaviour {
     public List<Brain> brains;
     public bool randomizeNumberOfAgents = true;
     public bool randomizeIterationOfAgents = true;
-    
 
     public GameObject bombPrefab;
     public GameObject monitorPrefab;
@@ -40,9 +39,18 @@ public class MapController : MonoBehaviour {
     //0 = draw, 1 = agent1, 2 = agent 2, ...
     private List<uint> matchResults;
 
+    public bool saveReplay;
+    private ReplayWriter replayWriter = null;
+
+    public bool followReplayFile;
+    private ReplayReader replayReader = null;
+    public string replayFileName;
+    public ReplayReader.ReplayStep currentReplayStep;
 
     // Use this for initialization
     void Start () {
+        currentReplayStep = new ReplayReader.ReplayStep();
+
         alreadyGenerateStatistic = false;
         matchResults = new List<uint>();
 
@@ -70,6 +78,22 @@ public class MapController : MonoBehaviour {
         iterationWhereWasCreatedBombs = 0;
         numberOfBombsByCreation = 1;
 
+        // replay
+        if (saveReplay)
+        {
+            replayWriter = new ReplayWriter(scenarioId);
+        }
+
+        if (followReplayFile)
+        {
+            replayReader = new ReplayReader(replayFileName);
+            ReplayReader.ReplayStep rStep = replayReader.readStep(ReplayCommandLine.RCL_Episode);
+            if (rStep.command == ReplayCommandLine.RCL_Episode)
+                currentReplayStep.epId = rStep.epId;
+            else
+                Debug.Log("Nao e pra entrar aqui");
+        }
+
         //Debug.Log("Criando MapController");
         createAgents();
 
@@ -81,32 +105,101 @@ public class MapController : MonoBehaviour {
     {
         // sorteando para ver quantos agentes serão criados para o cenário
         int numberOfAgents = 4;
-        if (randomizeNumberOfAgents)
-            numberOfAgents = UnityEngine.Random.Range(2, 5);
+        Dictionary<string, Vector2Int> agentInitPositionMap = new Dictionary<string, Vector2Int>();
+
+        if (!followReplayFile)
+        {
+            if (randomizeNumberOfAgents)
+                numberOfAgents = UnityEngine.Random.Range(2, 5);
+        }
+        else
+        {
+            ReplayReader.ReplayStep replayStep = replayReader.readStep(ReplayCommandLine.RCL_NumberOfAgents);
+            if (replayStep.command == ReplayCommandLine.RCL_NumberOfAgents)
+                numberOfAgents = replayStep.numberOfAgents;
+            else
+                Debug.Log("Entrei erradamente aqui");
+
+            replayStep = replayReader.readStep(ReplayCommandLine.RCL_InitialPositions);
+            if (replayStep.command == ReplayCommandLine.RCL_InitialPositions)
+                agentInitPositionMap = replayStep.agentInitPositionMap;
+            else
+                Debug.Log("Entrei erradamente aqui");
+        }
+
+        if (saveReplay)
+        {
+            replayWriter.printEpisode(playerManager.getEpisodeCount());
+            replayWriter.printNumberOfAgents(numberOfAgents);
+        }
 
         for (int i = 0; i < numberOfAgents; ++i)
         {
             if (!playerManager.containsPlayer(i + 1))
             {
-                createAgent(playerPrefabs[i], i + 1);
+                createAgent(playerPrefabs[i], i + 1, agentInitPositionMap);
             }
         }
 
         playerManager.createDistanceStructuresForReward();
+
+        saveReplayInitPositions();
     }
 
-    private void createAgent(GameObject agentPrefab, int playerNumber)
+    private void saveReplayInitPositions()
     {
-        
+        if (saveReplay)
+        {
+            string line = playerManager.processReplayWriteInitialPosition();
+
+            replayWriter.printStep(line);
+        }
+    }
+
+    private bool saveReplayActionsStep()
+    {
+        if (saveReplay)
+        {
+            string line = playerManager.processReplayWriteActions();
+
+            if (line != "")
+            {
+                replayWriter.printStep(line);
+                return true;
+            }
+
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    private void createAgent(GameObject agentPrefab, int playerNumber, Dictionary<string, Vector2Int> agentInitPositionMap)
+    {
         GameObject AgentObj = Instantiate(agentPrefab, transform.parent);
         Player agent = AgentObj.GetComponent<Player>();
 
-        agent.init(grid, playerNumber, this);
+        agent.init(grid, playerNumber);
 
         agent.myGridViewType = brains[playerNumber-1].gameObject.GetComponent<BrainCustomData>().gridViewType;
         agent.GiveBrain(brains[playerNumber-1]);
+        agent.eventsAfterGiveBrain(this);
 
-        randomizeInitialPositionFunction(agent);
+        if (agentInitPositionMap.Count == 0)
+            randomizeInitialPositionFunction(agent);
+        else
+        {
+            grid.clearAgentOnGrid(agent);
+
+            Vector2Int pos = agentInitPositionMap[playerNumber.ToString()];
+            agent.setInitialPosition(new Vector3(pos.x, 0.5f, pos.y));
+            agent.setOldLocalPosition(agent.getInitialPosition());
+            agent.transform.localPosition = agent.getInitialPosition();
+
+            grid.updateAgentOnGrid(agent);
+        }
 
         agent.AgentReset(); // acho que não precisa chamar esse reset.
 
@@ -175,6 +268,14 @@ public class MapController : MonoBehaviour {
             //Debug.Log("Cenário resetado");
             playerManager.clear();
             bombManager.clearBombs();
+
+            if (followReplayFile)
+            {
+                ReplayReader.ReplayStep rStep = replayReader.nextReplayStepEpisodeOrReopen();
+                if (rStep.command == ReplayCommandLine.RCL_Episode)
+                    currentReplayStep.epId = rStep.epId;
+            }
+
             createAgents();
             blocksManager.resetBlocks();
 
@@ -216,6 +317,7 @@ public class MapController : MonoBehaviour {
             numberOfBombsByCreation = 1;
 
             reseting = false;
+            playerManager.setIsUpdating(false);
         }
     }
 
@@ -273,40 +375,105 @@ public class MapController : MonoBehaviour {
         return isToCreateBombs;
     }
 
+    private void isToCreateBombsNormalFlux()
+    {
+        if (isToCreateBombs())
+        {
+            //grid recupera posições vazias.
+            List<Vector2> freePositions = grid.listFreePositions();
+            int maxBombByCreation = Mathf.Min(numberOfBombsByCreation, freePositions.Count);
+
+            List<Vector2Int> positionOfBombs = new List<Vector2Int>();
+
+            for (int i = 0; i < maxBombByCreation; ++i)
+            {
+                int randomIndex = UnityEngine.Random.Range(0, freePositions.Count);
+                Vector2 ramdomPos = freePositions[randomIndex];
+
+                freePositions.RemoveAt(randomIndex);
+                //maxBombByCreation = Mathf.Min(numberOfBombsByCreation, freePositions.Count);
+
+                GameObject bomb = Instantiate(bombPrefab,
+                                              new Vector3(Mathf.RoundToInt(ramdomPos.x) + transform.parent.transform.position.x,
+                                                          transform.parent.transform.position.y + 0.3f,
+                                                          Mathf.RoundToInt(ramdomPos.y) + transform.parent.transform.position.z),
+                                              bombPrefab.transform.rotation,
+                                              transform.parent);
+
+                bomb.GetComponent<Bomb>().grid = grid;
+                bomb.GetComponent<Bomb>().scenarioId = scenarioId;
+                bombManager.addBomb(bomb);
+                grid.enableObjectOnGrid(StateType.ST_Bomb, bomb.GetComponent<Bomb>().GetGridPosition());
+                grid.enableObjectOnGrid(StateType.ST_Danger, bomb.GetComponent<Bomb>().GetGridPosition());
+                bomb.GetComponent<Bomb>().CreateDangerZone(false);
+
+                positionOfBombs.Add(Vector2Int.FloorToInt(bomb.GetComponent<Bomb>().GetGridPosition()));
+            }
+
+            if (saveReplay)
+                replayWriter.printBombs(playerManager.getIterationCount(), true, positionOfBombs);
+        }
+        else
+        {
+            if (saveReplay)
+                replayWriter.printBombs(playerManager.getIterationCount(), false, new List<Vector2Int>());
+        }
+    }
+
+    private void isToCreateBombsReplayFlux()
+    {
+        if (currentReplayStep.hasCreatedBomb)
+        {
+            if (currentReplayStep.bombIteration == playerManager.getIterationCount())
+            {
+                Debug.Log("Entrou.");
+            }
+
+            List<Vector2Int> positionOfBombs = new List<Vector2Int>();
+
+            for (int i = 0; i < currentReplayStep.bombList.Count; ++i)
+            {
+                GameObject bomb = Instantiate(bombPrefab,
+                                              new Vector3(Mathf.RoundToInt(currentReplayStep.bombList[i].x) + transform.parent.transform.position.x,
+                                                          transform.parent.transform.position.y + 0.5f,
+                                                          Mathf.RoundToInt(currentReplayStep.bombList[i].y) + transform.parent.transform.position.z),
+                                              bombPrefab.transform.rotation,
+                                              transform.parent);
+
+                bomb.GetComponent<Bomb>().grid = grid;
+                bomb.GetComponent<Bomb>().scenarioId = scenarioId;
+                bombManager.addBomb(bomb);
+                grid.enableObjectOnGrid(StateType.ST_Bomb, bomb.GetComponent<Bomb>().GetGridPosition());
+                grid.enableObjectOnGrid(StateType.ST_Danger, bomb.GetComponent<Bomb>().GetGridPosition());
+                bomb.GetComponent<Bomb>().CreateDangerZone(false);
+
+                positionOfBombs.Add(Vector2Int.FloorToInt(bomb.GetComponent<Bomb>().GetGridPosition()));
+            }
+
+            if (saveReplay)
+                replayWriter.printBombs(playerManager.getIterationCount(), true, positionOfBombs);
+        }
+        else
+        {
+            if (saveReplay)
+                replayWriter.printBombs(playerManager.getIterationCount(), false, new List<Vector2Int>());
+        }
+    }
+
     private void verifyAndCreateBombs()
     {
         //Criando chuva de bombas após atingir limite de iterações
         if (playerManager.getIterationCount() >= Config.MAX_STEP_PER_AGENT)
         {
-            if (isToCreateBombs())
-            {
-                //grid recupera posições vazias.
-                List<Vector2> freePositions = grid.listFreePositions();
-                int maxBombByCreation = Mathf.Min(numberOfBombsByCreation, freePositions.Count);
-
-                for (int i = 0; i < maxBombByCreation; ++i)
-                {
-                    int randomIndex = UnityEngine.Random.Range(0, freePositions.Count);
-                    Vector2 ramdomPos = freePositions[randomIndex];
-
-                    freePositions.RemoveAt(randomIndex);
-                    maxBombByCreation = Mathf.Min(numberOfBombsByCreation, freePositions.Count);
-
-                    GameObject bomb = Instantiate(bombPrefab,
-                                                  new Vector3(Mathf.RoundToInt(ramdomPos.x) + transform.parent.transform.position.x,
-                                                              transform.parent.transform.position.y + 0.5f,
-                                                              Mathf.RoundToInt(ramdomPos.y) + transform.parent.transform.position.z),
-                                                  bombPrefab.transform.rotation,
-                                                  transform.parent);
-
-                    bomb.GetComponent<Bomb>().grid = grid;
-                    bomb.GetComponent<Bomb>().scenarioId = scenarioId;
-                    bombManager.addBomb(bomb);
-                    grid.enableObjectOnGrid(StateType.ST_Bomb, bomb.GetComponent<Bomb>().GetGridPosition());
-                    grid.enableObjectOnGrid(StateType.ST_Danger, bomb.GetComponent<Bomb>().GetGridPosition());
-                    bomb.GetComponent<Bomb>().CreateDangerZone();
-                }
-            }
+            if (!followReplayFile)
+                isToCreateBombsNormalFlux();
+            else
+                isToCreateBombsReplayFlux();
+        }
+        else
+        {
+            if (saveReplay)
+                replayWriter.printBombs(playerManager.getIterationCount(), false, new List<Vector2Int>());
         }
     }
 
@@ -318,18 +485,7 @@ public class MapController : MonoBehaviour {
             // se está em treinamento
             if (!academy.GetIsInference())
             {
-                if (playerManager.updateAgents())
-                {
-                    Monitor.Log("Iteração:", playerManager.getIterationCount().ToString() + " / " + maxIterationString, myMonitor.transform);
-                    bombManager.timeIterationUpdate();
-                    ServiceLocator.getManager(scenarioId).GetLogManager().globalStepPrint(playerManager.getIterationCount());
-
-                    verifyAndCreateBombs();
-                }
-                else
-                {
-                    resetStage();
-                }
+                myUpdate();
             }
             else
             {
@@ -337,20 +493,7 @@ public class MapController : MonoBehaviour {
                 {
                     timeSinceDecision = 0f;
 
-                    bool updateFlag = playerManager.updateAgents();
-                    if (updateFlag)
-                    {
-                        Monitor.Log("Iteração:", playerManager.getIterationCount().ToString() + " / " + maxIterationString, myMonitor.transform);
-                        bombManager.timeIterationUpdate();
-                        ServiceLocator.getManager(scenarioId).GetLogManager().globalStepPrint(playerManager.getIterationCount());
-
-                        verifyAndCreateBombs();
-                    }
-                    else
-                    {
-                        //Debug.Log("Resetando cenas");
-                        resetStage();
-                    }
+                    myUpdate();
                 }
                 else
                 {
@@ -362,5 +505,51 @@ public class MapController : MonoBehaviour {
         {
             Debug.Log("Esta atualizando");
         }
+    }
+
+    private void myUpdate()
+    {
+        if (playerManager.updateAgents())
+        {
+            Monitor.Log("Iteração:", playerManager.getIterationCount().ToString() + " / " + maxIterationString, myMonitor.transform);
+            bombManager.timeIterationUpdate();
+            ServiceLocator.getManager(scenarioId).GetLogManager().globalStepPrint(playerManager.getIterationCount());
+
+            if (followReplayFile)
+            {
+                ReplayReader.ReplayStep replayStep = replayReader.readStep(ReplayCommandLine.RCL_Actions);
+                if (replayStep.command == ReplayCommandLine.RCL_Actions)
+                    currentReplayStep.agentActionMap = replayStep.agentActionMap;
+                else
+                    Debug.Log("Nao eh pra entrar aqui");
+
+                replayStep = replayReader.readStep(ReplayCommandLine.RCL_BombPositions);
+                if (replayStep.command == ReplayCommandLine.RCL_BombPositions)
+                {
+                    currentReplayStep.bombList = replayStep.bombList;
+                    currentReplayStep.bombIteration = replayStep.bombIteration;
+                    currentReplayStep.hasCreatedBomb = replayStep.hasCreatedBomb;
+                }
+                else
+                    Debug.Log("Nao eh pra entrar aqui");
+            }
+
+            //como request decision é assincrono, temos que testar se ultima ação do agente está vazia.
+            if (saveReplayActionsStep())
+                verifyAndCreateBombs();
+
+            playerManager.setIsUpdating(false);
+        }
+        else
+        {
+            //Debug.Log("Resetando cenas");
+            resetStage();
+        }
+    }
+
+    void OnApplicationQuit()
+    {
+        if (saveReplay)
+            replayWriter.finish();
     }
 }

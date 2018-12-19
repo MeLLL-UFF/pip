@@ -9,9 +9,8 @@ public class ReplayWriter {
     bool initialized = false;
     private string fileName = "./replays/replay_scenario_";
     private StreamWriter sw;
-    private string tabFormat;
 
-    public ReplayWriter(int agentId, int scenarioId)
+    public ReplayWriter(int scenarioId)
     {
         if (!initialized)
         {
@@ -20,25 +19,41 @@ public class ReplayWriter {
                 Directory.CreateDirectory("./replays/");
             }
 
-            sw = new StreamWriter(fileName + scenarioId + "_agent_" + agentId + DateTime.Now.ToString("_yyyy_MM_dd_HH_mm_ss") + ".txt", true);
-            tabFormat = "\t\t";
+            sw = new StreamWriter(fileName + scenarioId + "_" + DateTime.Now.ToString("_yyyy_MM_dd_HH_mm_ss") + ".txt", true);
             initialized = true;
         }
     }
 
-    public void initSeq(int seqNum)
+    public void printEpisode(int numEpisode)
     {
-        sw.WriteLine("SEQ_" + seqNum);
+        sw.WriteLine("EP:" + numEpisode);
     }
 
-    public void printStep(string observationGrid, string actionId)
+    public void printNumberOfAgents(int numAgents)
     {
-        sw.WriteLine(observationGrid + ";" + actionId);
+        sw.WriteLine("NA:" + numAgents);
+    }
+
+    public void printStep(string line)
+    {
+        sw.WriteLine(line);
+    }
+
+    public void printBombs(int iteration, bool hasCreatedBomb, List<Vector2Int> list)
+    {
+        string line = "BO:" + iteration.ToString() + ";" + (hasCreatedBomb ? "1" : "0");
+
+        for (int i = 0; i < list.Count; ++i)
+        {
+            line += ";" + list[i].x + "," + list[i].y;
+        }
+
+        sw.WriteLine(line);
     }
 
     public void finish()
     {
-        sw.WriteLine("Fim");
+        sw.WriteLine("END");
         sw.Close();
     }
 }

@@ -2,189 +2,27 @@
 using System.Collections.Generic;
 using UnityEngine;
 using MLAgents;
+using System;
 
 public class BombermanDecision : MonoBehaviour, Decision {
 
-    private ReplayReader replayReader1;
-    private string replayFileName1 = "behaviorAgent1.txt";
-    private string seqId1;
-    public bool finishSeqs1;
-
-    private ReplayReader replayReader2;
-    private string replayFileName2 = "behaviorAgent2.txt";
-    private string seqId2;
-    public bool finishSeqs2;
-
-    private bool isReplayFile1;
-
-    public void Awake()
+    MapController mapController;
+    public float[] Decide(  List<float> vectorObs,
+                            List<Texture2D> visualObs,
+                            float reward,
+                            bool done,
+                            List<float> memory,
+                            int playerNumber)
     {
-        replayReader1 = new ReplayReader(replayFileName1);
-        replayReader2 = new ReplayReader(replayFileName2);
-        finishSeqs1 = false;
-        finishSeqs2 = false;
-    }
-
-    void OnApplicationQuit()
-    {
-        if (replayReader1 != null)
-            replayReader1.finish();
-
-        if (replayReader2 != null)
-            replayReader2.finish();
-    }
-
-    bool checkObservations(List<float> vectorObs, ReplayReader.ReplayStep replayStep)
-    {
-        if (vectorObs == null)
+        if (gameObject.GetComponent<Brain>().brainParameters.vectorActionSpaceType == SpaceType.discrete)
         {
-            //Debug.Log("vectorObs nulo");
-            return false;
-        }
-
-        if (replayStep == null)
-        {
-            //Debug.Log("replayStep nulo");
-            return false;
-        }
-        else
-        {
-            if (replayStep.command == "CORRUPTED")
-                return false;
-
-            if (replayStep.observationGrid == null)
-            {
-                //Debug.Log("observationGrid nulo");
-                return false;
-            }
-        }
-
-        if (vectorObs.Count != replayStep.observationGrid.Length)
-        {
-            //Debug.Log("Vetores de tamanhos diferentes");
-            return false;
-        }
-
-        for(int i = 0; i < vectorObs.Count; i++)
-        {
-            int obs = (int)vectorObs[i];
-            if (obs != replayStep.observationGrid[i])
-                return false;
-        }
-
-        return true;
-    }
-
-    float[] findMatch(List<float> vectorObs, ref ReplayReader replayReader, ref string seqId)
-    {
-        int searchAll = 0;
-        //lê linha do arquivo
-        ReplayReader.ReplayStep replayStep = replayReader.readStep();
-        //Debug.Log("Primeiro: " + replayStep.command);
-
-        //se for última linha, reabre o arquivo e lê a primeira linha
-        while (replayStep.command.Equals("END"))
-        {
-            //Debug.Log("Fim de arquivo de replay");
-            replayReader.finish();
-            replayReader.reopen();
-            replayStep = replayReader.readStep();
-        }
-
-        //se linha for de sequencia, armazena o seqID e lê a próxima linha
-        //Debug.Log("Segundo: " + replayStep.command);
-        if (replayStep.command.Equals("SEQ"))
-        {
-            //Debug.Log("Entrou");
-            seqId = replayStep.seqId;
-            //Debug.Log("Sequencia iniciada: " + seqId);
-            replayStep = replayReader.readStep();
-        }
-
-        //procura match entre observação e arquivo de replay
-        //while (!checkObservations(vectorObs, replayStep))
-        {
-            //testa pra ver se é a ultima linha do arquivo. Se for incrementa contador e reabre o arquivo.
-            /*if (replayStep.command.Equals("END"))
-            {
-                searchAll++;
-
-                if (searchAll <= 1)
-                {
-                    //Debug.Log("Procurando matche");
-                    replayReader.finish();
-                    replayReader.reopen();
-                    replayStep = replayReader.readStep();
-                }
-                else
-                {
-                    //Debug.Log("Nao foi encontrado matche. Evitando Loop infinito");
-                    return new float[1] { 0 };
-                }
-            }*/
-
-            //se linha for de sequencia, armazena o seqID e lê a próxima linha
-            /*if (replayStep.command.Equals("SEQ"))
-            {
-                
-                //procura por sequencia corrente
-                while (!replayStep.seqId.Equals(seqId))
-                {
-                    replayStep = replayReader.readStep();
-
-                    if (replayStep.command.Equals("END"))
-                    {
-                        searchAll++;
-
-                        if (searchAll <= 1)
-                        {
-                            replayReader.finish();
-                            replayReader.reopen();
-                            replayStep = replayReader.readStep();
-                        }
-                        else
-                        {
-                            return new float[1] { 0 };
-                        }
-                    }
-                }
-
-                //lê a proxima linha que é uma de STEP
-                replayStep = replayReader.readStep();
-            }
-            else
-            {
-                //Lê a proxima linha
-                replayStep = replayReader.readStep();
-            }*/
-        }
-
-        return new float[1] { replayStep.actionId };
-    }
-
-    public float[] Decide(
-        List<float> vectorObs,
-        List<Texture2D> visualObs,
-        float reward,
-        bool done,
-        List<float> memory)
-    {
-        if (gameObject.GetComponent<Brain>().brainParameters.vectorActionSpaceType
-            == SpaceType.discrete)
-        {
-            //pegando ultima observação para saber se é um agente 1 ou o 2
-            isReplayFile1 = vectorObs[vectorObs.Count - 1] == 1;
             if (!done)
             {
-                if (isReplayFile1)
+                if (mapController.currentReplayStep.agentActionMap.ContainsKey(playerNumber.ToString()))
                 {
-                    if (!finishSeqs1)
-                        return findMatch(vectorObs, ref replayReader1, ref seqId1);
-                }
-                else
-                {
-                    if (!finishSeqs2)
-                        return findMatch(vectorObs, ref replayReader2, ref seqId2);
+                    int action = mapController.currentReplayStep.agentActionMap[playerNumber.ToString()];
+
+                    return new float[1] { action };
                 }
             }
 
@@ -204,4 +42,9 @@ public class BombermanDecision : MonoBehaviour, Decision {
     {
         return new List<float>();
     }
-}
+
+    public void setMapController(MapController _mapController)
+    {
+        mapController = _mapController;
+    }
+} 

@@ -39,7 +39,7 @@ public class DestroySelf : MonoBehaviour
 {
     //public int scenarioId;
     public Bomb myBomb = null;
-    public int id;
+    public ulong id;
 
     public Player bomberman;
     public Grid grid;
@@ -53,6 +53,8 @@ public class DestroySelf : MonoBehaviour
     private void Awake()
     {
         stateType = StateType.ST_Fire;
+        discrete_timer = 0;
+        wasDestroyed = false;
     }
 
     public Vector2 GetGridPosition()
@@ -66,15 +68,6 @@ public class DestroySelf : MonoBehaviour
         grid.disableObjectOnGrid(stateType, GetGridPosition());
         gameObject.SetActive(false);
         GameObject.Destroy(gameObject);
-    }
-
-    void Start ()
-    {
-        //Debug.Log(Delay);
-        //Invoke("myDestroy", Config.EXPLOSION_TIMER);
-
-        discrete_timer = 0;
-        wasDestroyed = false;
     }
 
     public bool iterationUpdate()

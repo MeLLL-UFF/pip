@@ -29,7 +29,6 @@
  */
 
 using UnityEngine;
-using System.Collections;
 using System;
 using System.Collections.Generic;
 using MLAgents;
@@ -38,24 +37,13 @@ public class Player : Agent
 {
     private int scenarioId;
 
-    [Header("Specific to Player")]
-    private BombermanAcademy academy;
-    // private BombermanDecision bombermanDecision;
-    private BombermanOnlyOneDecision bombermanDecision;
+   /* [Header("Specific to Player")]
+    private BombermanAcademy academy;*/
+    private BombermanDecision bombermanDecision;
     private BCTeacherHelper bcTeacherHelper;
-    public int numSeqCompleted = 4;
-    public bool isSpecialist;
 
-    // Variáveis usadas para se utilizar a técnica da mímica 
-    public Player teacherAgent;
-    private List<float> teacherAgentObservations;
-    private ActionType lastTeacherAction;
-    private bool wasFilledTeacherObservations;
-    public bool isMimicking;
-    public bool forceReward = false;
 
     public Transform monitorFocus;
-    public GameObject hammerEffect;
 
     //Player parameters
     //[Range (1, 4)] //Enables a nifty slider in the editor. Indicates what player this is: P1 or P2
@@ -75,19 +63,14 @@ public class Player : Agent
     public Grid grid;
 
     private Animator animator;
-    private int bombs = 2;
 
     private Vector3 initialPosition;
     private Vector3 oldLocalPosition;
     private Vector2 myGridPosition;
 
-    private bool alreadyWasReseted = false;
     public bool randomizeResetPosition = false;
     public bool randomizeInitialPosition = false;
     public GridViewType myGridViewType;
-
-    private float closestDistance = float.MaxValue;
-    private float previousDistance = float.MaxValue;
 
     private int localEpisode = 1;
     private int localStep = 1;
@@ -96,18 +79,13 @@ public class Player : Agent
     private GameObject playerModel;
 
     //variaveis usadas para salvar arquivo de replay
-    public bool saveReplay = true;
-    private ReplayWriter replayWriter = null;
-    private string observationGridString;
-    private string actionIdString;
+    public string actionIdString;
 
     public PlayerManager myPlayerManager;
     public BombManager myBombManager;
     Player bombermanVillain;
 
     int bombCount = 0;
-
-    private MapController myMapController;
 
     public int getPlayerNumber()
     {
@@ -132,12 +110,6 @@ public class Player : Agent
     public void setOldLocalPosition(Vector3 p)
     {
         oldLocalPosition = p;
-    }
-
-    private void clearReplayVars()
-    {
-        observationGridString = "";
-        actionIdString = "";
     }
 
     public StateType getStateType()
@@ -179,10 +151,9 @@ public class Player : Agent
     }
 
     //Função foi criada para inicializar atributos do agente após a instanciação. Porque ao usar a instanciação, automaticamente é chamado InitializeAgent e Start.
-    public void init(Grid g, int pNumber, MapController mapController)
+    public void init(Grid g, int pNumber)
     {
         //Debug.Log("Init foi chamado");
-        myMapController = mapController;
         grid = g;
         scenarioId = grid.scenarioId;
         playerNumber = pNumber;
@@ -194,18 +165,6 @@ public class Player : Agent
         canDropBombs = true;
         isReady = true;
         lastMan = false;
-        alreadyWasReseted = false;
-        closestDistance = float.MaxValue;
-        previousDistance = float.MaxValue;
-
-        if (saveReplay)
-        {
-            if (replayWriter == null)
-                replayWriter = new ReplayWriter(playerNumber, scenarioId);
-
-            replayWriter.initSeq(localEpisode);
-        }
-
 
         localStep = 1;
 
@@ -219,14 +178,11 @@ public class Player : Agent
         playerModel = transform.Find("PlayerModel").gameObject;
         animator = transform.Find("PlayerModel").GetComponent<Animator>();
 
-        if (isSpecialist)
-        {
-            bombermanDecision = brain.GetComponent<BombermanOnlyOneDecision>();
-            teacherAgentObservations = new List<float>();
-        }
+        
 
         bombermanVillain = null;
-        wasFilledTeacherObservations = false;
+
+        actionIdString = "empty";
 
         wasInitialized = true;
 
@@ -234,16 +190,15 @@ public class Player : Agent
         myBombManager = ServiceLocator.getManager(scenarioId).GetBombManager();
     }
 
-    private void Start()
+    public void  eventsAfterGiveBrain(MapController mapController)
     {
-        //Debug.Log("Start foi chamado");
-        
-        academy = FindObjectOfType(typeof(BombermanAcademy)) as BombermanAcademy;
-        if (isSpecialist)
+        if (brain.GetComponent<BrainCustomData>().isTeacher)
+        {
+            bombermanDecision = brain.GetComponent<BombermanDecision>();
+            bombermanDecision.setMapController(mapController);
             bcTeacherHelper = GetComponent<BCTeacherHelper>();
-
+        }
     }
-
 
     public override void InitializeAgent()
     {
@@ -298,17 +253,6 @@ public class Player : Agent
                     int cell = (int)nodeStateType;
 
                     AddVectorObs(cell);
-
-                    if (isSpecialist)
-                        teacherAgentObservations.Add(cell);
-
-                    if (saveReplay)
-                    {
-                        if (observationGridString.Length > 0)
-                            observationGridString += "," + cell;
-                        else
-                            observationGridString = cell.ToString();
-                    }
                 }
             }
         }
@@ -452,63 +396,22 @@ public class Player : Agent
         }
     }
 
-    //função usada apenas com teacher.getTeacherAgentObservations()
-    private List<float> getTeacherAgentObservations()
-    {
-        if (teacherAgentObservations.Count > 0)
-        {
-            wasFilledTeacherObservations = false;
-            return teacherAgentObservations;
-        }
-        else
-        {
-            teacherAgentObservations = new List<float>(90);
-            return teacherAgentObservations;
-        }
-    }
-
     public override void CollectObservations()
     {
         //Debug.Log("agent" + playerNumber + " observacoes");
-        clearReplayVars();
+        actionIdString = "";
         myGridPosition = GetGridPosition();
 
         Vector2 normalizedGridPosition = (myGridPosition) / (grid.GetGridMaxValue());
         AddVectorObs(normalizedGridPosition);
 
-        //adicionando grid de observação da posição dos agentes
-        if (isSpecialist)
-        {
-            teacherAgentObservations.Clear();
-            AddVectorObsForGrid();
-
-            if (teacherAgentObservations.Count > 0)
-                wasFilledTeacherObservations = true;
-        }
-        else
-        {
-            if (isMimicking)
-            {
-                List<float> observations = teacherAgent.getTeacherAgentObservations();
-                AddVectorObs(observations);
-            }
-            else
-            {
-                //Debug.Log("Nao era pra eu ter entrado aqui.");
-                //teacherAgent.wasFilledTeacherObservations = false;
-                AddVectorObsForGrid();
-            }
-        }
-        
+        AddVectorObsForGrid();
     }
 
     public static void AddRewardToAgent(Player player, float reward, string message)
     {
-        if (player.forceReward || !player.isMimicking)
-        {
-            player.AddReward(reward);
-            ServiceLocator.getManager(player.scenarioId).GetLogManager().rewardPrint(message, reward);
-        }
+        player.AddReward(reward);
+        ServiceLocator.getManager(player.scenarioId).GetLogManager().rewardPrint(message, reward);
     }
 
     private void penalizeInvalidWalkMovement()
@@ -536,39 +439,6 @@ public class Player : Agent
         AddRewardToAgent(this, Config.REWARD_STOP_ACTION, "Agente" + playerNumber + " ficou parado, e ficar parado eh perder tempo");
     }
 
-    private float calculateMimickRewards(ActionType action)
-    {
-        float reward = Config.REWARD_CORRECT_TEACHER_ACTION;
-
-        //para ações contínuas há sentido em fazer a diferença absoluta entre ações
-        //reward = (-Abs(lastTeacherAction - action));
-
-        if (teacherAgent.lastTeacherAction != action)
-        {
-            reward = Config.REWARD_WRONG_TEACHER_ACTION;
-        }
-
-        return reward;
-    }
-
-    private void tryHammerAttack(Vector2 hammerPos)
-    {
-        if (grid.checkDestructible(hammerPos))
-        {
-            //destrua o bloca e pegue a recompensa
-            Destructable destructible = grid.getDestructibleInPosition(hammerPos);
-            destructible.attackByHammer(this);
-            Instantiate(hammerEffect, destructible.transform.position, Quaternion.identity, destructible.transform.parent);
-            reinforceValidHammerAction();
-        }
-        else
-        {
-            Instantiate(hammerEffect, transform.position, Quaternion.identity, transform.parent);
-            penalizeInvalidHammerAction();
-        }
-            
-    }
-
     public override void AgentAction(float[] vectorAction, string textAction)
     {
         //Debug.Log("agent" + playerNumber + " acoes");
@@ -583,31 +453,12 @@ public class Player : Agent
                                                     myBombManager.existsBombOrDanger());
 
 
-            /*if (!isMimicking)
-            {
-                // talvez seria melhor passar esse código para o playerManager.
-                if (getLocalStep() >= Config.MAX_STEP_PER_AGENT)
-                {
-                    AddRewardToAgent(this, Config.REWARD_MAX_STEP_REACHED, "Agente" + playerNumber + " alcancou max step");
-                    killAgent();
-                }
-            }*/
-
             ServiceLocator.getManager(scenarioId).GetLogManager().localStepPrint(this);
             localStep++;
             totalLocalStep++;
 
-            /*if (isSpecialist)
-                Debug.Log("LocalStep: " + localStep);*/
-
             ActionType action = ActionTypeExtension.convert((int)vectorAction[0]);
-            ActionType myAction = action;
-
-            if (isSpecialist)
-                lastTeacherAction = action;
-
-            if (isMimicking)
-                action = teacherAgent.lastTeacherAction;
+            actionIdString = ((int)vectorAction[0]).ToString();
 
             if (monitorFocus != null)
             {
@@ -617,12 +468,6 @@ public class Player : Agent
                 //Monitor.Log(" T Step: ", GetTotalStepCount().ToString(), monitorFocus);
                 Monitor.Log(" L Step: ", GetStepCount().ToString(), monitorFocus);
                 Monitor.Log("ActionP" + playerNumber + ": ", Convert.ToString((int)action), monitorFocus);
-            }
-
-            if (saveReplay)
-            {
-                actionIdString = ((int)vectorAction[0]).ToString();
-                replayWriter.printStep(observationGridString, actionIdString);
             }
 
             if (!IsDone())
@@ -654,17 +499,19 @@ public class Player : Agent
                         isInDanger = false;
                     }
 
-                    animator.SetBool("Walking", false);
+                    if (animator.gameObject.activeSelf)
+                    {
+                        animator.SetBool("Walking", false);
+                    }
 
                     //-----------------------------------------------------------------------------------------------------
                     if (!dead && !IsDone())
                     {
-                        Vector2 newPos;// hammerPos;
+                        Vector2 newPos;
                         switch (action)
                         {
                             //cima
                             case ActionType.AT_Up:
-                                //rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, moveSpeed);
                                 newPos = myGridPosition + new Vector2(0, 1);
                                 if (grid.checkFreePosition(newPos))
                                 {
@@ -675,11 +522,13 @@ public class Player : Agent
                                     penalizeInvalidWalkMovement();
 
                                 transform.rotation = Quaternion.Euler(0, 0, 0);
-                                animator.SetBool("Walking", true);
+                                if (animator.gameObject.activeSelf)
+                                {
+                                    animator.SetBool("Walking", true);
+                                }
                                 break;
                             //baixo
                             case ActionType.AT_Down:
-                                //rigidBody.velocity = new Vector3(rigidBody.velocity.x, rigidBody.velocity.y, -moveSpeed);
                                 newPos = myGridPosition + new Vector2(0, -1);
                                 if (grid.checkFreePosition(newPos))
                                 {
@@ -690,11 +539,13 @@ public class Player : Agent
                                     penalizeInvalidWalkMovement();
 
                                 transform.rotation = Quaternion.Euler(0, 180, 0);
-                                animator.SetBool("Walking", true);
+                                if (animator.gameObject.activeSelf)
+                                {
+                                    animator.SetBool("Walking", true);
+                                }
                                 break;
                             //direita
                             case ActionType.AT_Right:
-                                //rigidBody.velocity = new Vector3(moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
                                 newPos = myGridPosition + new Vector2(1, 0);
                                 if (grid.checkFreePosition(newPos))
                                 {
@@ -705,11 +556,13 @@ public class Player : Agent
                                     penalizeInvalidWalkMovement();
 
                                 transform.rotation = Quaternion.Euler(0, 90, 0);
-                                animator.SetBool("Walking", true);
+                                if (animator.gameObject.activeSelf)
+                                {
+                                    animator.SetBool("Walking", true);
+                                }
                                 break;
                             //esquerda
                             case ActionType.AT_Left:
-                                //rigidBody.velocity = new Vector3(-moveSpeed, rigidBody.velocity.y, rigidBody.velocity.z);
                                 newPos = myGridPosition + new Vector2(-1, 0);
                                 if (grid.checkFreePosition(newPos))
                                 {
@@ -720,7 +573,10 @@ public class Player : Agent
                                     penalizeInvalidWalkMovement();
 
                                 transform.rotation = Quaternion.Euler(0, 270, 0);
-                                animator.SetBool("Walking", true);
+                                if (animator.gameObject.activeSelf)
+                                {
+                                    animator.SetBool("Walking", true);
+                                }
                                 break;
                             //Drop bomb
                             case ActionType.AT_Bomb:
@@ -733,34 +589,6 @@ public class Player : Agent
                                     AddRewardToAgent(this, Config.REWARD_INVALID_BOMB_ACTION, "Agente" + playerNumber + " tentou colocar bomba sem poder");
                                 }
                                 break;
-                            //Hammer Up
-                            /*case ActionType.AT_Hammer_Up:
-                                hammerPos = myGridPosition + new Vector2(0, 1);
-                                tryHammerAttack(hammerPos);
-
-                                transform.rotation = Quaternion.Euler(0, 0, 0);
-                                break;
-                            //Hammer Down
-                            case ActionType.AT_Hammer_Down:
-                                hammerPos = myGridPosition + new Vector2(0, -1);
-                                tryHammerAttack(hammerPos);
-
-                                transform.rotation = Quaternion.Euler(0, 180, 0);
-                                break;
-                            //Hammer Right
-                            case ActionType.AT_Hammer_Right:
-                                hammerPos = myGridPosition + new Vector2(1, 0);
-                                tryHammerAttack(hammerPos);
-
-                                transform.rotation = Quaternion.Euler(0, 90, 0);
-                                break;
-                            //Hammer Left
-                            case ActionType.AT_Hammer_Left:
-                                hammerPos = myGridPosition + new Vector2(-1, 0);
-                                tryHammerAttack(hammerPos);
-
-                                transform.rotation = Quaternion.Euler(0, 270, 0);
-                                break;*/
                             //Wait
                             case ActionType.AT_Wait:
                                 penalizeStopAction();
@@ -768,12 +596,6 @@ public class Player : Agent
                             default:
                                 break;
                         }
-                    }
-
-                    // recompensa para avaliar se aluno está imitando corretamente professor
-                    if (isMimicking)
-                    {
-                        AddReward(calculateMimickRewards(myAction));
                     }
 
                     //recompensas
@@ -821,7 +643,7 @@ public class Player : Agent
 
             GameObject bomb = Instantiate(bombPrefab, 
                                         new Vector3(Mathf.RoundToInt(transform.position.x) + temp,
-                                                    Mathf.RoundToInt(transform.position.y),
+                                                    transform.parent.position.y + 0.3f,
                                                     Mathf.RoundToInt(transform.position.z)),
                                           bombPrefab.transform.rotation,
                                           transform.parent);
@@ -832,7 +654,7 @@ public class Player : Agent
             myBombManager.addBomb(bomb);
             grid.enableObjectOnGrid(StateType.ST_Bomb, bomb.GetComponent<Bomb>().GetGridPosition());
             grid.enableObjectOnGrid(StateType.ST_Danger, bomb.GetComponent<Bomb>().GetGridPosition());
-            bomb.GetComponent<Bomb>().CreateDangerZone();
+            bomb.GetComponent<Bomb>().CreateDangerZone(false);
 
 
             AddRewardToAgent(this, Config.REWARD_VALID_BOMB_ACTION, "Agente" + playerNumber + " colocou uma bomba");
@@ -841,15 +663,6 @@ public class Player : Agent
             canDropBombs = false;
             isInDanger = true;
         }
-    }
-
-    public void OnTriggerExit(Collider other)
-    {
-        //talvez na movimentação contínua não funcione esse código. Uma boa solução seria usar um contador(int) de perigo ao invés de um bool
-        /*if (other.CompareTag("Danger"))
-        {
-            isInDanger = false;
-        }*/
     }
 
     public void OnTriggerEnter (Collider other)
@@ -861,17 +674,6 @@ public class Player : Agent
                 bombermanVillain = other.gameObject.GetComponent<DestroySelf>().bomberman;
             }
         }
-
-        /*
-        //Agente toma muita recompensa negativa e desiste de colocar bomba muito rápido
-        if (other.CompareTag("Danger"))
-        {
-            isInDanger = true;
-            /*float dangerLevel = Mathf.Abs(other.gameObject.GetComponent<Danger>().GetDangerLevelOfPosition(this));
-            dangerLevel *= -0.1f;
-            AddReward(dangerLevel);
-            ServiceLocator.GetLogManager().rewardPrint("Agente" + playerNumber + " em area de perigo", dangerLevel);
-        }*/
     }
 
     private void defaultKillCode()
@@ -880,58 +682,19 @@ public class Player : Agent
         grid.clearAgentOnGrid(this);
         playerModel.SetActive(false);
         transform.localPosition = initialPosition;
-
-        // tentando corrigir problema da bomba explodir após agente ser reiniciado por tempo
-        //Bomb code
-        /*if (!academy.GetIsInference())
-            myBombManager.clearBombs();*/
-    }
-
-    private void killAgentOnly()
-    {
-        defaultKillCode();
-        //Debug.Log("Morri force - agente " + playerNumber);
     }
 
     private void killAgent()
     {
         defaultKillCode();
-        //Debug.Log("Morri - agente " + playerNumber);
 
         myPlayerManager.addDeadCount();
         Done();
-
-        /* Comentado porque começou a dar pau com apenas um agente após várias iterações
-         * if (myPlayerManager.getDeadCount() == 0)
-        {
-            myPlayerManager.addDeadCount();
-            Invoke("VerifyDeadCount", 0.5f);
-        }*/
     }
 
     private void internalUpdate()
     {
-        if (isMimicking)
-        {
-            if (teacherAgent != null && teacherAgent.wasFilledTeacherObservations)
-            {
-                RequestDecision();
-            }
-        }
-        else
-        {
-            if (isSpecialist)
-            {
-                if (!wasFilledTeacherObservations)
-                {
-                    RequestDecision();
-                }
-            }
-            else
-            {
-                RequestDecision();
-            }
-        }
+        RequestDecision();
     }
 
     public bool WaitIterationActions()
@@ -943,11 +706,5 @@ public class Player : Agent
         }
 
         return false;
-    }
-
-    void OnApplicationQuit()
-    {
-        if (saveReplay)
-            replayWriter.finish();
     }
 }

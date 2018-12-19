@@ -9,27 +9,41 @@ public class ReplayReader {
     bool initialized = false;
     private string fileFolder = "./replays/";
     private StreamReader sr;
-    private int counter;
     private string fileName;
 
     public class ReplayStep
     {
-        public int[] observationGrid;
-        public int actionId;
-        public string command;
-        public string seqId;
+        public ReplayCommandLine command;
+        public string epId;
+        public int numberOfAgents;
+        public Dictionary<string, Vector2Int> agentInitPositionMap;
+        public Dictionary<string, int> agentActionMap;
+        public int bombIteration;
+        public bool hasCreatedBomb;
+        public List<Vector2Int> bombList;
 
         public ReplayStep()
         {
-            seqId = "null";
+            hasCreatedBomb = false;
+            epId = "0";
+            agentInitPositionMap = new Dictionary<string, Vector2Int>();
+            agentActionMap = new Dictionary<string, int>();
+            bombList = new List<Vector2Int>();
         }
+    }
+
+    ReplayStep lastLine;
+    bool isSynchronized;
+
+    public ReplayStep getLastLine()
+    {
+        return lastLine;
     }
 
     public ReplayReader(string filename)
     {
         if (!initialized)
         {
-            counter = 0;
             if (!Directory.Exists(fileFolder))
             {
                 Directory.CreateDirectory(fileFolder);
@@ -43,67 +57,149 @@ public class ReplayReader {
             catch (FileNotFoundException ex)
             {
                 Debug.Log("Arquivo de replay " + fileFolder + fileName + " nao foi encontrado");
+                Debug.Log(ex.Message);
             }
 
+            isSynchronized = true;
             initialized = true;
         }
     }
 
     public void reopen()
     {
-        counter = 0;
+        sr.Close();
         sr = new StreamReader(fileFolder + fileName);
+        isSynchronized = true;
     }
 
-    public ReplayStep readStep()
+    public ReplayStep nextReplayStepEpisodeOrReopen()
     {
-        ReplayStep replayStep = new ReplayStep();
-        string line = sr.ReadLine();
-        if (line != null && line != "Fim")
+        ReplayStep rStep = readStep(ReplayCommandLine.RCL_Episode);
+
+        if (rStep.command == ReplayCommandLine.RCL_Episode)
+            return rStep;
+
+        while(rStep.command != ReplayCommandLine.RCL_Episode && rStep.command != ReplayCommandLine.RCL_End)
         {
-            if (line.Substring(0, 3).Equals("SEQ"))
+            rStep = readStep(ReplayCommandLine.RCL_Episode, true);
+        }
+
+        if (rStep.command == ReplayCommandLine.RCL_End)
+        {
+            reopen();
+            rStep = readStep(ReplayCommandLine.RCL_Episode);
+        }
+
+        return rStep;
+    }
+
+    public ReplayStep readStep(ReplayCommandLine requiredCommand, bool force = false)
+    {
+        if (isSynchronized || force)
+        {
+            ReplayStep replayStep = new ReplayStep();
+            string line = sr.ReadLine();
+
+            if (line != null && line != "END")
             {
-                //Debug.Log("Substring SEQ encontrada");
-                replayStep.command = "SEQ";
-                replayStep.seqId = line;
-                //Debug.Log("Interno: " + replayStep.command);
+                if (line.Substring(0, 2).Equals("EP"))
+                {
+                    replayStep.command = ReplayCommandLine.RCL_Episode;
 
-                counter = 0;
+                    string[] parts = line.Split(':');
+                    replayStep.epId = parts[1];
 
-                return replayStep;
+                    //return replayStep;
+                }
+                else if (line.Substring(0, 2).Equals("NA"))
+                {
+                    replayStep.command = ReplayCommandLine.RCL_NumberOfAgents;
+
+                    string[] parts = line.Split(':');
+                    replayStep.numberOfAgents = Int32.Parse(parts[1]);
+
+                    //return replayStep;
+                }
+                else if (line.Substring(0, 2).Equals("IP"))
+                {
+                    replayStep.command = ReplayCommandLine.RCL_InitialPositions;
+
+                    string[] parts = line.Split(':');
+                    string positions = parts[1];
+                    string[] agentPosParts = positions.Split(';');
+                    for (int i = 0; i < agentPosParts.Length; ++i)
+                    {
+                        string[] agentPos = agentPosParts[i].Split(',');
+                        Vector2Int pos = new Vector2Int(Int32.Parse(agentPos[1]), Int32.Parse(agentPos[2]));
+                        replayStep.agentInitPositionMap.Add(agentPos[0], pos);
+                    }
+
+                    //return replayStep;
+                }
+                else if (line.Substring(0, 2).Equals("AC"))
+                {
+                    replayStep.command = ReplayCommandLine.RCL_Actions;
+
+                    string[] parts = line.Split(':');
+                    string positions = parts[1];
+                    string[] agentActionParts = positions.Split(';');
+                    for (int i = 0; i < agentActionParts.Length; ++i)
+                    {
+                        string[] agentAction = agentActionParts[i].Split(',');
+                        replayStep.agentActionMap.Add(agentAction[0], Int32.Parse(agentAction[1]));
+                    }
+
+                    //return replayStep;
+                }
+                else if (line.Substring(0, 2).Equals("BO"))
+                {
+                    replayStep.command = ReplayCommandLine.RCL_BombPositions;
+
+                    string[] parts = line.Split(':');
+                    string positions = parts[1];
+                    string[] agentActionParts = positions.Split(';');
+
+                    replayStep.bombIteration = Int32.Parse(agentActionParts[0]);
+                    replayStep.hasCreatedBomb = Int32.Parse(agentActionParts[1]) == 1 ? true : false;
+
+                    if (replayStep.hasCreatedBomb)
+                    {
+                        for (int i = 2; i < agentActionParts.Length; ++i)
+                        {
+                            string[] agentPos = agentActionParts[i].Split(',');
+                            Vector2Int pos = new Vector2Int(Int32.Parse(agentPos[0]), Int32.Parse(agentPos[1]));
+                            replayStep.bombList.Add(pos);
+                        }
+                    }
+
+                    //return replayStep;
+                }
+                else
+                {
+                    replayStep.command = ReplayCommandLine.RCL_Corrupted;
+                    //return replayStep;
+                }
             }
             else
             {
-                string[] parts = line.Split(';');
-                if (parts.Length != 2)
-                {
-                    replayStep.command = "CORRUPTED";
-                    return replayStep;
-                }
-
-                replayStep.command = "STEP";
-                string firstPart = parts[0];
-                string actionPart = parts[1];
-
-                replayStep.actionId = Int32.Parse(actionPart);
-
-                string[] observationParts = firstPart.Split(',');
-                int[] obs = new int[observationParts.Length];
-                for (int i = 0; i < observationParts.Length; ++i)
-                {
-                    obs[i] = Int32.Parse(observationParts[i]);
-                }
-                replayStep.observationGrid = obs;
-
-                return replayStep;
+                replayStep.command = ReplayCommandLine.RCL_End;
+                //return replayStep;
             }
 
-            counter++;
+            if (requiredCommand == replayStep.command)
+                isSynchronized = true;
+            else
+                isSynchronized = false;
+
+            lastLine = replayStep;
+            return replayStep;
         }
         else
         {
-            replayStep.command = "END";
-            return replayStep;
+            if (requiredCommand == lastLine.command)
+                isSynchronized = true;
+
+            return lastLine;
         }
     }
 

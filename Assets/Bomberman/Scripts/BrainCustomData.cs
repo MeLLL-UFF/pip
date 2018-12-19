@@ -5,4 +5,5 @@ using UnityEngine;
 public class BrainCustomData : MonoBehaviour {
 
     public GridViewType gridViewType;
+    public bool isTeacher;
 }

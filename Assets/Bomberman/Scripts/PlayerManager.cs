@@ -52,6 +52,63 @@ public class PlayerManager {
         }
     }
 
+    public string processReplayWriteInitialPosition()
+    {
+        int numberOfAgents = getNumPlayers();
+        string line = "IP:";
+        int i = 1;
+
+        foreach (KeyValuePair<int, Player> entry in playerDict)
+        {
+            Player player = entry.Value;
+            if (player != null)
+            {
+                {
+                    Vector2Int pos = Vector2Int.FloorToInt(player.GetGridPosition());
+                    if (i != numberOfAgents)
+                        line += player.getPlayerNumber() + "," + pos.x + "," + pos.y + ";";
+                    else
+                        line += player.getPlayerNumber() + "," + pos.x + "," + pos.y;
+                }
+            }
+            ++i;
+        }
+
+        return line;
+    }
+
+    public string processReplayWriteActions()
+    {
+        string line = "";
+        int numberOfAgents = getNumPlayers();
+        int i = 1;
+
+        foreach (KeyValuePair<int, Player> entry in playerDict)
+        {
+            Player player = entry.Value;
+            if (player != null)
+            {
+                string lastAction = player.actionIdString;
+                if (lastAction != "empty")
+                {
+                    if (i != numberOfAgents)
+                        line += player.getPlayerNumber() + "," + lastAction + ";";
+                    else
+                        line += player.getPlayerNumber() + "," + lastAction;
+                }
+            }
+
+            ++i;
+        }
+
+        if (line != "")
+        {
+            line = "AC:" + line;
+        }
+
+        return line;
+    }
+
     public void initInitialPositions(Grid grid)
     {
         //porque as bordas são paredes
@@ -266,57 +323,67 @@ public class PlayerManager {
         return updating;
     }
 
+    public void setIsUpdating(bool _isUpdating)
+    {
+        updating = _isUpdating;
+    }
+
     public bool updateAgents()
     {
-        updating = true;
-        bool areThereUpdate = false;
-
-        if (randomizeIterationOfAgents)
+        if (!updating)
         {
-            List<Player> playerList = new List<Player>(playerDict.Values);
-            List<Player> randomList = new List<Player>();
-            while (playerList.Count > 0)
+            updating = true;
+            bool areThereUpdate = false;
+
+            if (randomizeIterationOfAgents)
             {
-                int rand = UnityEngine.Random.Range(0, playerList.Count);
-                randomList.Add(playerList[rand]);
-                playerList.RemoveAt(rand);
+                List<Player> playerList = new List<Player>(playerDict.Values);
+                List<Player> randomList = new List<Player>();
+                while (playerList.Count > 0)
+                {
+                    int rand = UnityEngine.Random.Range(0, playerList.Count);
+                    randomList.Add(playerList[rand]);
+                    playerList.RemoveAt(rand);
+                }
+
+                for (int i = 0; i < randomList.Count; ++i)
+                {
+                    if (randomList[i].WaitIterationActions())
+                        areThereUpdate = true;
+                }
+            }
+            else
+            {
+                foreach (KeyValuePair<int, Player> entry in playerDict)
+                {
+                    if (entry.Value.WaitIterationActions())
+                        areThereUpdate = true;
+                }
             }
 
-            for (int i = 0; i < randomList.Count; ++i)
+            verifyLastMan();
+
+            // se há algum agente vivo na cena
+            if (areThereUpdate)
             {
-                if (randomList[i].WaitIterationActions())
-                    areThereUpdate = true;
+                addIterationCount();
+                //updating = false;
+                return true;
             }
-        }
-        else
-        {
-            foreach (KeyValuePair<int, Player> entry in playerDict)
+            else
             {
-                if (entry.Value.WaitIterationActions())
-                    areThereUpdate = true;
+                if (!lastManFound)
+                {
+                    lastManAgent = "draw";
+                    lastManAgentResult = 0;
+                }
+                // precisamos resetar a cena
+                //updating = false;
+                return false;
             }
         }
 
-        verifyLastMan();
-
-        // se há algum agente vivo na cena
-        if (areThereUpdate)
-        {
-            addIterationCount();
-            updating = false;
-            return true;
-        }
-        else
-        {
-            if (!lastManFound)
-            {
-                lastManAgent = "draw";
-                lastManAgentResult = 0;
-            }
-            // precisamos resetar a cena
-            updating = false;
-            return false;
-        }
+        return false;
     }
 
     public void setRandomizeIterationOfAgents(bool value)
