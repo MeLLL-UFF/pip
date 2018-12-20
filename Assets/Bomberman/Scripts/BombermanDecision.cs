@@ -6,18 +6,21 @@ using System;
 
 public class BombermanDecision : MonoBehaviour, Decision {
 
-    MapController mapController;
+    Dictionary<int, MapController> mapControllerDict = new Dictionary<int, MapController>();
+
     public float[] Decide(  List<float> vectorObs,
                             List<Texture2D> visualObs,
                             float reward,
                             bool done,
                             List<float> memory,
-                            int playerNumber)
+                            int playerNumber,
+                            int scenarioId)
     {
         if (gameObject.GetComponent<Brain>().brainParameters.vectorActionSpaceType == SpaceType.discrete)
         {
             if (!done)
             {
+                MapController mapController = mapControllerDict[scenarioId];
                 if (mapController.currentReplayStep.agentActionMap.ContainsKey(playerNumber.ToString()))
                 {
                     int action = mapController.currentReplayStep.agentActionMap[playerNumber.ToString()];
@@ -43,8 +46,11 @@ public class BombermanDecision : MonoBehaviour, Decision {
         return new List<float>();
     }
 
-    public void setMapController(MapController _mapController)
+    public void setMapController(int scenarioId, MapController _mapController)
     {
-        mapController = _mapController;
+        if (!mapControllerDict.ContainsKey(scenarioId))
+        {
+            mapControllerDict.Add(scenarioId, _mapController);
+        }
     }
 } 

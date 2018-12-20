@@ -551,5 +551,8 @@ public class MapController : MonoBehaviour {
     {
         if (saveReplay)
             replayWriter.finish();
+
+        if (followReplayFile)
+            replayReader.finish();
     }
 }

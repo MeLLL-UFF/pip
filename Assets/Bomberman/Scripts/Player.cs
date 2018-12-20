@@ -35,7 +35,7 @@ using MLAgents;
 
 public class Player : Agent
 {
-    private int scenarioId;
+    int scenarioId;
 
    /* [Header("Specific to Player")]
     private BombermanAcademy academy;*/
@@ -86,6 +86,11 @@ public class Player : Agent
     Player bombermanVillain;
 
     int bombCount = 0;
+
+    public int getScenarioId()
+    {
+        return scenarioId;
+    }
 
     public int getPlayerNumber()
     {
@@ -195,7 +200,7 @@ public class Player : Agent
         if (brain.GetComponent<BrainCustomData>().isTeacher)
         {
             bombermanDecision = brain.GetComponent<BombermanDecision>();
-            bombermanDecision.setMapController(mapController);
+            bombermanDecision.setMapController(getScenarioId(), mapController);
             bcTeacherHelper = GetComponent<BCTeacherHelper>();
         }
     }
