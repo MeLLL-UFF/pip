@@ -51,7 +51,9 @@ public class Bomb : MonoBehaviour {
     public void CreateDangerZone(bool forceTimeout)
     {
         GameObject dangerObject = Instantiate(dangerPrefab, transform.position, Quaternion.identity, transform.parent);
-        dangerObject.GetComponent<Danger>().myBomb = this;
+        dangerObject.GetComponent<Danger>().bombermanOwner = bomberman;
+        if (bomberman != null)
+            dangerObject.GetComponent<Danger>().bomberOwnerNumber = bomberman.getPlayerNumber();
         dangerObject.GetComponent<Danger>().grid = grid;
         //dangerObject.GetComponent<Danger>().scenarioId = scenarioId;
 
@@ -64,20 +66,21 @@ public class Bomb : MonoBehaviour {
         //comentado porque senão vai sobrescrever a bomba no mapa. Código chamado junto com a bomba
         //grid.enableObjectOnGrid(StateType.ST_Danger, dangerObject.GetComponent<DestroySelf>().GetGridPosition());
 
-        StartCoroutine(CreateDangers(Vector3.forward, forceTimeout));
-        StartCoroutine(CreateDangers(Vector3.right, forceTimeout));
-        StartCoroutine(CreateDangers(Vector3.back, forceTimeout));
-        StartCoroutine(CreateDangers(Vector3.left, forceTimeout));
+        CreateDangers(Vector3.forward, forceTimeout);
+        CreateDangers(Vector3.right, forceTimeout);
+        CreateDangers(Vector3.back, forceTimeout);
+        CreateDangers(Vector3.left, forceTimeout);
     }
 
     bool Explode(bool forceTimeout)
     {
         //Bomb code
         GameObject explosionObject = Instantiate(explosionPrefab, transform.position, Quaternion.identity, transform.parent);
-        explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
+        explosionObject.GetComponent<DestroySelf>().bombermanOwner = bomberman;
         explosionObject.GetComponent<DestroySelf>().grid = grid;
         //explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
-        explosionObject.GetComponent<DestroySelf>().bomberman = bomberman;
+        if (bomberman != null)
+            explosionObject.GetComponent<DestroySelf>().bombermanOwnerNumber = bomberman.getPlayerNumber();
 
         if (forceTimeout)
         {
@@ -87,10 +90,11 @@ public class Bomb : MonoBehaviour {
         ServiceLocator.getManager(scenarioId).GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
         grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
 
-        StartCoroutine(CreateExplosions(Vector3.forward, forceTimeout));
-        StartCoroutine(CreateExplosions(Vector3.right, forceTimeout));
-        StartCoroutine(CreateExplosions(Vector3.back, forceTimeout));
-        StartCoroutine(CreateExplosions(Vector3.left, forceTimeout));
+        /*StartCoroutine(*/
+        CreateExplosions(Vector3.forward, forceTimeout); 
+        CreateExplosions(Vector3.right, forceTimeout);
+        CreateExplosions(Vector3.back, forceTimeout);
+        CreateExplosions(Vector3.left, forceTimeout); 
 
         GetComponent<MeshRenderer>().enabled = false;
         exploded = true;
@@ -104,10 +108,7 @@ public class Bomb : MonoBehaviour {
         grid.disableObjectOnGrid(stateType, GetGridPosition());
         grid.disableObjectOnGrid(StateType.ST_Danger, GetGridPosition());
 
-        //comentado porque dá erro ao tentar remover bomba dentro de uma iteração de bombas com foreach
-        //ServiceLocator.getManager(scenarioId).GetBombManager().removeBomb(bombId);
-
-        Destroy(gameObject);//, Config.BOMB_TIMER_AFTER_DESTROY);
+        Destroy(gameObject);
 
         return true;
     }
@@ -118,7 +119,7 @@ public class Bomb : MonoBehaviour {
         Destroy(gameObject);
     }
 
-    private IEnumerator CreateExplosions(Vector3 direction, bool forceTimeout)
+    private void CreateExplosions(Vector3 direction, bool forceTimeout)
     {
         //Bomb code
         for (int i = 1; i < 3; i++)
@@ -129,10 +130,11 @@ public class Bomb : MonoBehaviour {
             if (!hit.collider)
             {
                 GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation, transform.parent);
-                explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
+                explosionObject.GetComponent<DestroySelf>().bombermanOwner = bomberman;
                 explosionObject.GetComponent<DestroySelf>().grid = grid;
                 //explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
-                explosionObject.GetComponent<DestroySelf>().bomberman = bomberman;
+                if (bomberman != null)
+                    explosionObject.GetComponent<DestroySelf>().bombermanOwnerNumber = bomberman.getPlayerNumber();
 
                 if (forceTimeout)
                     explosionObject.GetComponent<DestroySelf>().discrete_timer = Config.EXPLOSION_TIMER_DISCRETE;
@@ -146,10 +148,11 @@ public class Bomb : MonoBehaviour {
                 if (hit.collider.CompareTag("Destructable"))  
                 {
                     GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation, transform.parent);
-                    explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
+                    explosionObject.GetComponent<DestroySelf>().bombermanOwner = bomberman;
                     explosionObject.GetComponent<DestroySelf>().grid = grid;
                     //explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
-                    explosionObject.GetComponent<DestroySelf>().bomberman = bomberman;
+                    if (bomberman != null)
+                        explosionObject.GetComponent<DestroySelf>().bombermanOwnerNumber = bomberman.getPlayerNumber();
 
                     if (forceTimeout)
                         explosionObject.GetComponent<DestroySelf>().discrete_timer = Config.EXPLOSION_TIMER_DISCRETE;
@@ -164,10 +167,11 @@ public class Bomb : MonoBehaviour {
                     if (otherBomb.bombId != bombId)
                     {
                         GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation, transform.parent);
-                        explosionObject.GetComponent<DestroySelf>().myBomb = gameObject.GetComponent<Bomb>();
+                        explosionObject.GetComponent<DestroySelf>().bombermanOwner = bomberman;
                         explosionObject.GetComponent<DestroySelf>().grid = grid;
                         //explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
-                        explosionObject.GetComponent<DestroySelf>().bomberman = bomberman;
+                        if (bomberman != null)
+                            explosionObject.GetComponent<DestroySelf>().bombermanOwnerNumber = bomberman.getPlayerNumber();
 
                         if (forceTimeout)
                             explosionObject.GetComponent<DestroySelf>().discrete_timer = Config.EXPLOSION_TIMER_DISCRETE;
@@ -187,10 +191,10 @@ public class Bomb : MonoBehaviour {
         }
 
         //yield return new WaitForSeconds(.05f);
-        yield return null;
+        //yield return null;
     }
 
-    private IEnumerator CreateDangers(Vector3 direction, bool forceTimeout)
+    private void CreateDangers(Vector3 direction, bool forceTimeout)
     {
         //Bomb code
         for (int i = 1; i < 3; i++)
@@ -201,7 +205,9 @@ public class Bomb : MonoBehaviour {
             if (!hit.collider)
             {
                 GameObject dangerObject = Instantiate(dangerPrefab, transform.position + (i * direction), dangerPrefab.transform.rotation, transform.parent);
-                dangerObject.GetComponent<Danger>().myBomb = gameObject.GetComponent<Bomb>();
+                dangerObject.GetComponent<Danger>().bombermanOwner = bomberman;
+                if (bomberman != null)
+                    dangerObject.GetComponent<Danger>().bomberOwnerNumber = bomberman.getPlayerNumber();
                 dangerObject.GetComponent<Danger>().grid = grid;
                 //dangerObject.GetComponent<Danger>().scenarioId = scenarioId;
 
@@ -216,7 +222,9 @@ public class Bomb : MonoBehaviour {
                 if (hit.collider.CompareTag("Destructable"))
                 {
                     GameObject dangerObject = Instantiate(dangerPrefab, transform.position + (i * direction), dangerPrefab.transform.rotation, transform.parent);
-                    dangerObject.GetComponent<Danger>().myBomb = gameObject.GetComponent<Bomb>();
+                    dangerObject.GetComponent<Danger>().bombermanOwner = bomberman;
+                    if (bomberman != null)
+                        dangerObject.GetComponent<Danger>().bomberOwnerNumber = bomberman.getPlayerNumber();
                     dangerObject.GetComponent<Danger>().grid = grid;
                     //dangerObject.GetComponent<Danger>().scenarioId = scenarioId;
 
@@ -232,7 +240,9 @@ public class Bomb : MonoBehaviour {
                     if (otherBomb.bombId != bombId)
                     {
                         GameObject dangerObject = Instantiate(dangerPrefab, transform.position + (i * direction), dangerPrefab.transform.rotation, transform.parent);
-                        dangerObject.GetComponent<Danger>().myBomb = gameObject.GetComponent<Bomb>();
+                        dangerObject.GetComponent<Danger>().bombermanOwner = bomberman;
+                        if (bomberman != null)
+                            dangerObject.GetComponent<Danger>().bomberOwnerNumber = bomberman.getPlayerNumber();
                         dangerObject.GetComponent<Danger>().grid = grid;
                         //dangerObject.GetComponent<Danger>().scenarioId = scenarioId;
 
@@ -252,7 +262,7 @@ public class Bomb : MonoBehaviour {
             }
         }
 
-        yield return null;
+        //yield return null;
     }
 
     public void OnTriggerEnter(Collider other)

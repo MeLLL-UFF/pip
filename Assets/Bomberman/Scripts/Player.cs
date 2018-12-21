@@ -87,6 +87,25 @@ public class Player : Agent
 
     int bombCount = 0;
 
+    class ObservationLog
+    {
+        public Vector2 gridPosition;
+        public string gridString;
+        public bool canDropBombs;
+        public bool isInDanger;
+        public bool existsBombOrDanger;
+
+        public void update(Vector2 _gridPosition, string _gridString, bool _canDropBombs, bool _isInDanger, bool _existsBombOrDanger)
+        {
+            gridPosition= _gridPosition;
+            gridString= _gridString;
+            canDropBombs= _canDropBombs;
+            isInDanger= _isInDanger;
+            existsBombOrDanger=_existsBombOrDanger;
+        }
+    }
+    ObservationLog lastObservationLog = new ObservationLog();
+
     public int getScenarioId()
     {
         return scenarioId;
@@ -183,8 +202,6 @@ public class Player : Agent
         playerModel = transform.Find("PlayerModel").gameObject;
         animator = transform.Find("PlayerModel").GetComponent<Animator>();
 
-        
-
         bombermanVillain = null;
 
         actionIdString = "empty";
@@ -197,11 +214,31 @@ public class Player : Agent
 
     public void  eventsAfterGiveBrain(MapController mapController)
     {
+        bcTeacherHelper = GetComponent<BCTeacherHelper>();
         if (brain.GetComponent<BrainCustomData>().isTeacher)
         {
             bombermanDecision = brain.GetComponent<BombermanDecision>();
             bombermanDecision.setMapController(getScenarioId(), mapController);
-            bcTeacherHelper = GetComponent<BCTeacherHelper>();
+        }
+        else
+        {
+            bcTeacherHelper.enabled = false;
+        }
+    }
+
+    public void setBCTeacherHelperTransform(Transform _transform)
+    {
+        if (brain.GetComponent<BrainCustomData>().isTeacher)
+        {
+            bcTeacherHelper.setMyMonitorTransform(_transform);
+        }
+    }
+
+    public void stopToSendExperience()
+    {
+        if (brain.GetComponent<BrainCustomData>().isTeacher)
+        {
+            bcTeacherHelper.forceStopRecord();
         }
     }
 
@@ -411,6 +448,8 @@ public class Player : Agent
         AddVectorObs(normalizedGridPosition);
 
         AddVectorObsForGrid();
+
+        lastObservationLog.update(myGridPosition, grid.gridToString(playerNumber), canDropBombs, isInDanger, myBombManager.existsBombOrDanger());
     }
 
     public static void AddRewardToAgent(Player player, float reward, string message)
@@ -450,12 +489,11 @@ public class Player : Agent
         if (!dead)
         {
             ServiceLocator.getManager(scenarioId).GetLogManager().statePrint("Agent " + playerNumber,
-                                                    myGridPosition,
-
-                                                    grid.gridToString(playerNumber),
-                                                    canDropBombs,
-                                                    isInDanger,
-                                                    myBombManager.existsBombOrDanger());
+                                                    lastObservationLog.gridPosition,
+                                                    lastObservationLog.gridString,
+                                                    lastObservationLog.canDropBombs,
+                                                    lastObservationLog.isInDanger,
+                                                    lastObservationLog.existsBombOrDanger);
 
 
             ServiceLocator.getManager(scenarioId).GetLogManager().localStepPrint(this);
@@ -676,7 +714,7 @@ public class Player : Agent
         {
             if (!dead)
             {
-                bombermanVillain = other.gameObject.GetComponent<DestroySelf>().bomberman;
+                bombermanVillain = other.gameObject.GetComponent<DestroySelf>().bombermanOwner;
             }
         }
     }
@@ -704,7 +742,7 @@ public class Player : Agent
 
     public bool WaitIterationActions()
     {
-        if (wasInitialized && !dead)
+        if (wasInitialized && !dead && !IsDone())
         {
             internalUpdate();
             return true;

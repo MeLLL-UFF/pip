@@ -244,6 +244,68 @@ public class Grid : MonoBehaviour {
         return gb.GetComponent<Destructable>();
     }
 
+    public bool hasAnotherFireInThisPosition(Vector2 pos)
+    {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+
+        if (!isOnGrid(x, y))
+            return false;
+
+        BinaryNode node = NodeFromPos(x, y);
+
+        Ray ray = new Ray(node.worldPosition + Vector3.up * 6, Vector3.down);
+        RaycastHit[] hits;
+        hits = Physics.RaycastAll(ray, 10, defaultLayer);
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            RaycastHit hit = hits[i];
+
+            if (hit.transform.tag == "Explosion")
+                return true;
+
+            /*StateType st = getStateTypeFromHit(hit);
+            if (st == StateType.ST_Fire)
+            {
+                return true;
+            }*/
+        }
+
+        return false;
+    }
+
+    public bool hasAnotherDangerInThisPosition(Vector2 pos)
+    {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+
+        if (!isOnGrid(x, y))
+            return false;
+
+        BinaryNode node = NodeFromPos(x, y);
+
+        Ray ray = new Ray(node.worldPosition + Vector3.up * 6, Vector3.down);
+        RaycastHit[] hits;
+        hits = Physics.RaycastAll(ray, 10, defaultLayer);
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            RaycastHit hit = hits[i];
+
+            if (hit.transform.tag == "Danger")
+                return true;
+
+            /*StateType st = getStateTypeFromHit(hit);
+            if (st == StateType.ST_Danger)
+            {
+                return true;
+            }*/
+        }
+
+        return false;
+    }
+
     StateType getStateTypeFromHit(RaycastHit hit)
     {
         StateType nodeStateType = StateType.ST_Empty;

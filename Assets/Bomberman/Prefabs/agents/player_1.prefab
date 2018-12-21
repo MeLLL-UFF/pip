@@ -263,6 +263,7 @@ GameObject:
   - component: {fileID: 54038231396892486}
   - component: {fileID: 114345252287532608}
   - component: {fileID: 136127903380293802}
+  - component: {fileID: 114614551894514488}
   m_Layer: 10
   m_Name: player_1
   m_TagString: Player
@@ -630,6 +631,18 @@ MonoBehaviour:
   randomizeInitialPosition: 1
   myGridViewType: 0
   actionIdString: 
+--- !u!114 &114614551894514488
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1877386225526198}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1cf16abc39fb4d6ca81222fc73d1bb5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  myTransform: {fileID: 0}
 --- !u!136 &136127903380293802
 CapsuleCollider:
   m_ObjectHideFlags: 1

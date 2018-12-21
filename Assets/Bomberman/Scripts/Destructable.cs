@@ -136,7 +136,7 @@ public class Destructable : MonoBehaviour {
             if (!wasDestroy)
             {
                 wasDestroy = true;
-                Player bomberman = other.gameObject.GetComponent<DestroySelf>().bomberman;
+                Player bomberman = other.gameObject.GetComponent<DestroySelf>().bombermanOwner;
                 if (bomberman != null)
                 {
                     Player.AddRewardToAgent(bomberman, Config.REWARD_BLOCK_DESTROY, "Agente" + bomberman.getPlayerNumber() + " destruiu um bloco");

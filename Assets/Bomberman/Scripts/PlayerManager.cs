@@ -52,6 +52,14 @@ public class PlayerManager {
         }
     }
 
+    public void stopToSendExperienceToAllPlayers()
+    {
+        foreach (KeyValuePair<int, Player> entry in playerDict)
+        {
+            entry.Value.stopToSendExperience();
+        }
+    }
+
     public string processReplayWriteInitialPosition()
     {
         int numberOfAgents = getNumPlayers();

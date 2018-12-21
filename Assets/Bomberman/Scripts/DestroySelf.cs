@@ -38,10 +38,10 @@ using System.Collections;
 public class DestroySelf : MonoBehaviour
 {
     //public int scenarioId;
-    public Bomb myBomb = null;
+    public Player bombermanOwner = null;
+    public int bombermanOwnerNumber = -1;
     public ulong id;
 
-    public Player bomberman;
     public Grid grid;
 
     private StateType stateType;
@@ -63,11 +63,27 @@ public class DestroySelf : MonoBehaviour
         return new Vector2(n.gridX, n.gridY);
     }
 
+
     public void forceDestroy()
     {
-        grid.disableObjectOnGrid(stateType, GetGridPosition());
+        //desativamos o colisor
+        gameObject.GetComponent<BoxCollider>().enabled = false;
+
+        Vector2 p = GetGridPosition();
+
+        //testamos se há outro colisor de explosão no mesmo lugar
+        //se não há, então desativamos o estado de fogo no grid
+        if (!grid.hasAnotherFireInThisPosition(p))
+        {
+            grid.disableObjectOnGrid(stateType, p);
+        }
+        else
+        {
+            Debug.Log("há outro fogo nessa posição");
+        }
+  
         gameObject.SetActive(false);
-        GameObject.Destroy(gameObject);
+        Destroy(gameObject);
     }
 
     public bool iterationUpdate()

@@ -3380,18 +3380,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4708455174762664, guid: 49518cf64fdc3aa4eb3048c76ed1489d,
     type: 2}
   m_PrefabInternal: {fileID: 85477641}
---- !u!114 &89026021
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35813a1be64e144f887d7d5f15b963fa, type: 3}
-  m_Name: (Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)
-  m_EditorClassIdentifier: 
-  brain: {fileID: 360465427}
 --- !u!1001 &91463263
 Prefab:
   m_ObjectHideFlags: 0
@@ -4642,18 +4630,18 @@ MonoBehaviour:
   - {fileID: 1617484077978740, guid: 8d0118c7d881d0e4e967d5cc0bfe9548, type: 2}
   - {fileID: 1345632531193378, guid: 58da1ee272ccbf240b5d8d49fd9c779c, type: 2}
   brains:
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  randomizeNumberOfAgents: 0
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  randomizeNumberOfAgents: 1
   randomizeIterationOfAgents: 0
   bombPrefab: {fileID: 124052, guid: 6291891f72f724c4eae6be6052e78735, type: 2}
   monitorPrefab: {fileID: 1591142960451790, guid: 8ec23c36b31106d45a2f5bb7d129e52b,
     type: 2}
   generateStatistic: 0
   matchMaxQuant: 1000
-  saveReplay: 0
+  saveReplay: 1
   followReplayFile: 0
   replayFileName: 
 --- !u!114 &116052482
@@ -11445,7 +11433,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 262751129}
   m_LocalRotation: {x: 0.49246693, y: -0, z: -0, w: 0.8703311}
-  m_LocalPosition: {x: 25, y: 40, z: -5}
+  m_LocalPosition: {x: 5, y: 40, z: -5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -12009,6 +11997,29 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4708455174762664, guid: 49518cf64fdc3aa4eb3048c76ed1489d,
     type: 2}
   m_PrefabInternal: {fileID: 275114412}
+--- !u!114 &275187882
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b23992c8eb17439887f5e944bf04a40, type: 3}
+  m_Name: (Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)
+  m_EditorClassIdentifier: 
+  broadcast: 1
+  graphModel: {fileID: 4900000, guid: c4ed18895d9869e49943758c6b1b8b08, type: 3}
+  graphScope: 
+  graphPlaceholders: []
+  BatchSizePlaceholderName: batch_size
+  VectorObservationPlacholderName: vector_observation
+  RecurrentInPlaceholderName: recurrent_in
+  RecurrentOutPlaceholderName: recurrent_out
+  VisualObservationPlaceholderName: []
+  ActionPlaceholderName: action
+  PreviousActionPlaceholderName: prev_action
+  brain: {fileID: 360465427}
 --- !u!1001 &277003340
 Prefab:
   m_ObjectHideFlags: 0
@@ -14776,7 +14787,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &352374403
 Transform:
   m_ObjectHideFlags: 0
@@ -15140,11 +15151,11 @@ MonoBehaviour:
     vectorActionSpaceType: 0
   brainType: 3
   CoreBrains:
-  - {fileID: 588715925}
-  - {fileID: 1157465358}
-  - {fileID: 89026021}
-  - {fileID: 423088508}
-  instanceID: 4882
+  - {fileID: 554380193}
+  - {fileID: 1179864723}
+  - {fileID: 675220130}
+  - {fileID: 275187882}
+  instanceID: 4918
 --- !u!1001 &360979274
 Prefab:
   m_ObjectHideFlags: 0
@@ -15593,7 +15604,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &368060646
 Transform:
   m_ObjectHideFlags: 0
@@ -16741,11 +16752,11 @@ MonoBehaviour:
   - {fileID: 1617484077978740, guid: 8d0118c7d881d0e4e967d5cc0bfe9548, type: 2}
   - {fileID: 1345632531193378, guid: 58da1ee272ccbf240b5d8d49fd9c779c, type: 2}
   brains:
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  randomizeNumberOfAgents: 0
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  randomizeNumberOfAgents: 1
   randomizeIterationOfAgents: 0
   bombPrefab: {fileID: 124052, guid: 6291891f72f724c4eae6be6052e78735, type: 2}
   monitorPrefab: {fileID: 1591142960451790, guid: 8ec23c36b31106d45a2f5bb7d129e52b,
@@ -17579,29 +17590,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4324125577001986, guid: a5612ed8f33ab7e4093c3276faeddfeb,
     type: 2}
   m_PrefabInternal: {fileID: 422490438}
---- !u!114 &423088508
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8b23992c8eb17439887f5e944bf04a40, type: 3}
-  m_Name: (Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)
-  m_EditorClassIdentifier: 
-  broadcast: 1
-  graphModel: {fileID: 4900000, guid: c4ed18895d9869e49943758c6b1b8b08, type: 3}
-  graphScope: 
-  graphPlaceholders: []
-  BatchSizePlaceholderName: batch_size
-  VectorObservationPlacholderName: vector_observation
-  RecurrentInPlaceholderName: recurrent_in
-  RecurrentOutPlaceholderName: recurrent_out
-  VisualObservationPlaceholderName: []
-  ActionPlaceholderName: action
-  PreviousActionPlaceholderName: prev_action
-  brain: {fileID: 360465427}
 --- !u!1001 &423856056
 Prefab:
   m_ObjectHideFlags: 0
@@ -19310,7 +19298,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &453243367
 Transform:
   m_ObjectHideFlags: 0
@@ -19781,11 +19769,11 @@ MonoBehaviour:
   - {fileID: 1617484077978740, guid: 8d0118c7d881d0e4e967d5cc0bfe9548, type: 2}
   - {fileID: 1345632531193378, guid: 58da1ee272ccbf240b5d8d49fd9c779c, type: 2}
   brains:
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  randomizeNumberOfAgents: 0
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  randomizeNumberOfAgents: 1
   randomizeIterationOfAgents: 0
   bombPrefab: {fileID: 124052, guid: 6291891f72f724c4eae6be6052e78735, type: 2}
   monitorPrefab: {fileID: 1591142960451790, guid: 8ec23c36b31106d45a2f5bb7d129e52b,
@@ -23486,6 +23474,22 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4708455174762664, guid: 49518cf64fdc3aa4eb3048c76ed1489d,
     type: 2}
   m_PrefabInternal: {fileID: 553381678}
+--- !u!114 &554380193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41e9bda8f3cf1492fa74926a530f6f70, type: 3}
+  m_Name: (Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)
+  m_EditorClassIdentifier: 
+  broadcast: 1
+  keyContinuousPlayerActions: []
+  axisContinuousPlayerActions: []
+  discretePlayerActions: []
+  brain: {fileID: 0}
 --- !u!114 &554689683
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25092,22 +25096,6 @@ Prefab:
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 49518cf64fdc3aa4eb3048c76ed1489d, type: 2}
   m_IsPrefabAsset: 0
---- !u!114 &588715925
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 41e9bda8f3cf1492fa74926a530f6f70, type: 3}
-  m_Name: (Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)
-  m_EditorClassIdentifier: 
-  broadcast: 1
-  keyContinuousPlayerActions: []
-  axisContinuousPlayerActions: []
-  discretePlayerActions: []
-  brain: {fileID: 0}
 --- !u!1001 &590036568
 Prefab:
   m_ObjectHideFlags: 0
@@ -26182,11 +26170,11 @@ MonoBehaviour:
   - {fileID: 1617484077978740, guid: 8d0118c7d881d0e4e967d5cc0bfe9548, type: 2}
   - {fileID: 1345632531193378, guid: 58da1ee272ccbf240b5d8d49fd9c779c, type: 2}
   brains:
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  randomizeNumberOfAgents: 0
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  randomizeNumberOfAgents: 1
   randomizeIterationOfAgents: 0
   bombPrefab: {fileID: 124052, guid: 6291891f72f724c4eae6be6052e78735, type: 2}
   monitorPrefab: {fileID: 1591142960451790, guid: 8ec23c36b31106d45a2f5bb7d129e52b,
@@ -26194,7 +26182,7 @@ MonoBehaviour:
   generateStatistic: 0
   matchMaxQuant: 1000
   saveReplay: 0
-  followReplayFile: 1
+  followReplayFile: 0
   replayFileName: replay_scenario_1.txt
 --- !u!1001 &615744376
 Prefab:
@@ -28396,6 +28384,18 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4621322909468826, guid: f07ce2e5e77aa9544ac894e4dc2ff7b9,
     type: 2}
   m_PrefabInternal: {fileID: 674287207}
+--- !u!114 &675220130
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35813a1be64e144f887d7d5f15b963fa, type: 3}
+  m_Name: (Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)
+  m_EditorClassIdentifier: 
+  brain: {fileID: 360465427}
 --- !u!1001 &675676756
 Prefab:
   m_ObjectHideFlags: 0
@@ -30089,18 +30089,18 @@ MonoBehaviour:
   - {fileID: 1617484077978740, guid: 8d0118c7d881d0e4e967d5cc0bfe9548, type: 2}
   - {fileID: 1345632531193378, guid: 58da1ee272ccbf240b5d8d49fd9c779c, type: 2}
   brains:
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  randomizeNumberOfAgents: 0
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  randomizeNumberOfAgents: 1
   randomizeIterationOfAgents: 0
   bombPrefab: {fileID: 124052, guid: 6291891f72f724c4eae6be6052e78735, type: 2}
   monitorPrefab: {fileID: 1591142960451790, guid: 8ec23c36b31106d45a2f5bb7d129e52b,
     type: 2}
   generateStatistic: 0
   matchMaxQuant: 1000
-  saveReplay: 0
+  saveReplay: 1
   followReplayFile: 0
   replayFileName: 
 --- !u!114 &711763604
@@ -39967,7 +39967,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &961270576
 Transform:
   m_ObjectHideFlags: 0
@@ -46507,11 +46507,11 @@ MonoBehaviour:
   - {fileID: 1617484077978740, guid: 8d0118c7d881d0e4e967d5cc0bfe9548, type: 2}
   - {fileID: 1345632531193378, guid: 58da1ee272ccbf240b5d8d49fd9c779c, type: 2}
   brains:
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  randomizeNumberOfAgents: 0
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  randomizeNumberOfAgents: 1
   randomizeIterationOfAgents: 0
   bombPrefab: {fileID: 124052, guid: 6291891f72f724c4eae6be6052e78735, type: 2}
   monitorPrefab: {fileID: 1591142960451790, guid: 8ec23c36b31106d45a2f5bb7d129e52b,
@@ -47227,19 +47227,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4664783343499610, guid: 1d0378a0e30ad22408c5627a0b3982bd,
     type: 2}
   m_PrefabInternal: {fileID: 1157114874}
---- !u!114 &1157465358
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 943466ab374444748a364f9d6c3e2fe2, type: 3}
-  m_Name: (Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)
-  m_EditorClassIdentifier: 
-  broadcast: 1
-  brain: {fileID: 0}
 --- !u!1001 &1159695809
 Prefab:
   m_ObjectHideFlags: 0
@@ -48056,6 +48043,19 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4708455174762664, guid: 49518cf64fdc3aa4eb3048c76ed1489d,
     type: 2}
   m_PrefabInternal: {fileID: 1179808726}
+--- !u!114 &1179864723
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 943466ab374444748a364f9d6c3e2fe2, type: 3}
+  m_Name: (Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)(Clone)
+  m_EditorClassIdentifier: 
+  broadcast: 1
+  brain: {fileID: 0}
 --- !u!1001 &1181667016
 Prefab:
   m_ObjectHideFlags: 0
@@ -54011,7 +54011,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1314608457
 Transform:
   m_ObjectHideFlags: 0
@@ -56881,7 +56881,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1397368748
 Transform:
   m_ObjectHideFlags: 0
@@ -61159,19 +61159,19 @@ MonoBehaviour:
   - {fileID: 1617484077978740, guid: 8d0118c7d881d0e4e967d5cc0bfe9548, type: 2}
   - {fileID: 1345632531193378, guid: 58da1ee272ccbf240b5d8d49fd9c779c, type: 2}
   brains:
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  randomizeNumberOfAgents: 0
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  randomizeNumberOfAgents: 1
   randomizeIterationOfAgents: 0
   bombPrefab: {fileID: 124052, guid: 6291891f72f724c4eae6be6052e78735, type: 2}
   monitorPrefab: {fileID: 1591142960451790, guid: 8ec23c36b31106d45a2f5bb7d129e52b,
     type: 2}
   generateStatistic: 0
   matchMaxQuant: 1000
-  saveReplay: 0
-  followReplayFile: 1
+  saveReplay: 1
+  followReplayFile: 0
   replayFileName: replay_scenario_2.txt
 --- !u!114 &1502710738
 MonoBehaviour:
@@ -62085,11 +62085,11 @@ MonoBehaviour:
   - {fileID: 1617484077978740, guid: 8d0118c7d881d0e4e967d5cc0bfe9548, type: 2}
   - {fileID: 1345632531193378, guid: 58da1ee272ccbf240b5d8d49fd9c779c, type: 2}
   brains:
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  randomizeNumberOfAgents: 0
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  randomizeNumberOfAgents: 1
   randomizeIterationOfAgents: 0
   bombPrefab: {fileID: 124052, guid: 6291891f72f724c4eae6be6052e78735, type: 2}
   monitorPrefab: {fileID: 1591142960451790, guid: 8ec23c36b31106d45a2f5bb7d129e52b,
@@ -76334,11 +76334,11 @@ MonoBehaviour:
   - {fileID: 1617484077978740, guid: 8d0118c7d881d0e4e967d5cc0bfe9548, type: 2}
   - {fileID: 1345632531193378, guid: 58da1ee272ccbf240b5d8d49fd9c779c, type: 2}
   brains:
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  randomizeNumberOfAgents: 0
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  randomizeNumberOfAgents: 1
   randomizeIterationOfAgents: 0
   bombPrefab: {fileID: 124052, guid: 6291891f72f724c4eae6be6052e78735, type: 2}
   monitorPrefab: {fileID: 1591142960451790, guid: 8ec23c36b31106d45a2f5bb7d129e52b,
@@ -80005,11 +80005,11 @@ MonoBehaviour:
   - {fileID: 1617484077978740, guid: 8d0118c7d881d0e4e967d5cc0bfe9548, type: 2}
   - {fileID: 1345632531193378, guid: 58da1ee272ccbf240b5d8d49fd9c779c, type: 2}
   brains:
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  - {fileID: 1462404439}
-  randomizeNumberOfAgents: 0
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  - {fileID: 961270577}
+  - {fileID: 368060648}
+  randomizeNumberOfAgents: 1
   randomizeIterationOfAgents: 0
   bombPrefab: {fileID: 124052, guid: 6291891f72f724c4eae6be6052e78735, type: 2}
   monitorPrefab: {fileID: 1591142960451790, guid: 8ec23c36b31106d45a2f5bb7d129e52b,

@@ -46,9 +46,12 @@ public class MapController : MonoBehaviour {
     private ReplayReader replayReader = null;
     public string replayFileName;
     public ReplayReader.ReplayStep currentReplayStep;
+    public int stopToSendSpecialistExperienceInEpsode = 10;
+    private bool stoToSendAlreadyCalled;
 
     // Use this for initialization
     void Start () {
+        stoToSendAlreadyCalled = false;
         currentReplayStep = new ReplayReader.ReplayStep();
 
         alreadyGenerateStatistic = false;
@@ -68,7 +71,8 @@ public class MapController : MonoBehaviour {
 
         playerManager.setRandomizeIterationOfAgents(randomizeIterationOfAgents);
 
-        Vector3 monitorPosition = transform.position + new Vector3(-3, 4, 1);
+        //Vector3 monitorPosition = transform.position + new Vector3(-3, 4, 1); // scene sem imitação
+        Vector3 monitorPosition = transform.position + new Vector3(-6.72f, 4, -4.51f);
         myMonitor = Instantiate(monitorPrefab, monitorPosition, Quaternion.identity, transform.parent);
         Monitor.Log("Ult. Vitorioso:", "draw", myMonitor.transform);
         Monitor.Log("Iteração:", "0 / " + maxIterationString, myMonitor.transform);
@@ -186,6 +190,7 @@ public class MapController : MonoBehaviour {
         agent.myGridViewType = brains[playerNumber-1].gameObject.GetComponent<BrainCustomData>().gridViewType;
         agent.GiveBrain(brains[playerNumber-1]);
         agent.eventsAfterGiveBrain(this);
+        agent.setBCTeacherHelperTransform(myMonitor.transform);
 
         if (agentInitPositionMap.Count == 0)
             randomizeInitialPositionFunction(agent);
@@ -265,6 +270,7 @@ public class MapController : MonoBehaviour {
         if (!reseting)
         {
             reseting = true;
+
             //Debug.Log("Cenário resetado");
             playerManager.clear();
             bombManager.clearBombs();
@@ -315,6 +321,15 @@ public class MapController : MonoBehaviour {
             Monitor.Log("Ult. Vitorioso:", playerManager.lastManAgent, myMonitor.transform);
             iterationWhereWasCreatedBombs = 0;
             numberOfBombsByCreation = 1;
+
+            if (followReplayFile)
+            {
+                if (stopToSendSpecialistExperienceInEpsode == playerManager.getEpisodeCount() && !stoToSendAlreadyCalled)
+                {
+                    playerManager.stopToSendExperienceToAllPlayers();
+                    stoToSendAlreadyCalled = true;
+                }
+            }
 
             reseting = false;
             playerManager.setIsUpdating(false);

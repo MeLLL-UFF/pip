@@ -112,6 +112,19 @@ public class BombManager {
 
     public void timeIterationUpdate()
     {
+        // explosões devem ser chamadas antes da atualização da bomba porque senão elas sofrem já uma atualização após a bomba explodir.
+        List<DestroySelf> listExplosions = new List<DestroySelf>();
+        foreach (KeyValuePair<ulong, DestroySelf> entry in explosions)
+        {
+            if (entry.Value.iterationUpdate())
+                listExplosions.Add(entry.Value);
+        }
+
+        for (int i = 0; i < listExplosions.Count; ++i)
+        {
+            removeExplosion(listExplosions[i].id);
+        }
+
         List<Bomb> list = new List<Bomb>();
         foreach (KeyValuePair<ulong, GameObject> entry in bombs)
         {
@@ -134,18 +147,6 @@ public class BombManager {
         for (int i = 0; i < listDanger.Count; ++i)
         {
             removeDanger(listDanger[i].id);
-        }
-
-        List<DestroySelf> listExplosions = new List<DestroySelf>();
-        foreach (KeyValuePair<ulong, DestroySelf> entry in explosions)
-        {
-            if (entry.Value.iterationUpdate())
-                listExplosions.Add(entry.Value);
-        }
-
-        for (int i = 0; i < listExplosions.Count; ++i)
-        {
-            removeExplosion(listExplosions[i].id);
         }
     }
 

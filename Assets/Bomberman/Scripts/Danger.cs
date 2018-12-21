@@ -7,8 +7,9 @@ using System.Collections;
 /// </summary>
 public class Danger : MonoBehaviour
 {
-    //public int scenarioId;
-    public Bomb myBomb = null;
+    public Player bombermanOwner = null;
+    public int bomberOwnerNumber = -1;
+
     public ulong id;
 
     public Grid grid;
@@ -21,6 +22,8 @@ public class Danger : MonoBehaviour
 
     private void Awake()
     {
+        bombermanOwner = null;
+        bomberOwnerNumber = -1;
         stateType = StateType.ST_Danger;
         discrete_timer = 0;
         dangerLevelOfPosition = (float)discrete_timer / (float)Config.BOMB_TIMER_DISCRETE;
@@ -56,9 +59,9 @@ public class Danger : MonoBehaviour
     {
         //penalty The danger value is negative if the bomb has been placed by the player and positive if it has been placed by an opponent(or environment)
         float penalty = 1.0f;
-        if (myBomb.bomberman != null)
+        if (bomberOwnerNumber != -1)
         {
-            penalty = myBomb.bomberman.getPlayerNumber() == player.getPlayerNumber() ? -1.0f : 1.0f;
+            penalty = bomberOwnerNumber == player.getPlayerNumber() ? -1.0f : 1.0f;
         }
         
         return dangerLevelOfPosition * penalty;
@@ -77,7 +80,17 @@ public class Danger : MonoBehaviour
 
     public void forceDestroy()
     {
-        grid.disableObjectOnGrid(stateType, GetGridPosition());
+        //desativamos o colisor
+        gameObject.GetComponent<BoxCollider>().enabled = false;
+
+        Vector2 p = GetGridPosition();
+
+        if (!grid.hasAnotherDangerInThisPosition(p))
+        {
+            grid.disableObjectOnGrid(stateType, p);
+        }
+
+        gameObject.SetActive(false);
         Destroy(gameObject);
     }
 

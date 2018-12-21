@@ -9,7 +9,7 @@ public class LogManager {
     bool initialized = false;
 
     // variável foi criada porque agora tem muitos cenários, se não tivermos controle vai gerar muito log
-    bool disabled = true;
+    bool disabled = false;
 
 
     private string fileName = "./logdir/logtest_scenario_";
