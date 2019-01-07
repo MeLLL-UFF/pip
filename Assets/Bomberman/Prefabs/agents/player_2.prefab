@@ -619,10 +619,13 @@ MonoBehaviour:
     onDemandDecision: 1
     numberOfActionsBetweenDecisions: 1
   monitorFocus: {fileID: 0}
+  showMonitor: 0
   canDropBombs: 1
   dead: 0
   lastMan: 0
+  isInFire: 0
   isInDanger: 0
+  areThereDangerAround: 0
   isReady: 0
   wasInitialized: 0
   bombPrefab: {fileID: 124052, guid: 6291891f72f724c4eae6be6052e78735, type: 2}

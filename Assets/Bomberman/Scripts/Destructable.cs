@@ -15,8 +15,14 @@ public class Destructable : MonoBehaviour {
     private Grid grid;
     private StateType stateType;
 
+    public Player bombermanVilain;
+
+    private int discreteTimerAfterExplosion;
+
     private void Awake()
     {
+        discreteTimerAfterExplosion = 0;
+        bombermanVilain = null;
         initialActivation = gameObject.activeSelf;
 
         if (randomStart)
@@ -69,6 +75,8 @@ public class Destructable : MonoBehaviour {
 
     public void reset()
     {
+        discreteTimerAfterExplosion = 0;
+        bombermanVilain = null;
         wasDestroy = false;
         transform.position = initPos;
 
@@ -107,7 +115,7 @@ public class Destructable : MonoBehaviour {
         }
     }
 
-    public void attackByHammer(Player hammerman)
+    /*public void attackByHammer(Player hammerman)
     {
         if (!wasDestroy)
         {
@@ -126,7 +134,7 @@ public class Destructable : MonoBehaviour {
             grid.disableObjectOnGrid(stateType, GetGridPosition());
             //Destroy(gameObject, 0.1f);
         }
-    }
+    }*/
 
     //Bomb code
     public void OnTriggerEnter(Collider other)
@@ -136,21 +144,34 @@ public class Destructable : MonoBehaviour {
             if (!wasDestroy)
             {
                 wasDestroy = true;
-                Player bomberman = other.gameObject.GetComponent<DestroySelf>().bombermanOwner;
-                if (bomberman != null)
-                {
-                    Player.AddRewardToAgent(bomberman, Config.REWARD_BLOCK_DESTROY, "Agente" + bomberman.getPlayerNumber() + " destruiu um bloco");
-                }
-                else
-                {
-                    ServiceLocator.getManager(scenarioId).GetLogManager().print("Bomberman nulo");
-                }
+                bombermanVilain = other.gameObject.GetComponent<DestroySelf>().bombermanOwner;
 
-                gameObject.SetActive(false);
-                grid.disableObjectOnGrid(stateType, GetGridPosition());
-                //Destroy(gameObject, 0.1f);
+                ServiceLocator.getManager(scenarioId).GetBlocksManager().addBlockToDestroy(this);
+            }
+        }
+    }
+
+    public bool destroyMethod()
+    {
+        ++discreteTimerAfterExplosion;
+
+        if (discreteTimerAfterExplosion >= Config.EXPLOSION_TIMER_DISCRETE)
+        {
+            if (bombermanVilain != null)
+            {
+                Player.AddRewardToAgent(bombermanVilain, Config.REWARD_BLOCK_DESTROY, "Agente" + bombermanVilain.getPlayerNumber() + " destruiu um bloco");
+            }
+            else
+            {
+                ServiceLocator.getManager(scenarioId).GetLogManager().print("Bomberman nulo");
             }
 
+            gameObject.SetActive(false);
+            grid.disableObjectOnGrid(stateType, GetGridPosition());
+
+            return true;
         }
+
+        return false;
     }
 }

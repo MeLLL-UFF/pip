@@ -24,4 +24,9 @@ public class BombermanAcademy : Academy {
         if (agent2 != null)
             ServiceLocator.getManager(2).GetLogManager().globalStepPrint(GetStepCount());*/
     }
+
+    public override void AcademyAfterAgentsAct()
+    {
+        //Debug.Log("teste");
+    }
 }

@@ -36,6 +36,33 @@ public class PlayerManager {
 
     public Vector3[] staticInitialPositions; 
 
+    public class DistanceReward
+    {
+        public bool applyRewardClosest;
+        public string applyRewardClosestMessage;
+
+        public bool applyRewardFar;
+        public string applyRewardFarMessage;
+        public bool applyRewardApproach;
+        public string applyRewardApproachMessage;
+
+        public DistanceReward()
+        {
+            reset();
+        }
+
+        public void reset()
+        {
+            applyRewardClosest = false;
+            applyRewardClosestMessage = "";
+
+            applyRewardFar = false;
+            applyRewardFarMessage = "";
+            applyRewardApproach = false;
+            applyRewardApproachMessage = "";
+        }
+    }
+
     public PlayerManager()
     {
         if (!initialized)
@@ -249,14 +276,14 @@ public class PlayerManager {
         return null;
     }
 
-    public void calculateDistanceEnemyPosition(Player agent)
+    /*public void calculateDistanceEnemyPositionAndApplyRewards(Player agent)
     {
         foreach (KeyValuePair<int, Player> entry in playerDict)
         {
             Player enemy = entry.Value;
             if (!enemy.dead && enemy.getPlayerNumber() != agent.getPlayerNumber())
             {
-                float distance = Vector2.Distance(agent.GetGridPosition(), entry.Value.GetGridPosition());
+                float distance = Vector2.Distance(agent.GetGridPosition(), enemy.getLastOldGridPosition());
                 if (distance < distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].closestDistance)
                 {
                     distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].closestDistance = distance;
@@ -275,6 +302,42 @@ public class PlayerManager {
                 distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].previousDistance = distance;
             }
         }
+    }*/
+
+    //chamar no momento da observação
+    public DistanceReward CalculateDistanceEnemyPositionRewards(Player agent)
+    {
+        DistanceReward distanceReward = new DistanceReward();
+
+        foreach (KeyValuePair<int, Player> entry in playerDict)
+        {
+            Player enemy = entry.Value;
+            if (!enemy.dead && enemy.getPlayerNumber() != agent.getPlayerNumber())
+            {
+                float distance = Util.ManhattanDistance(agent.GetGridPosition(), enemy.GetGridPosition());
+                if (distance < distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].closestDistance)
+                {
+                    distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].closestDistance = distance;
+                    distanceReward.applyRewardClosest = true;
+                    distanceReward.applyRewardClosestMessage = "Agente" + agent.getPlayerNumber() + " melhor aproximacao do inimigo " + enemy.getPlayerNumber();
+                }
+
+                if (distance < distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].previousDistance)
+                {
+                    distanceReward.applyRewardApproach = true;
+                    distanceReward.applyRewardApproachMessage = "Agente" + agent.getPlayerNumber() + " se aproximou do inimigo " + enemy.getPlayerNumber();
+                }
+                else if (distance > distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].previousDistance)
+                {
+                    distanceReward.applyRewardFar = true;
+                    distanceReward.applyRewardFarMessage = "Agente" + agent.getPlayerNumber() + " se distanciou do inimigo " + enemy.getPlayerNumber();
+                }
+
+                distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].previousDistance = distance;
+            }
+        }
+
+        return distanceReward;
     }
 
     public void createDistanceStructuresForReward()
@@ -294,7 +357,12 @@ public class PlayerManager {
                         distanceStructureDict.Add(playerNumber, enemyDistance);
                     }
 
-                    distanceStructureDict[playerNumber].Add(playerNumberEnemy, new DistanceStructure());
+                    float distance = Util.ManhattanDistance(entry.Value.GetGridPosition(), enemyEntry.Value.GetGridPosition());
+                    DistanceStructure dStruct = new DistanceStructure();
+                    dStruct.closestDistance = distance;
+                    dStruct.previousDistance = distance;
+
+                    distanceStructureDict[playerNumber].Add(playerNumberEnemy, dStruct);
                 }
             }
         }
@@ -319,6 +387,7 @@ public class PlayerManager {
             {
                 Player.AddRewardToAgent(playerDict[lastManIndex], Config.REWARD_LAST_MAN, "Agente" + playerDict[lastManIndex].getPlayerNumber() + ": foi o único sobrevivente");
                 playerDict[lastManIndex].Done();
+                playerDict[lastManIndex].lastMan = true;
                 lastManAgent = "Agente " + playerDict[lastManIndex].getPlayerNumber();
                 lastManAgentResult = (uint)playerDict[lastManIndex].getPlayerNumber();
                 lastManFound = true;

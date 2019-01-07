@@ -42,7 +42,6 @@ public class Player : Agent
     private BombermanDecision bombermanDecision;
     private BCTeacherHelper bcTeacherHelper;
 
-
     public Transform monitorFocus;
 
     //Player parameters
@@ -50,11 +49,17 @@ public class Player : Agent
     private int playerNumber = 1;
     private StateType stateType;
 
+    public bool showMonitor;
     public bool canDropBombs;
     public bool dead = false;
     public bool lastMan = false;
 
+    public bool isInFire;
     public bool isInDanger;
+    public bool areThereDangerAround;
+    private PlayerManager.DistanceReward myDistanceReward;
+
+
     public bool isReady = true;
     [HideInInspector]
     public bool wasInitialized = false;
@@ -67,6 +72,7 @@ public class Player : Agent
     private Vector3 initialPosition;
     private Vector3 oldLocalPosition;
     private Vector2 myGridPosition;
+    private Vector2 oldGridPosition;
 
     public bool randomizeResetPosition = false;
     public bool randomizeInitialPosition = false;
@@ -185,7 +191,10 @@ public class Player : Agent
         myGridViewType = grid.getGridViewType();
 
         bombCount = 0;
+        isInFire = false;
         isInDanger = false;
+        areThereDangerAround = false;
+        myDistanceReward = new PlayerManager.DistanceReward();
         canDropBombs = true;
         isReady = true;
         lastMan = false;
@@ -197,6 +206,7 @@ public class Player : Agent
         //------------------------------------------------------ São atualizadas no Start, que é chamado depois
         initialPosition = transform.localPosition;
         oldLocalPosition = transform.localPosition;
+        oldGridPosition = GetOldGridPosition();
         // -----------------------------------------------------------------------------------------------------
 
         playerModel = transform.Find("PlayerModel").gameObject;
@@ -442,12 +452,37 @@ public class Player : Agent
     {
         //Debug.Log("agent" + playerNumber + " observacoes");
         actionIdString = "";
+        myDistanceReward.reset();
+
         myGridPosition = GetGridPosition();
 
         Vector2 normalizedGridPosition = (myGridPosition) / (grid.GetGridMaxValue());
         AddVectorObs(normalizedGridPosition);
 
         AddVectorObsForGrid();
+
+        if (!dead && !IsDone() && !lastMan)
+        {
+            // verificação e aplicação de recompensas do passo anterior antes de enviar ao Brain
+            verifyFire();
+            verifyDanger();
+
+            if (!myGridPosition.Equals(oldGridPosition))
+                myDistanceReward = myPlayerManager.CalculateDistanceEnemyPositionRewards(this);
+
+            applyRewardInFire();
+
+            if (isInFire)
+                forceTerminate();
+
+            //-----------------------------------------------------------------------------------------------------
+            if (!dead && !IsDone())
+            {
+                applyRewardInDanger();
+                applyRewardsToDistanceEnemyPositions();
+            }
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        }
 
         lastObservationLog.update(myGridPosition, grid.gridToString(playerNumber), canDropBombs, isInDanger, myBombManager.existsBombOrDanger());
     }
@@ -456,6 +491,23 @@ public class Player : Agent
     {
         player.AddReward(reward);
         ServiceLocator.getManager(player.scenarioId).GetLogManager().rewardPrint(message, reward);
+    }
+
+    private void applyRewardsToDistanceEnemyPositions()
+    {
+        if (myDistanceReward.applyRewardClosest)
+        {
+            AddRewardToAgent(this, Config.REWARD_CLOSEST_DISTANCE, myDistanceReward.applyRewardClosestMessage);
+        }
+
+        if (myDistanceReward.applyRewardApproach)
+        {
+            AddRewardToAgent(this, Config.REWARD_APPROACHED_DISTANCE, myDistanceReward.applyRewardApproachMessage);
+        }
+        else if (myDistanceReward.applyRewardFar)
+        {
+            AddRewardToAgent(this, Config.REWARD_FAR_DISTANCE, myDistanceReward.applyRewardFarMessage);
+        }
     }
 
     private void penalizeInvalidWalkMovement()
@@ -483,8 +535,78 @@ public class Player : Agent
         AddRewardToAgent(this, Config.REWARD_STOP_ACTION, "Agente" + playerNumber + " ficou parado, e ficar parado eh perder tempo");
     }
 
+    private void verifyFire()
+    {
+        if (grid.checkFire(myGridPosition)) //Bomb code
+        {
+            isInFire = true;
+        }
+    }
+
+    private void applyRewardInFire()
+    {
+        if (isInFire)
+        {
+            AddRewardToAgent(this, Config.REWARD_DIE, "Agente" + playerNumber + " atingido por explosao");
+
+            if (bombermanVillain != null)
+            {
+                if (bombermanVillain.playerNumber != playerNumber)
+                {
+                    AddRewardToAgent(bombermanVillain, Config.REWARD_KILL_ENEMY, "Agente" + bombermanVillain.playerNumber + " matou inimigo");
+                }
+            }
+
+            killAgent();
+        }
+    }
+
+    private void verifyDanger()
+    {
+        //----------
+        if (grid.checkDangerOrBomb(myGridPosition))
+        {
+            isInDanger = true;
+        }
+        else
+        {
+            isInDanger = false;
+
+            // verificamos se há perigo em volta do agente
+            if (ServiceLocator.getManager(scenarioId).GetBombManager().existsBombOrDanger())
+            {
+                if (grid.checkDangerAround(myGridPosition))
+                    areThereDangerAround = true;
+                else
+                    areThereDangerAround = false;
+            }
+            else
+            {
+                areThereDangerAround = false;
+            }
+        }
+    }
+
+    private void applyRewardInDanger()
+    {
+        if (isInDanger)
+        {
+            AddRewardToAgent(this, Config.REWARD_DANGER_AREA, "Agente" + playerNumber + " esta em area de perigo");
+        }
+        else
+        {
+            if (areThereDangerAround)
+            {
+                AddRewardToAgent(this, Config.REWARD_SAFE_AREA, "Agente" + playerNumber + " estava seguro no momento da observação");
+            }
+        }
+    }
+
     public override void AgentAction(float[] vectorAction, string textAction)
     {
+        if (showMonitor)
+            Monitor.Log("R. Acum:", GetCumulativeReward().ToString(), transform);
+
         //Debug.Log("agent" + playerNumber + " acoes");
         if (!dead)
         {
@@ -517,39 +639,19 @@ public class Player : Agent
             {
                 if (!lastMan)
                 {
-                    if (grid.checkFire(myGridPosition)) //Bomb code
-                    {
-                        AddRewardToAgent(this, Config.REWARD_DIE, "Agente" + playerNumber + " atingido por explosao");
-
-                        if (bombermanVillain != null)
-                        {
-                            if (bombermanVillain.playerNumber != playerNumber)
-                            {
-                                AddRewardToAgent(bombermanVillain, Config.REWARD_KILL_ENEMY, "Agente" + bombermanVillain.playerNumber + " matou inimigo");
-                            }
-                        }
-
-                        killAgent();
-                    }
-
-                    //----------
-                    if (grid.checkDanger(myGridPosition))
-                    {
-                        isInDanger = true;
-                    }
-                    else
-                    {
-                        isInDanger = false;
-                    }
-
                     if (animator.gameObject.activeSelf)
                     {
                         animator.SetBool("Walking", false);
                     }
 
+                    //applyRewardInFire();
+
                     //-----------------------------------------------------------------------------------------------------
-                    if (!dead && !IsDone())
-                    {
+                    //if (!dead && !IsDone())
+                    //{
+                        //applyRewardInDanger();
+                        //applyRewardsToDistanceEnemyPositions();
+
                         Vector2 newPos;
                         switch (action)
                         {
@@ -639,44 +741,54 @@ public class Player : Agent
                             default:
                                 break;
                         }
-                    }
 
-                    //recompensas
-                    myGridPosition = GetGridPosition();
-                    Vector2 oldGridPosition = GetOldGridPosition();
+                        myGridPosition = GetGridPosition();
+                        oldGridPosition = GetOldGridPosition();
 
-                    // testar aproximação para cada inimigo. Recompensas só serão dadas caso o agente tenta mudado de posição
-                    if (!myGridPosition.Equals(oldGridPosition))
-                        myPlayerManager.calculateDistanceEnemyPosition(this);
+                        AddRewardToAgent(this, Config.REWARD_TIME_PENALTY, "Agente" + playerNumber + " sofreu penalidade de tempo");
 
+                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardResumePrint(GetReward(), GetCumulativeReward());
 
-                    if (ServiceLocator.getManager(scenarioId).GetBombManager().existsBombOrDanger())
-                    {
-                        if (!isInDanger)
-                        {
-                            AddRewardToAgent(this, Config.REWARD_SAFE_AREA, "Agente" + playerNumber + " esta seguro");
-                        }
-                        else
-                        {
-                            AddRewardToAgent(this, Config.REWARD_DANGER_AREA, "Agente" + playerNumber + " continua em area de perigo");
-                        }
-                    }
+                        grid.updateAgentOnGrid(this);
+                        oldLocalPosition = transform.localPosition;
+                    //}
                 }
-
-                AddRewardToAgent(this, Config.REWARD_TIME_PENALTY, "Agente" + playerNumber + " sofreu penalidade de tempo");
             }
 
-            ServiceLocator.getManager(scenarioId).GetLogManager().rewardResumePrint(GetReward(), GetCumulativeReward());
+            //ServiceLocator.getManager(scenarioId).GetLogManager().rewardResumePrint(GetReward(), GetCumulativeReward());
             ServiceLocator.getManager(scenarioId).GetLogManager().actionPrint("Agent" + playerNumber, action);
-
-            grid.updateAgentOnGrid(this);
-            oldLocalPosition = transform.localPosition;
         }
         else
         {
             Debug.Log("Estou morto " + GetStepCount());
         }
     }
+
+    /*public override void AgentRewards()
+    {
+        //Debug.Log("agent" + playerNumber + " recompensas");
+        if (!dead && !IsDone() && !lastMan)
+        {
+            //verifyFire();
+            verifyDanger();
+
+            if (!myGridPosition.Equals(oldGridPosition))
+                myDistanceReward = myPlayerManager.CalculateDistanceEnemyPositionRewards(this);
+
+            applyRewardInFire();
+
+            //-----------------------------------------------------------------------------------------------------
+            if (!dead && !IsDone())
+            {
+                applyRewardInDanger();
+                applyRewardsToDistanceEnemyPositions();
+            }
+
+            AddRewardToAgent(this, Config.REWARD_TIME_PENALTY, "Agente" + playerNumber + " sofreu penalidade de tempo");
+
+            ServiceLocator.getManager(scenarioId).GetLogManager().rewardResumePrint(GetReward(), GetCumulativeReward());
+        }  
+    }*/
 
     private void DropBomb ()
     {
@@ -705,6 +817,7 @@ public class Player : Agent
             bombCount++;
             canDropBombs = false;
             isInDanger = true;
+            areThereDangerAround = true;
         }
     }
 

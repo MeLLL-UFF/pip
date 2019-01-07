@@ -55,7 +55,6 @@ public class Bomb : MonoBehaviour {
         if (bomberman != null)
             dangerObject.GetComponent<Danger>().bomberOwnerNumber = bomberman.getPlayerNumber();
         dangerObject.GetComponent<Danger>().grid = grid;
-        //dangerObject.GetComponent<Danger>().scenarioId = scenarioId;
 
         if (forceTimeout)
         {
@@ -63,8 +62,6 @@ public class Bomb : MonoBehaviour {
         }
 
         ServiceLocator.getManager(scenarioId).GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
-        //comentado porque senão vai sobrescrever a bomba no mapa. Código chamado junto com a bomba
-        //grid.enableObjectOnGrid(StateType.ST_Danger, dangerObject.GetComponent<DestroySelf>().GetGridPosition());
 
         CreateDangers(Vector3.forward, forceTimeout);
         CreateDangers(Vector3.right, forceTimeout);

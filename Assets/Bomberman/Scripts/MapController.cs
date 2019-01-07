@@ -530,6 +530,8 @@ public class MapController : MonoBehaviour {
             bombManager.timeIterationUpdate();
             ServiceLocator.getManager(scenarioId).GetLogManager().globalStepPrint(playerManager.getIterationCount());
 
+            blocksManager.checkBlocksAndDestroy();
+
             if (followReplayFile)
             {
                 ReplayReader.ReplayStep replayStep = replayReader.readStep(ReplayCommandLine.RCL_Actions);

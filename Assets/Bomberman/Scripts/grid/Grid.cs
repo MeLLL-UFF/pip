@@ -195,6 +195,58 @@ public class Grid : MonoBehaviour {
         return false;
     }
 
+    public bool checkDangerOrBomb(Vector2 pos)
+    {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+
+        if (!isOnGrid(x, y))
+            return false;
+
+        BinaryNode node = NodeFromPos(x, y);
+
+        if (node.hasSomeFlag(StateType.ST_Danger | StateType.ST_Bomb))
+            return true;
+
+        return false;
+    }
+
+    public bool checkDangerAround(Vector2 pos)
+    {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+
+        if (!isOnGrid(x, y))
+            return false;
+
+        int minPosX = Mathf.Max(0, x - 1);
+        int maxPosX = Mathf.Min(gridSizeX-1, x + 1);
+
+        int minPosY = Mathf.Max(0, y - 1);
+        int maxPosY = Mathf.Min(gridSizeY - 1, y + 1);
+
+        for (int posX = minPosX; posX <= maxPosX; ++posX)
+        {
+            for (int posY = minPosY; posY <= maxPosY; ++posY)
+            {
+                if (posX == x && posY == y)
+                    continue;
+
+                Vector2 newPos = new Vector2(posX, posY);
+                int distance = (int)Util.ManhattanDistance(newPos, pos);
+                if (distance > 1)
+                    continue;
+
+                BinaryNode node = NodeFromPos(posX, posY);
+
+                if (node.hasFlag(StateType.ST_Danger))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
     public bool checkDestructible(Vector2 pos)
     {
         int x = (int)pos.x;
