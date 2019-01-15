@@ -336,17 +336,22 @@ public class MapController : MonoBehaviour {
         }
     }
 
+    private void initNextRandomInitPosition(Player player)
+    {
+        grid.clearAgentOnGrid(player);
+
+        player.setInitialPosition(playerManager.getNextRandomInitPosition());
+        player.setOldLocalPosition(player.getInitialPosition());
+        player.transform.localPosition = player.getInitialPosition();
+
+        grid.updateAgentOnGrid(player);
+    }
+
     public void randomizeInitialPositionFunction(Player player)
     {
         if (player.randomizeInitialPosition)
         {
-            grid.clearAgentOnGrid(player);
-
-            player.setInitialPosition(playerManager.getNextRandomInitPosition());
-            player.setOldLocalPosition(player.getInitialPosition());
-            player.transform.localPosition = player.getInitialPosition();
-
-            grid.updateAgentOnGrid(player);
+            initNextRandomInitPosition(player);
         }
     }
 
@@ -354,13 +359,7 @@ public class MapController : MonoBehaviour {
     {
         if (player.randomizeResetPosition)
         {
-            grid.clearAgentOnGrid(player);
-
-            player.setInitialPosition(playerManager.getNextRandomInitPosition());
-            player.setOldLocalPosition(player.getInitialPosition());
-            player.transform.localPosition = player.getInitialPosition();
-
-            grid.updateAgentOnGrid(player);
+            initNextRandomInitPosition(player);
         }
         else
         {
@@ -390,6 +389,25 @@ public class MapController : MonoBehaviour {
         return isToCreateBombs;
     }
 
+    private GameObject createBombGameObject(float x, float z)
+    {
+        GameObject bomb = Instantiate(bombPrefab,
+                                              new Vector3(x + transform.parent.transform.position.x,
+                                                          transform.parent.transform.position.y + 0.3f,
+                                                          z + transform.parent.transform.position.z),
+                                              bombPrefab.transform.rotation,
+                                              transform.parent);
+
+        bomb.GetComponent<Bomb>().grid = grid;
+        bomb.GetComponent<Bomb>().scenarioId = scenarioId;
+        bombManager.addBomb(bomb);
+        grid.enableObjectOnGrid(StateType.ST_Bomb, bomb.GetComponent<Bomb>().GetGridPosition());
+        grid.enableObjectOnGrid(StateType.ST_Danger, bomb.GetComponent<Bomb>().GetGridPosition());
+        bomb.GetComponent<Bomb>().CreateDangerZone(false);
+
+        return bomb;
+    }
+
     private void isToCreateBombsNormalFlux()
     {
         if (isToCreateBombs())
@@ -406,22 +424,9 @@ public class MapController : MonoBehaviour {
                 Vector2 ramdomPos = freePositions[randomIndex];
 
                 freePositions.RemoveAt(randomIndex);
-                //maxBombByCreation = Mathf.Min(numberOfBombsByCreation, freePositions.Count);
 
-                GameObject bomb = Instantiate(bombPrefab,
-                                              new Vector3(Mathf.RoundToInt(ramdomPos.x) + transform.parent.transform.position.x,
-                                                          transform.parent.transform.position.y + 0.3f,
-                                                          Mathf.RoundToInt(ramdomPos.y) + transform.parent.transform.position.z),
-                                              bombPrefab.transform.rotation,
-                                              transform.parent);
-
-                bomb.GetComponent<Bomb>().grid = grid;
-                bomb.GetComponent<Bomb>().scenarioId = scenarioId;
-                bombManager.addBomb(bomb);
-                grid.enableObjectOnGrid(StateType.ST_Bomb, bomb.GetComponent<Bomb>().GetGridPosition());
-                grid.enableObjectOnGrid(StateType.ST_Danger, bomb.GetComponent<Bomb>().GetGridPosition());
-                bomb.GetComponent<Bomb>().CreateDangerZone(false);
-
+                GameObject bomb = createBombGameObject(Mathf.RoundToInt(ramdomPos.x), Mathf.RoundToInt(ramdomPos.y));
+             
                 positionOfBombs.Add(Vector2Int.FloorToInt(bomb.GetComponent<Bomb>().GetGridPosition()));
             }
 
@@ -448,19 +453,7 @@ public class MapController : MonoBehaviour {
 
             for (int i = 0; i < currentReplayStep.bombList.Count; ++i)
             {
-                GameObject bomb = Instantiate(bombPrefab,
-                                              new Vector3(Mathf.RoundToInt(currentReplayStep.bombList[i].x) + transform.parent.transform.position.x,
-                                                          transform.parent.transform.position.y + 0.5f,
-                                                          Mathf.RoundToInt(currentReplayStep.bombList[i].y) + transform.parent.transform.position.z),
-                                              bombPrefab.transform.rotation,
-                                              transform.parent);
-
-                bomb.GetComponent<Bomb>().grid = grid;
-                bomb.GetComponent<Bomb>().scenarioId = scenarioId;
-                bombManager.addBomb(bomb);
-                grid.enableObjectOnGrid(StateType.ST_Bomb, bomb.GetComponent<Bomb>().GetGridPosition());
-                grid.enableObjectOnGrid(StateType.ST_Danger, bomb.GetComponent<Bomb>().GetGridPosition());
-                bomb.GetComponent<Bomb>().CreateDangerZone(false);
+                GameObject bomb = createBombGameObject(Mathf.RoundToInt(currentReplayStep.bombList[i].x), Mathf.RoundToInt(currentReplayStep.bombList[i].y));
 
                 positionOfBombs.Add(Vector2Int.FloorToInt(bomb.GetComponent<Bomb>().GetGridPosition()));
             }

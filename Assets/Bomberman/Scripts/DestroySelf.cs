@@ -20,11 +20,16 @@ public class DestroySelf : MonoBehaviour
 
     private bool wasDestroyed;
 
+    private ParticleSystem myParticleSystem;
+
     private void Awake()
     {
         stateType = StateType.ST_Fire;
         discrete_timer = 0;
         wasDestroyed = false;
+
+        myParticleSystem = GetComponentInChildren<ParticleSystem>();
+        //GetComponentInChildren<ParticleSystem>();
     }
 
     public Vector2 GetGridPosition()
@@ -36,6 +41,8 @@ public class DestroySelf : MonoBehaviour
 
     public void forceDestroy()
     {
+        myParticleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
         //desativamos o colisor
         gameObject.GetComponent<BoxCollider>().enabled = false;
 

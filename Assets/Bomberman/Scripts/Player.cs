@@ -644,114 +644,114 @@ public class Player : Agent
                         animator.SetBool("Walking", false);
                     }
 
-                    //applyRewardInFire();
+                    Vector2 newPos;
+                    switch (action)
+                    {
+                        //cima
+                        case ActionType.AT_Up:
+                            newPos = myGridPosition + new Vector2(0, 1);
+                            if (grid.checkFreePosition(newPos))
+                            {
+                                transform.position = transform.position + new Vector3(0, 0, 1);
+                                reinforceValidWalkMovement();
+                            }
+                            else
+                                penalizeInvalidWalkMovement();
 
-                    //-----------------------------------------------------------------------------------------------------
-                    //if (!dead && !IsDone())
-                    //{
-                        //applyRewardInDanger();
-                        //applyRewardsToDistanceEnemyPositions();
+                            transform.rotation = Quaternion.Euler(0, 0, 0);
+                            if (animator.gameObject.activeSelf)
+                            {
+                                animator.SetBool("Walking", true);
+                            }
+                            break;
+                        //baixo
+                        case ActionType.AT_Down:
+                            newPos = myGridPosition + new Vector2(0, -1);
+                            if (grid.checkFreePosition(newPos))
+                            {
+                                transform.position = transform.position + new Vector3(0, 0, -1);
+                                reinforceValidWalkMovement();
+                            }
+                            else
+                                penalizeInvalidWalkMovement();
 
-                        Vector2 newPos;
-                        switch (action)
-                        {
-                            //cima
-                            case ActionType.AT_Up:
-                                newPos = myGridPosition + new Vector2(0, 1);
-                                if (grid.checkFreePosition(newPos))
-                                {
-                                    transform.position = transform.position + new Vector3(0, 0, 1);
-                                    reinforceValidWalkMovement();
-                                }
-                                else
-                                    penalizeInvalidWalkMovement();
+                            transform.rotation = Quaternion.Euler(0, 180, 0);
+                            if (animator.gameObject.activeSelf)
+                            {
+                                animator.SetBool("Walking", true);
+                            }
+                            break;
+                        //direita
+                        case ActionType.AT_Right:
+                            newPos = myGridPosition + new Vector2(1, 0);
+                            if (grid.checkFreePosition(newPos))
+                            {
+                                transform.position = transform.position + new Vector3(1, 0, 0);
+                                reinforceValidWalkMovement();
+                            }
+                            else
+                                penalizeInvalidWalkMovement();
 
-                                transform.rotation = Quaternion.Euler(0, 0, 0);
-                                if (animator.gameObject.activeSelf)
-                                {
-                                    animator.SetBool("Walking", true);
-                                }
-                                break;
-                            //baixo
-                            case ActionType.AT_Down:
-                                newPos = myGridPosition + new Vector2(0, -1);
-                                if (grid.checkFreePosition(newPos))
-                                {
-                                    transform.position = transform.position + new Vector3(0, 0, -1);
-                                    reinforceValidWalkMovement();
-                                }
-                                else
-                                    penalizeInvalidWalkMovement();
+                            transform.rotation = Quaternion.Euler(0, 90, 0);
+                            if (animator.gameObject.activeSelf)
+                            {
+                                animator.SetBool("Walking", true);
+                            }
+                            break;
+                        //esquerda
+                        case ActionType.AT_Left:
+                            newPos = myGridPosition + new Vector2(-1, 0);
+                            if (grid.checkFreePosition(newPos))
+                            {
+                                transform.position = transform.position + new Vector3(-1, 0, 0);
+                                reinforceValidWalkMovement();
+                            }
+                            else
+                                penalizeInvalidWalkMovement();
 
-                                transform.rotation = Quaternion.Euler(0, 180, 0);
-                                if (animator.gameObject.activeSelf)
-                                {
-                                    animator.SetBool("Walking", true);
-                                }
-                                break;
-                            //direita
-                            case ActionType.AT_Right:
-                                newPos = myGridPosition + new Vector2(1, 0);
-                                if (grid.checkFreePosition(newPos))
-                                {
-                                    transform.position = transform.position + new Vector3(1, 0, 0);
-                                    reinforceValidWalkMovement();
-                                }
-                                else
-                                    penalizeInvalidWalkMovement();
+                            transform.rotation = Quaternion.Euler(0, 270, 0);
+                            if (animator.gameObject.activeSelf)
+                            {
+                                animator.SetBool("Walking", true);
+                            }
+                            break;
+                        //Drop bomb
+                        case ActionType.AT_Bomb:
+                            if (canDropBombs && !dead && !grid.checkBomb(myGridPosition))
+                            {
+                                DropBomb();
+                            }
+                            else
+                            {
+                                AddRewardToAgent(this, Config.REWARD_INVALID_BOMB_ACTION, "Agente" + playerNumber + " tentou colocar bomba sem poder");
+                            }
+                            break;
+                        //Wait
+                        case ActionType.AT_Wait:
+                            penalizeStopAction();
+                            break;
+                        default:
+                            break;
+                    }
 
-                                transform.rotation = Quaternion.Euler(0, 90, 0);
-                                if (animator.gameObject.activeSelf)
-                                {
-                                    animator.SetBool("Walking", true);
-                                }
-                                break;
-                            //esquerda
-                            case ActionType.AT_Left:
-                                newPos = myGridPosition + new Vector2(-1, 0);
-                                if (grid.checkFreePosition(newPos))
-                                {
-                                    transform.position = transform.position + new Vector3(-1, 0, 0);
-                                    reinforceValidWalkMovement();
-                                }
-                                else
-                                    penalizeInvalidWalkMovement();
+                    myGridPosition = GetGridPosition();
+                    oldGridPosition = GetOldGridPosition();
 
-                                transform.rotation = Quaternion.Euler(0, 270, 0);
-                                if (animator.gameObject.activeSelf)
-                                {
-                                    animator.SetBool("Walking", true);
-                                }
-                                break;
-                            //Drop bomb
-                            case ActionType.AT_Bomb:
-                                if (canDropBombs && !dead && !grid.checkBomb(myGridPosition))
-                                {
-                                    DropBomb();
-                                }
-                                else
-                                {
-                                    AddRewardToAgent(this, Config.REWARD_INVALID_BOMB_ACTION, "Agente" + playerNumber + " tentou colocar bomba sem poder");
-                                }
-                                break;
-                            //Wait
-                            case ActionType.AT_Wait:
-                                penalizeStopAction();
-                                break;
-                            default:
-                                break;
-                        }
+                    // se o agente mudou de posição, é necessário verficar fogo porque senão, o fogo irá atingir o agente, mas a atualização da explosão que é chamada antes
+                    // da próxima observação irá destruir o fogo antes de checar se o agente foi atingido pela explosão. Logo, é necessário verificar fogo na observação
+                    // e após o agente mudar de posição.
+                    if (!myGridPosition.Equals(oldGridPosition))
+                    {
+                        verifyFire();
+                        applyRewardInFire();
+                    }
 
-                        myGridPosition = GetGridPosition();
-                        oldGridPosition = GetOldGridPosition();
+                    AddRewardToAgent(this, Config.REWARD_TIME_PENALTY, "Agente" + playerNumber + " sofreu penalidade de tempo");
 
-                        AddRewardToAgent(this, Config.REWARD_TIME_PENALTY, "Agente" + playerNumber + " sofreu penalidade de tempo");
+                    ServiceLocator.getManager(scenarioId).GetLogManager().rewardResumePrint(GetReward(), GetCumulativeReward());
 
-                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardResumePrint(GetReward(), GetCumulativeReward());
-
-                        grid.updateAgentOnGrid(this);
-                        oldLocalPosition = transform.localPosition;
-                    //}
+                    grid.updateAgentOnGrid(this);
+                    oldLocalPosition = transform.localPosition;
                 }
             }
 

@@ -28,5 +28,6 @@ public class BombermanAcademy : Academy {
     public override void AcademyAfterAgentsAct()
     {
         //Debug.Log("teste");
+
     }
 }

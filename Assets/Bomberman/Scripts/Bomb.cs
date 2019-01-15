@@ -48,34 +48,19 @@ public class Bomb : MonoBehaviour {
         return new Vector2(n.gridX, n.gridY);
     }
 
-    public void CreateDangerZone(bool forceTimeout)
+    public void autoDestroy()
     {
-        GameObject dangerObject = Instantiate(dangerPrefab, transform.position, Quaternion.identity, transform.parent);
-        dangerObject.GetComponent<Danger>().bombermanOwner = bomberman;
-        if (bomberman != null)
-            dangerObject.GetComponent<Danger>().bomberOwnerNumber = bomberman.getPlayerNumber();
-        dangerObject.GetComponent<Danger>().grid = grid;
-
-        if (forceTimeout)
-        {
-            dangerObject.GetComponent<Danger>().discrete_timer = Config.BOMB_TIMER_DISCRETE;
-        }
-
-        ServiceLocator.getManager(scenarioId).GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
-
-        CreateDangers(Vector3.forward, forceTimeout);
-        CreateDangers(Vector3.right, forceTimeout);
-        CreateDangers(Vector3.back, forceTimeout);
-        CreateDangers(Vector3.left, forceTimeout);
+        grid.disableObjectOnGrid(stateType, GetGridPosition());
+        Destroy(gameObject);
     }
 
-    bool Explode(bool forceTimeout)
+    void createExplosionObject(bool forceTimeout, Vector3 pos, Quaternion rotation)
     {
         //Bomb code
-        GameObject explosionObject = Instantiate(explosionPrefab, transform.position, Quaternion.identity, transform.parent);
+        GameObject explosionObject = Instantiate(explosionPrefab, pos, rotation, transform.parent);
         explosionObject.GetComponent<DestroySelf>().bombermanOwner = bomberman;
         explosionObject.GetComponent<DestroySelf>().grid = grid;
-        //explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
+
         if (bomberman != null)
             explosionObject.GetComponent<DestroySelf>().bombermanOwnerNumber = bomberman.getPlayerNumber();
 
@@ -86,12 +71,19 @@ public class Bomb : MonoBehaviour {
 
         ServiceLocator.getManager(scenarioId).GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
         grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
+        grid.disableObjectOnGrid(StateType.ST_Danger, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
+    }
+
+    bool Explode(bool forceTimeout)
+    {
+        //Bomb code
+        createExplosionObject(forceTimeout, transform.position, Quaternion.identity);
 
         /*StartCoroutine(*/
-        CreateExplosions(Vector3.forward, forceTimeout); 
+        CreateExplosions(Vector3.forward, forceTimeout);
         CreateExplosions(Vector3.right, forceTimeout);
         CreateExplosions(Vector3.back, forceTimeout);
-        CreateExplosions(Vector3.left, forceTimeout); 
+        CreateExplosions(Vector3.left, forceTimeout);
 
         GetComponent<MeshRenderer>().enabled = false;
         exploded = true;
@@ -103,17 +95,11 @@ public class Bomb : MonoBehaviour {
         }
 
         grid.disableObjectOnGrid(stateType, GetGridPosition());
-        grid.disableObjectOnGrid(StateType.ST_Danger, GetGridPosition());
+        //grid.disableObjectOnGrid(StateType.ST_Danger, GetGridPosition());
 
         Destroy(gameObject);
 
         return true;
-    }
-
-    public void autoDestroy()
-    {
-        grid.disableObjectOnGrid(stateType, GetGridPosition());
-        Destroy(gameObject);
     }
 
     private void CreateExplosions(Vector3 direction, bool forceTimeout)
@@ -126,61 +112,25 @@ public class Bomb : MonoBehaviour {
 
             if (!hit.collider)
             {
-                GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation, transform.parent);
-                explosionObject.GetComponent<DestroySelf>().bombermanOwner = bomberman;
-                explosionObject.GetComponent<DestroySelf>().grid = grid;
-                //explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
-                if (bomberman != null)
-                    explosionObject.GetComponent<DestroySelf>().bombermanOwnerNumber = bomberman.getPlayerNumber();
-
-                if (forceTimeout)
-                    explosionObject.GetComponent<DestroySelf>().discrete_timer = Config.EXPLOSION_TIMER_DISCRETE;
-
-                ServiceLocator.getManager(scenarioId).GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
-                grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
-                grid.disableObjectOnGrid(StateType.ST_Danger, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
+                createExplosionObject(forceTimeout, transform.position + (i * direction), explosionPrefab.transform.rotation);
             }
             else
             {
                 if (hit.collider.CompareTag("Destructable"))  
                 {
-                    GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation, transform.parent);
-                    explosionObject.GetComponent<DestroySelf>().bombermanOwner = bomberman;
-                    explosionObject.GetComponent<DestroySelf>().grid = grid;
-                    //explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
-                    if (bomberman != null)
-                        explosionObject.GetComponent<DestroySelf>().bombermanOwnerNumber = bomberman.getPlayerNumber();
-
-                    if (forceTimeout)
-                        explosionObject.GetComponent<DestroySelf>().discrete_timer = Config.EXPLOSION_TIMER_DISCRETE;
-
-                    ServiceLocator.getManager(scenarioId).GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
-                    grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
-                    grid.disableObjectOnGrid(StateType.ST_Danger, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
+                    createExplosionObject(forceTimeout, transform.position + (i * direction), explosionPrefab.transform.rotation);
                 }
                 else if (hit.collider.CompareTag("Bomb") )
                 {
                     Bomb otherBomb = hit.collider.GetComponentInParent<Bomb>();
                     if (otherBomb.bombId != bombId)
                     {
-                        GameObject explosionObject = Instantiate(explosionPrefab, transform.position + (i * direction), explosionPrefab.transform.rotation, transform.parent);
-                        explosionObject.GetComponent<DestroySelf>().bombermanOwner = bomberman;
-                        explosionObject.GetComponent<DestroySelf>().grid = grid;
-                        //explosionObject.GetComponent<DestroySelf>().scenarioId = scenarioId;
-                        if (bomberman != null)
-                            explosionObject.GetComponent<DestroySelf>().bombermanOwnerNumber = bomberman.getPlayerNumber();
-
-                        if (forceTimeout)
-                            explosionObject.GetComponent<DestroySelf>().discrete_timer = Config.EXPLOSION_TIMER_DISCRETE;
-
-                        ServiceLocator.getManager(scenarioId).GetBombManager().addExplosion(explosionObject.GetComponent<DestroySelf>());
-                        grid.enableObjectOnGrid(StateType.ST_Fire, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
-                        grid.disableObjectOnGrid(StateType.ST_Danger, explosionObject.GetComponent<DestroySelf>().GetGridPosition());
+                        createExplosionObject(forceTimeout, transform.position + (i * direction), explosionPrefab.transform.rotation);
                     }
-                    else
+                    /*else
                     {
                         Debug.Log("Mesma bomba");
-                    }
+                    }*/
                 }
 
                 break;
@@ -189,6 +139,44 @@ public class Bomb : MonoBehaviour {
 
         //yield return new WaitForSeconds(.05f);
         //yield return null;
+    }
+
+    private GameObject CreateDangerObject(bool forceTimeout, Vector3 pos, Quaternion rotation)
+    {
+        GameObject dangerObject = Instantiate(dangerPrefab, pos, rotation, transform.parent);
+        dangerObject.GetComponent<Danger>().bombermanOwner = bomberman;
+
+        if (bomberman != null)
+            dangerObject.GetComponent<Danger>().bomberOwnerNumber = bomberman.getPlayerNumber();
+
+        dangerObject.GetComponent<Danger>().grid = grid;
+
+        if (forceTimeout)
+        {
+            dangerObject.GetComponent<Danger>().discrete_timer = Config.BOMB_TIMER_DISCRETE;
+        }
+
+        ServiceLocator.getManager(scenarioId).GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
+
+        return dangerObject;
+    }
+
+    private void createDangerObjectAndEnableOnGrid(bool forceTimeout, Vector3 pos)
+    {
+        GameObject dangerObject = CreateDangerObject(forceTimeout, pos, dangerPrefab.transform.rotation);
+        grid.enableObjectOnGrid(StateType.ST_Danger, dangerObject.GetComponent<Danger>().GetGridPosition());
+    }
+
+    public void CreateDangerZone(bool forceTimeout)
+    {
+        // in current position
+        CreateDangerObject(forceTimeout, transform.position, Quaternion.identity);
+
+        // in around positions
+        CreateDangers(Vector3.forward, forceTimeout);
+        CreateDangers(Vector3.right, forceTimeout);
+        CreateDangers(Vector3.back, forceTimeout);
+        CreateDangers(Vector3.left, forceTimeout);
     }
 
     private void CreateDangers(Vector3 direction, bool forceTimeout)
@@ -201,58 +189,25 @@ public class Bomb : MonoBehaviour {
 
             if (!hit.collider)
             {
-                GameObject dangerObject = Instantiate(dangerPrefab, transform.position + (i * direction), dangerPrefab.transform.rotation, transform.parent);
-                dangerObject.GetComponent<Danger>().bombermanOwner = bomberman;
-                if (bomberman != null)
-                    dangerObject.GetComponent<Danger>().bomberOwnerNumber = bomberman.getPlayerNumber();
-                dangerObject.GetComponent<Danger>().grid = grid;
-                //dangerObject.GetComponent<Danger>().scenarioId = scenarioId;
-
-                if (forceTimeout)
-                    dangerObject.GetComponent<Danger>().discrete_timer = Config.BOMB_TIMER_DISCRETE;
-
-                ServiceLocator.getManager(scenarioId).GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
-                grid.enableObjectOnGrid(StateType.ST_Danger, dangerObject.GetComponent<Danger>().GetGridPosition());
+                createDangerObjectAndEnableOnGrid(forceTimeout, transform.position + (i * direction));
             }
             else
             {
                 if (hit.collider.CompareTag("Destructable"))
                 {
-                    GameObject dangerObject = Instantiate(dangerPrefab, transform.position + (i * direction), dangerPrefab.transform.rotation, transform.parent);
-                    dangerObject.GetComponent<Danger>().bombermanOwner = bomberman;
-                    if (bomberman != null)
-                        dangerObject.GetComponent<Danger>().bomberOwnerNumber = bomberman.getPlayerNumber();
-                    dangerObject.GetComponent<Danger>().grid = grid;
-                    //dangerObject.GetComponent<Danger>().scenarioId = scenarioId;
-
-                    if (forceTimeout)
-                        dangerObject.GetComponent<Danger>().discrete_timer = Config.BOMB_TIMER_DISCRETE;
-
-                    ServiceLocator.getManager(scenarioId).GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
-                    grid.enableObjectOnGrid(StateType.ST_Danger, dangerObject.GetComponent<Danger>().GetGridPosition());
+                    createDangerObjectAndEnableOnGrid(forceTimeout, transform.position + (i * direction));
                 }
                 else if (hit.collider.CompareTag("Bomb"))
                 {
                     Bomb otherBomb = hit.collider.GetComponentInParent<Bomb>();
                     if (otherBomb.bombId != bombId)
                     {
-                        GameObject dangerObject = Instantiate(dangerPrefab, transform.position + (i * direction), dangerPrefab.transform.rotation, transform.parent);
-                        dangerObject.GetComponent<Danger>().bombermanOwner = bomberman;
-                        if (bomberman != null)
-                            dangerObject.GetComponent<Danger>().bomberOwnerNumber = bomberman.getPlayerNumber();
-                        dangerObject.GetComponent<Danger>().grid = grid;
-                        //dangerObject.GetComponent<Danger>().scenarioId = scenarioId;
-
-                        if (forceTimeout)
-                            dangerObject.GetComponent<Danger>().discrete_timer = Config.BOMB_TIMER_DISCRETE;
-
-                        ServiceLocator.getManager(scenarioId).GetBombManager().addDanger(dangerObject.GetComponent<Danger>());
-                        grid.enableObjectOnGrid(StateType.ST_Danger, dangerObject.GetComponent<Danger>().GetGridPosition());
+                        createDangerObjectAndEnableOnGrid(forceTimeout, transform.position + (i * direction));
                     }
-                    else
+                    /*else
                     {
                         Debug.Log("Mesma bomba");
-                    }
+                    }*/
                 }
 
                 break;
