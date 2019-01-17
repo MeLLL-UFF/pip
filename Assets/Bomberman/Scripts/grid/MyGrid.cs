@@ -236,15 +236,7 @@ public class MyGrid : MonoBehaviour {
         {
             if (hit.collider.CompareTag("Player"))
             {
-                int number = hit.collider.gameObject.GetComponent<Player>().playerNumber;
-                if (number == 1)
-                    nodeStateType = StateType.ST_Agent1;
-                else if (number == 2)
-                {
-                    //como o agente está imitando o outro, logo é necessário que o espaço de estados seja representado da mesma forma
-                    nodeStateType = StateType.ST_Agent2;
-                }
-                    
+               nodeStateType = StateType.ST_Agent1;     
             }
         }
 
@@ -502,21 +494,6 @@ public class MyGrid : MonoBehaviour {
             {
                 BaseNode node = grid[x, y];
                 StateType nodeStateType = (StateType)node.getBinary();
-
-                if (playerNumber == 2)
-                {
-                    //se é um nó com stateType agent
-                    if (node.hasFlag(StateType.ST_Agent1))
-                    {
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent1);
-                        nodeStateType = nodeStateType | StateType.ST_Agent2;
-                    }
-                    else if (node.hasFlag(StateType.ST_Agent2))
-                    {
-                        nodeStateType = nodeStateType & (~StateType.ST_Agent2);
-                        nodeStateType = nodeStateType | StateType.ST_Agent1;
-                    }
-                }
 
                 saida += StateTypeExtension.getIntBinaryString(nodeStateType) + " | ";
             }

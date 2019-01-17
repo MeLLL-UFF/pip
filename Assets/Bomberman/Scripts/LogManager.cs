@@ -106,7 +106,7 @@ public class LogManager {
     {
         if (!disabled)
         {
-            print("Agent " + player.playerNumber + " Step " + player.getLocalStep());
+            print("Agent " + 1 + " Step " + player.getLocalStep());
             //print("Recompensas:", "\n");
         }
     }
@@ -123,7 +123,7 @@ public class LogManager {
     {
         if (!disabled)
         {
-            print("Local Episode of agent " + player.playerNumber + ": " + epCount);
+            print("Local Episode of agent " + 1 + ": " + epCount);
         }
     }
 

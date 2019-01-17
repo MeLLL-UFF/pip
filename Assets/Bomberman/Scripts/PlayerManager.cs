@@ -6,7 +6,6 @@ public class PlayerManager {
 
     bool initialized = false;
     private Player agent1;
-    private Player agent2;
 
     private int deadCount;
     private int targetCount;
@@ -94,25 +93,14 @@ public class PlayerManager {
         return true;
     }
 
-    public void setAgent1(Player p)
+    public void setAgent(Player p)
     {
         agent1 = p;
         addPlayer(p);
     }
 
-    public void setAgent2(Player p)
-    {
-        agent2 = p;
-        addPlayer(p);
-    }
-
-    public Player getAgent1()
+    public Player getAgent()
     {
         return agent1;
-    }
-
-    public Player getAgent2()
-    {
-        return agent2;
     }
 }

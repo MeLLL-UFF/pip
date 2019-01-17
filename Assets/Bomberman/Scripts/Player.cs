@@ -58,9 +58,6 @@ public class Player : Agent
     public Transform monitorFocus;
     public GameObject hammerEffect;
 
-    //Player parameters
-    [Range (1, 2)] //Enables a nifty slider in the editor. Indicates what player this is: P1 or P2
-    public int playerNumber = 1;
     private StateType stateType;
 
     public bool dead = false;
@@ -139,14 +136,7 @@ public class Player : Agent
 
         myPlayerManager = ServiceLocator.getManager(scenarioId).GetPlayerManager();
 
-        if (playerNumber == 1)
-        {
-            myPlayerManager.setAgent1(this);
-        }
-        else if (playerNumber == 2)
-        {
-            myPlayerManager.setAgent2(this);
-        }
+        myPlayerManager.setAgent(this);
     }
 
     public override void InitializeAgent()
@@ -182,14 +172,8 @@ public class Player : Agent
         }
             
 
-        if (playerNumber == 1)
-        {
-            stateType = StateType.ST_Agent1;
-        }
-        else if (playerNumber == 2)
-        {
-            stateType = StateType.ST_Agent2;
-        }
+        stateType = StateType.ST_Agent1;
+       
 
         myIterationActionWasExecuted = false;
         wasFilledTeacherObservations = false;
@@ -221,7 +205,7 @@ public class Player : Agent
         if (saveReplay)
         {
             if (replayWriter == null)
-                replayWriter = new ReplayWriter(playerNumber, scenarioId);
+                replayWriter = new ReplayWriter(1, scenarioId);
 
             replayWriter.initSeq(localEpisode);
         }
@@ -231,17 +215,9 @@ public class Player : Agent
         
         ServiceLocator.getManager(scenarioId).GetLogManager().localEpisodePrint(localEpisode++, this);
 
-        if (playerNumber == 1)
-        {
-            ServiceLocator.getManager(scenarioId).GetBlocksManager().resetBlocks();
-            //grid.refreshNodesInGrid();
-            isReady = true;
-        }
-        else
-        {
-            //Debug.Log("Agente 2 nao resetou a fase");
-            isReady = true;
-        }
+        ServiceLocator.getManager(scenarioId).GetBlocksManager().resetBlocks();
+        //grid.refreshNodesInGrid();
+        isReady = true;
 
         dead = false;
         myIterationActionWasExecuted = false;
@@ -283,21 +259,6 @@ public class Player : Agent
                     {
                         BaseNode node = grid.NodeFromPos(x, y);
                         StateType nodeStateType = (StateType)node.getBinary();
-
-                        if (playerNumber == 2)
-                        {
-                            //se é um nó com stateType agent
-                            if (node.hasFlag(StateType.ST_Agent1))
-                            {
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent1);
-                                nodeStateType = nodeStateType | StateType.ST_Agent2;
-                            }
-                            else if (node.hasFlag(StateType.ST_Agent2))
-                            {
-                                nodeStateType = nodeStateType & (~StateType.ST_Agent2);
-                                nodeStateType = nodeStateType | StateType.ST_Agent1;
-                            }
-                        }
                         
                         int cell = (int)nodeStateType;
 
@@ -332,7 +293,7 @@ public class Player : Agent
                 {
                     for (int x = 0; x < grid.GetGridSizeX(); ++x)
                     {
-                        AddVectorObs(grid.NodeFromPos(x, y).getPositionAgent(playerNumber));
+                        AddVectorObs(grid.NodeFromPos(x, y).getPositionAgent(1));
                     }
                 }
 
@@ -393,10 +354,10 @@ public class Player : Agent
             }
         }
 
-        ServiceLocator.getManager(scenarioId).GetLogManager().statePrint("Agent " + playerNumber,
+        ServiceLocator.getManager(scenarioId).GetLogManager().statePrint("Agent " + 1,
                                                     myGridPosition,
                                                     targetGridPosition,
-                                                    grid.gridToString(playerNumber));
+                                                    grid.gridToString(1));
         
     }
 
@@ -411,27 +372,27 @@ public class Player : Agent
 
     private void penalizeInvalidWalkMovement()
     {
-        AddRewardToAgent(this, Config.REWARD_INVALID_WALK_ACTION, "Agente" + playerNumber + " tentou andar sem poder");
+        AddRewardToAgent(this, Config.REWARD_INVALID_WALK_ACTION, "Agente" + 1 + " tentou andar sem poder");
     }
 
     private void reinforceValidWalkMovement()
     {
-        AddRewardToAgent(this, Config.REWARD_VALID_WALK_POSITION, "Agente" + playerNumber + " andou para um lugar livre");
+        AddRewardToAgent(this, Config.REWARD_VALID_WALK_POSITION, "Agente" + 1 + " andou para um lugar livre");
     }
 
     private void penalizeInvalidHammerAction()
     {
-        AddRewardToAgent(this, Config.REWARD_INVALID_HAMMER_ACTION, "Agente" + playerNumber + " tentou usar o martelo desnecessariamente");
+        AddRewardToAgent(this, Config.REWARD_INVALID_HAMMER_ACTION, "Agente" + 1 + " tentou usar o martelo desnecessariamente");
     }
 
     private void reinforceValidHammerAction()
     {
-        AddRewardToAgent(this, Config.REWARD_VALID_HAMMER_ACTION, "Agente" + playerNumber + " usou o martelo corretamente");
+        AddRewardToAgent(this, Config.REWARD_VALID_HAMMER_ACTION, "Agente" + 1 + " usou o martelo corretamente");
     }
 
     private void penalizeStopAction()
     {
-        AddRewardToAgent(this, Config.REWARD_STOP_ACTION, "Agente" + playerNumber + " ficou parado, e ficar parado eh perder tempo");
+        AddRewardToAgent(this, Config.REWARD_STOP_ACTION, "Agente" + 1 + " ficou parado, e ficar parado eh perder tempo");
     }
 
     private float calculateMimickRewards(ActionType action)
@@ -476,7 +437,7 @@ public class Player : Agent
             {
                 if (getLocalStep() >= Config.MAX_STEP_PER_AGENT)
                 {
-                    AddRewardToAgent(this, Config.REWARD_MAX_STEP_REACHED, "Agente" + playerNumber + " alcancou max step");
+                    AddRewardToAgent(this, Config.REWARD_MAX_STEP_REACHED, "Agente" + 1 + " alcancou max step");
                     killAgent();
                 }
             }
@@ -504,7 +465,7 @@ public class Player : Agent
                 Monitor.Log("RL Step: ", (getLocalStep()-1).ToString(), monitorFocus);
                 //Monitor.Log(" T Step: ", GetTotalStepCount().ToString(), monitorFocus);
                 Monitor.Log(" L Step: ", GetStepCount().ToString(), monitorFocus);
-                Monitor.Log("ActionP" + playerNumber + ": ", Convert.ToString((int)action), monitorFocus);
+                Monitor.Log("ActionP" + 1 + ": ", Convert.ToString((int)action), monitorFocus);
             }
 
             if (saveReplay)
@@ -520,7 +481,7 @@ public class Player : Agent
                     //Testar objetivo final e target aqui porque foi observado que ao chegar ao destino final, o estado não é atualizado.
                     if (grid.checkTarget(myGridPosition))
                     {
-                        AddRewardToAgent(this, Config.REWARD_GOAL, "Agente" + playerNumber + " alcancou o objetivo");
+                        AddRewardToAgent(this, Config.REWARD_GOAL, "Agente" + 1 + " alcancou o objetivo");
 
                         targetReached = true;
                         myPlayerManager.addTargetCount();
@@ -677,26 +638,26 @@ public class Player : Agent
                     if (distanceToTarget < closestDistance)
                     {
                         closestDistance = distanceToTarget;
-                        AddRewardToAgent(this, Config.REWARD_CLOSEST_DISTANCE, "Agente" + playerNumber + " melhor aproximacao do objetivo");
+                        AddRewardToAgent(this, Config.REWARD_CLOSEST_DISTANCE, "Agente" + 1 + " melhor aproximacao do objetivo");
                     }
 
                     if (distanceToTarget < previousDistance)
                     {
-                        AddRewardToAgent(this, Config.REWARD_APPROACHED_DISTANCE, "Agente" + playerNumber + " se aproximou");
+                        AddRewardToAgent(this, Config.REWARD_APPROACHED_DISTANCE, "Agente" + 1 + " se aproximou");
                     }
                     else if (distanceToTarget > previousDistance)
                     {
-                        AddRewardToAgent(this, Config.REWARD_FAR_DISTANCE, "Agente" + playerNumber + " se distanciou");
+                        AddRewardToAgent(this, Config.REWARD_FAR_DISTANCE, "Agente" + 1 + " se distanciou");
                     }
 
                     previousDistance = distanceToTarget;
                 }
 
-                AddRewardToAgent(this, Config.REWARD_TIME_PENALTY, "Agente" + playerNumber + " sofreu penalidade de tempo");
+                AddRewardToAgent(this, Config.REWARD_TIME_PENALTY, "Agente" + 1 + " sofreu penalidade de tempo");
             }
 
             ServiceLocator.getManager(scenarioId).GetLogManager().rewardResumePrint(GetReward(), GetCumulativeReward());
-            ServiceLocator.getManager(scenarioId).GetLogManager().actionPrint("Agent" + playerNumber, action);
+            ServiceLocator.getManager(scenarioId).GetLogManager().actionPrint("Agent" + 1, action);
 
             grid.updateAgentOnGrid(this);
             oldLocalPosition = transform.localPosition;
@@ -817,15 +778,10 @@ public class Player : Agent
         else */if (myPlayerManager.getDeadCount() >= 1)
         {
             //playerManager.clearDeadCount();
-            if (myPlayerManager.getAgent1() != null && myPlayerManager.getAgent1().dead)
+            if (myPlayerManager.getAgent() != null && myPlayerManager.getAgent().dead)
             {
                 //Debug.Log("DeadCount1 ag1");
                 Invoke("DoneWithDelay", 2.5f);
-            }
-            else if (myPlayerManager.getAgent2() != null && myPlayerManager.getAgent2().dead)
-            {
-                //Debug.Log("DeadCount1 ag2");
-                Invoke("DoneWithDelay", 0.0f);
             }
         }
     }
@@ -833,62 +789,26 @@ public class Player : Agent
     private void doneAnother()
     {
         isReady = false;
-        if (playerNumber == 1)
-        {
-            Player another = myPlayerManager.getAgent2();
-            if (another != null)
-            {
-                //Debug.Log("Matei o agente2");
-                another.killAgentOnly();
-                another.Done();
-                another.isReady = false;
-                myPlayerManager.clearDeadCount();
-            }
 
-            if (myPlayerManager.getNumPlayers() == 1)
-            {
-                myPlayerManager.clearDeadCount();
-            }
-        }
-        else if (playerNumber == 2)
+        if (myPlayerManager.getNumPlayers() == 1)
         {
-            dead = true;
-            Player another = myPlayerManager.getAgent1();
-            if (another != null)
-            {
-                //Debug.Log("Matei o agente1");
-                another.killAgentBoth();
-                another.isReady = false;
-            }
+            myPlayerManager.clearDeadCount();
         }
     }
 
     private void doneAnotherWithoutDeath()
     {
         isReady = false;
-        if (playerNumber == 1)
-        {
-            Player another = ServiceLocator.getManager(scenarioId).GetPlayerManager().getAgent2();
-            if (another != null)
-            {
-                another.Done();
-                another.isReady = false;
-                ServiceLocator.getManager(scenarioId).GetPlayerManager().clearDeadCount();
-                ServiceLocator.getManager(scenarioId).GetPlayerManager().clearTargetCount();
-                //another.targetReached = false;
-            }
 
-            if (ServiceLocator.getManager(scenarioId).GetPlayerManager().getNumPlayers() == 1)
-            {
-                ServiceLocator.getManager(scenarioId).GetPlayerManager().clearDeadCount();
-            }
+        if (ServiceLocator.getManager(scenarioId).GetPlayerManager().getNumPlayers() == 1)
+        {
+            ServiceLocator.getManager(scenarioId).GetPlayerManager().clearDeadCount();
         }
     }
 
     private void DoneWithDelay()
-    {
-        if (playerNumber == 1)
-            Done();
+    { 
+        Done();
 
         doneAnother();
     }

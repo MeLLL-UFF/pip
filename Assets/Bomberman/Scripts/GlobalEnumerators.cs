@@ -39,8 +39,7 @@ public class ActionTypeExtension
     ST_Block    =   1 << 1,     // 2        00000010
     
     ST_Agent1   =   1 << 2,     // 4        00000100
-    ST_Agent2   =   1 << 3,     // 8        00001000
-    ST_Target   =   1 << 4,     // 16       00010000
+    ST_Target   =   1 << 3,     // 8
 
     //apenas quando há bomba
     /*ST_Bomb     =   1 << 5,     // 32        
@@ -49,7 +48,7 @@ public class ActionTypeExtension
     // -------------------------------
 
 
-    ST_All = (ST_Wall | ST_Block | ST_Agent1 | ST_Agent2 | ST_Target /*| ST_Bomb | ST_Fire | ST_Danger*/),
+    ST_All = (ST_Wall | ST_Block | ST_Agent1 | ST_Target /*| ST_Bomb | ST_Fire | ST_Danger*/),
     ST_Size = 9
 }
 

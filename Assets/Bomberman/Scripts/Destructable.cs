@@ -115,7 +115,7 @@ public class Destructable : MonoBehaviour {
             
             if (hammerman != null)
             {
-                Player.AddRewardToAgent(hammerman, Config.REWARD_BLOCK_DESTROY, "Agente" + hammerman.playerNumber + " destruiu um bloco");
+                Player.AddRewardToAgent(hammerman, Config.REWARD_BLOCK_DESTROY, "Agente" + 1 + " destruiu um bloco");
             }
             else
             {

@@ -37,7 +37,7 @@ public class BinaryNode : BaseNode {
 
     public override int getPositionAgent(int playerNumber)
     {
-        StateType testFlag = StateType.ST_Agent2;
+        StateType testFlag = StateType.ST_Agent1;
 
         if (playerNumber == 1)
             testFlag = StateType.ST_Agent1;
