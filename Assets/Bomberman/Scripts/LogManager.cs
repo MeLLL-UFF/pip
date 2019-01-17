@@ -127,7 +127,7 @@ public class LogManager {
         }
     }
 
-    public void statePrint(string agentName, Vector2 agentGridPos, Vector2 targetGridPos, /*Vector2 velocity,*/ string grid, bool canDropBombs, bool isInDanger, bool existBombs)
+    public void statePrint(string agentName, Vector2 agentGridPos, Vector2 targetGridPos, /*Vector2 velocity,*/ string grid)
     {
         if (!disabled)
         {
@@ -135,9 +135,7 @@ public class LogManager {
             result += tabFormat + "pos: " + agentGridPos + "\n";
             result += tabFormat + "tar: " + targetGridPos + "\n";
             //result += tabFormat + "vel: " + velocity + "\n";
-            result += tabFormat + "canDropBombs: " + canDropBombs + "\n";
-            result += tabFormat + "isInDanger: " + isInDanger + "\n";
-            result += tabFormat + "existBombs: " + existBombs + "\n";
+           
             result += tabFormat + "grid:" + "\n" + grid;
 
 

@@ -63,20 +63,16 @@ public class Player : Agent
     public int playerNumber = 1;
     private StateType stateType;
 
-    public bool canDropBombs;
     public bool dead = false;
     public bool targetReached = false;
-    public bool isInDanger;
     public bool isReady = true;
     [HideInInspector]
     public bool wasInitialized = false;
 
-    public GameObject bombPrefab;
     public Transform Target;
-    public Grid grid;
+    public MyGrid grid;
 
     private Animator animator;
-    private int bombs = 2;
 
     private Vector3 initialPosition;
     private Vector3 oldLocalPosition;
@@ -84,16 +80,6 @@ public class Player : Agent
     private Vector2 targetGridPosition;
 
     private bool alreadyWasReseted = false;
-    public bool randomizeResetPosition = false;
-    public bool randomizeInitialPosition = false;
-    public bool forceInitialPosition = false;
-    [Range(0, 3)]
-    public int indexInitialPosition = 0;
-    private static Vector3[] initialPositions = new Vector3[] {  new Vector3(1.0f, 0.5f, 9.0f),
-                                                                 new Vector3(9.0f, 0.5f, 9.0f) ,
-                                                                 new Vector3(9.0f, 0.5f, 1.0f) ,
-                                                                 new Vector3(1.0f, 0.5f, 1.0f)};
-
     private float closestDistance = float.MaxValue;
     private float previousDistance = float.MaxValue;
 
@@ -103,7 +89,6 @@ public class Player : Agent
     
     public float timeBetweenDecisionsAtInference;
     private float timeSinceDecision;
-
 
     private GameObject playerModel;
 
@@ -115,22 +100,6 @@ public class Player : Agent
 
     public bool myIterationActionWasExecuted;
     public PlayerManager myPlayerManager;
-    public BombManager myBombManager;
-    Player bombermanVillain;
-
-    int bombCount = 0;
-
-    static Vector3 getOppositeInitialPosition(int index)
-    {
-        if (index == 0)
-            return initialPositions[2];
-        else if (index == 1)
-            return initialPositions[3];
-        else if (index == 2)
-            return initialPositions[0];
-        else
-            return initialPositions[1];
-    }
 
     private void clearReplayVars()
     {
@@ -169,7 +138,6 @@ public class Player : Agent
             bcTeacherHelper = GetComponent<BCTeacherHelper>();
 
         myPlayerManager = ServiceLocator.getManager(scenarioId).GetPlayerManager();
-        myBombManager = ServiceLocator.getManager(scenarioId).GetBombManager();
 
         if (playerNumber == 1)
         {
@@ -178,64 +146,6 @@ public class Player : Agent
         else if (playerNumber == 2)
         {
             myPlayerManager.setAgent2(this);
-        }
-
-        randomizeInitialPositionFunction();
-    }
-
-    private void randomizeInitialPositionFunction()
-    {
-        if (randomizeInitialPosition)
-        {
-            grid.clearAgentOnGrid(this);
-
-            int number;
-            if (!forceInitialPosition)
-                number = UnityEngine.Random.Range(0, initialPositions.Length);
-            else
-                number = indexInitialPosition;
-
-            initialPosition = initialPositions[number];
-            oldLocalPosition = initialPosition;
-            transform.localPosition = initialPosition;
-            grid.updateAgentOnGrid(this);
-
-            Vector3 gridTarget3d = Target.transform.localPosition;
-            Vector2 oldGridTarget2d = new Vector2(Mathf.RoundToInt(gridTarget3d.x), Mathf.RoundToInt(gridTarget3d.z));
-            grid.disableObjectOnGrid(StateType.ST_Target, oldGridTarget2d);
-
-            Vector3 targetGridPosition3d = Player.getOppositeInitialPosition(number);
-            targetGridPosition = new Vector2(Mathf.RoundToInt(targetGridPosition3d.x), Mathf.RoundToInt(targetGridPosition3d.z));
-            grid.enableObjectOnGrid(StateType.ST_Target, targetGridPosition);
-            Target.transform.localPosition = targetGridPosition3d;
-        }
-    }
-
-    private void randomizeResetPositionFunction()
-    {
-        if (randomizeResetPosition)
-        {
-            grid.clearAgentOnGrid(this);
-
-            int number = UnityEngine.Random.Range(0, initialPositions.Length);
-
-            initialPosition = initialPositions[number];
-            oldLocalPosition = initialPosition;
-            transform.localPosition = initialPosition;
-            grid.updateAgentOnGrid(this);
-
-            Vector3 gridTarget3d = Target.transform.localPosition;
-            Vector2 oldGridTarget2d = new Vector2(Mathf.RoundToInt(gridTarget3d.x), Mathf.RoundToInt(gridTarget3d.z));
-            grid.disableObjectOnGrid(StateType.ST_Target, oldGridTarget2d);
-
-            Vector3 targetGridPosition3d = Player.getOppositeInitialPosition(number);
-            targetGridPosition = new Vector2(Mathf.RoundToInt(targetGridPosition3d.x), Mathf.RoundToInt(targetGridPosition3d.z));
-            grid.enableObjectOnGrid(StateType.ST_Target, targetGridPosition);
-            Target.transform.localPosition = targetGridPosition3d;
-        }
-        else
-        {
-            grid.updateAgentOnGrid(this);
         }
     }
 
@@ -247,15 +157,13 @@ public class Player : Agent
 
         countSeq = 0;
 
-        isInDanger = false;
-        canDropBombs = true;
         closestDistance = float.MaxValue;
         previousDistance = float.MaxValue;
 
         //------------------------------------------------------ São atualizadas no Start, que é chamado depois
         initialPosition = transform.localPosition;
         oldLocalPosition = transform.localPosition;
-        Vector3 gridTarget3d = Target.transform.localPosition;
+        Vector3 gridTarget3d = Target.transform.localPosition - Vector3.one;
         targetGridPosition = new Vector2(Mathf.RoundToInt(gridTarget3d.x), Mathf.RoundToInt(gridTarget3d.z));
         // -----------------------------------------------------------------------------------------------------
 
@@ -263,8 +171,6 @@ public class Player : Agent
         isReady = true;
         targetReached = false;
         alreadyWasReseted = false;
-
-        bombCount = 0;
 
         playerModel = transform.Find("PlayerModel").gameObject;
         animator = transform.Find("PlayerModel").GetComponent<Animator>();
@@ -286,7 +192,6 @@ public class Player : Agent
         }
 
         myIterationActionWasExecuted = false;
-        bombermanVillain = null;
         wasFilledTeacherObservations = false;
 
         wasInitialized = true;
@@ -309,13 +214,9 @@ public class Player : Agent
         this.transform.localPosition = initialPosition;
         
         targetReached = false;
-        canDropBombs = true;
-        isInDanger = false;
         closestDistance = float.MaxValue;
         previousDistance = float.MaxValue;
         playerModel.SetActive(true);
-
-        bombCount = 0;
 
         if (saveReplay)
         {
@@ -332,8 +233,6 @@ public class Player : Agent
 
         if (playerNumber == 1)
         {
-            //Debug.Log("Agente 1 resetou a fase");
-            myBombManager.clearBombs();
             ServiceLocator.getManager(scenarioId).GetBlocksManager().resetBlocks();
             //grid.refreshNodesInGrid();
             isReady = true;
@@ -346,13 +245,9 @@ public class Player : Agent
 
         dead = false;
         myIterationActionWasExecuted = false;
-        bombermanVillain = null;
         wasFilledTeacherObservations = false;
 
-        if (alreadyWasReseted)
-            randomizeResetPositionFunction();
-        else
-            grid.updateAgentOnGrid(this);
+        grid.updateAgentOnGrid(this);
 
         oldLocalPosition = transform.localPosition;
 
@@ -441,28 +336,6 @@ public class Player : Agent
                     }
                 }
 
-                //enviar grid que representa áreas de perigo
-                for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
-                {
-                    for (int x = 0; x < grid.GetGridSizeX(); ++x)
-                    {
-                        bool hasDanger = grid.NodeFromPos(x, y).getDangerPosition();
-                        if (!hasDanger)
-                            AddVectorObs(0.0f);
-                        else
-                        {
-                            Danger danger = myBombManager.getDanger(x, y);
-                            if (danger != null)
-                            {
-                                float dangerLevel = danger.GetDangerLevelOfPosition(this);
-                                AddVectorObs(dangerLevel);
-                            }
-                            else
-                                AddVectorObs(0.0f);
-                        }
-                    }   
-                }
-
                 //enviar grid que representa posição do target
                 for (int y = grid.GetGridSizeY() - 1; y >= 0; --y)
                 {
@@ -513,8 +386,9 @@ public class Player : Agent
             }
             else
             {
-                //Debug.Log("Nao era pra eu ter entrado aqui.");
-                teacherAgent.wasFilledTeacherObservations = false;
+                if (teacherAgent != null)
+                    teacherAgent.wasFilledTeacherObservations = false;
+
                 AddVectorObsForGrid();
             }
         }
@@ -522,10 +396,7 @@ public class Player : Agent
         ServiceLocator.getManager(scenarioId).GetLogManager().statePrint("Agent " + playerNumber,
                                                     myGridPosition,
                                                     targetGridPosition,
-                                                    grid.gridToString(playerNumber),
-                                                    canDropBombs,
-                                                    isInDanger,
-                                                    myBombManager.existsBombOrDanger());
+                                                    grid.gridToString(playerNumber));
         
     }
 
@@ -674,32 +545,6 @@ public class Player : Agent
                             //doneAnother();
                         }
                     }
-                    else if (grid.checkFire(myGridPosition)) //Bomb code
-                    {
-
-                        AddRewardToAgent(this, Config.REWARD_DIE, "Agente" + playerNumber + " atingido por explosao");
-
-                        if (bombermanVillain != null)
-                        {
-                            if (bombermanVillain.playerNumber != playerNumber)
-                            {
-                                //penalizando amigo por fogo amigo
-                                AddRewardToAgent(bombermanVillain, Config.REWARD_KILL_FRIEND, "Agente" + bombermanVillain.playerNumber + " matou amigo");
-                            }
-                        }
-
-                        killAgent();
-                    }
-
-                    //----------
-                    if (grid.checkDanger(myGridPosition))
-                    {
-                        isInDanger = true;
-                    }
-                    else
-                    {
-                        isInDanger = false;
-                    }
 
                     animator.SetBool("Walking", false);
 
@@ -770,7 +615,7 @@ public class Player : Agent
                                 animator.SetBool("Walking", true);
                                 break;
                             //Drop bomb
-                            case ActionType.AT_Bomb:
+                            /*case ActionType.AT_Bomb:
                                 if (canDropBombs && !dead)
                                 {
                                     DropBomb();
@@ -779,9 +624,9 @@ public class Player : Agent
                                 {
                                     AddRewardToAgent(this, Config.REWARD_INVALID_BOMB_ACTION, "Agente" + playerNumber + " tentou colocar bomba sem poder");
                                 }
-                                break;
+                                break;*/
                             //Hammer Up
-                            /*case ActionType.AT_Hammer_Up:
+                            case ActionType.AT_Hammer_Up:
                                 hammerPos = myGridPosition + new Vector2(0, 1);
                                 tryHammerAttack(hammerPos);
 
@@ -807,7 +652,7 @@ public class Player : Agent
                                 tryHammerAttack(hammerPos);
 
                                 transform.rotation = Quaternion.Euler(0, 270, 0);
-                                break;*/
+                                break;
                             //Wait
                             case ActionType.AT_Wait:
                                 penalizeStopAction();
@@ -844,46 +689,7 @@ public class Player : Agent
                         AddRewardToAgent(this, Config.REWARD_FAR_DISTANCE, "Agente" + playerNumber + " se distanciou");
                     }
 
-                    if (ServiceLocator.getManager(scenarioId).GetBombManager().existsBombOrDanger())
-                    {
-                        if (!isInDanger)
-                        {
-                            AddRewardToAgent(this, Config.REWARD_SAFE_AREA, "Agente" + playerNumber + " esta seguro");
-                        }
-                        else
-                        {
-                            AddRewardToAgent(this, Config.REWARD_DANGER_AREA, "Agente" + playerNumber + " continua em area de perigo");
-                        }
-                    }
-
-
-
                     previousDistance = distanceToTarget;
-                }
-                else
-                {
-                    if (playerNumber == 1)
-                    {
-                        if (myPlayerManager.getTargetCount() >= 2)
-                        {
-                            AddRewardToAgent(this, Config.REWARD_TEAM_GOAL, "Agente" + playerNumber + ": time alcancou o objetivo");
-                            AddRewardToAgent(myPlayerManager.getAgent2(), Config.REWARD_TEAM_GOAL, "Agente" + myPlayerManager.getAgent2().playerNumber + ": time alcancou o objetivo");
-
-                            targetReached = false;
-
-                            Done();
-                            doneAnotherWithoutDeath();
-
-                            if (isSpecialist && countSeq == numSeqCompleted)
-                            {
-                                myPlayerManager.getAgent2().bcTeacherHelper.forceStopRecord();
-                                bcTeacherHelper.forceStopRecord();
-                                bombermanDecision.finishSeqs1 = true;
-                                //playerManager.getAgent2().bombermanDecision.finishSeqs2 = true;
-                            }
-
-                        }
-                    }
                 }
 
                 AddRewardToAgent(this, Config.REWARD_TIME_PENALTY, "Agente" + playerNumber + " sofreu penalidade de tempo");
@@ -901,7 +707,7 @@ public class Player : Agent
         }
     }
 
-    private void DropBomb ()
+    /*private void DropBomb ()
     {
         if (bombPrefab)
         { 
@@ -929,7 +735,7 @@ public class Player : Agent
             canDropBombs = false;
             isInDanger = true;
         }
-    }
+    }*/
 
     public void OnTriggerExit(Collider other)
     {
@@ -967,11 +773,6 @@ public class Player : Agent
         grid.clearAgentOnGrid(this);
         playerModel.SetActive(false);
         transform.localPosition = initialPosition;
-
-        // tentando corrigir problema da bomba explodir após agente ser reiniciado por tempo
-        //Bomb code
-        if (!academy.GetIsInference())
-            myBombManager.clearBombs();
     }
 
     private void killAgentOnly()
@@ -1103,7 +904,6 @@ public class Player : Agent
         if (myPlayerManager.isReadyForNewIteration())
         {
             myPlayerManager.addIterationCount();
-            myBombManager.timeIterationUpdate();
         }
 
         if (!myIterationActionWasExecuted)

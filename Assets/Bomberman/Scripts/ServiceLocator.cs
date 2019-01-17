@@ -6,7 +6,6 @@ public class Managers
 {
     public int id;
 
-    private BombManager sBombManager;
     private BlocksManager sBlocksManager;
     private LogManager sLogManager;
     private PlayerManager myPlayerManager;
@@ -15,7 +14,6 @@ public class Managers
     {
         id = _id;
         sLogManager = new LogManager(id);
-        sBombManager = new BombManager();
         sBlocksManager = new BlocksManager();
         myPlayerManager = new PlayerManager();
     }
@@ -25,13 +23,6 @@ public class Managers
         Debug.Assert(sLogManager != null, "sLogManager is null.");
 
         return sLogManager;
-    }
-
-    public BombManager GetBombManager()
-    {
-        Debug.Assert(sBombManager != null, "sBombManager is null.");
-
-        return sBombManager;
     }
 
     public BlocksManager GetBlocksManager()

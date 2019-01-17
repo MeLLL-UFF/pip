@@ -9,7 +9,7 @@ public class ReplayWriter {
     bool initialized = false;
     private string fileName = "./replays/replay_scenario_";
     private StreamWriter sw;
-    private string tabFormat;
+    //private string tabFormat;
 
     public ReplayWriter(int agentId, int scenarioId)
     {
@@ -21,7 +21,7 @@ public class ReplayWriter {
             }
 
             sw = new StreamWriter(fileName + scenarioId + "_agent_" + agentId + DateTime.Now.ToString("_yyyy_MM_dd_HH_mm_ss") + ".txt", true);
-            tabFormat = "\t\t";
+            //tabFormat = "\t\t";
             initialized = true;
         }
     }

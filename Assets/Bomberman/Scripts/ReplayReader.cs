@@ -43,6 +43,7 @@ public class ReplayReader {
             catch (FileNotFoundException ex)
             {
                 Debug.Log("Arquivo de replay " + fileFolder + fileName + " nao foi encontrado");
+                Debug.Log(ex.Message);
             }
 
             initialized = true;
@@ -95,10 +96,9 @@ public class ReplayReader {
                 }
                 replayStep.observationGrid = obs;
 
+                counter++;
                 return replayStep;
             }
-
-            counter++;
         }
         else
         {

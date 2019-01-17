@@ -77,7 +77,7 @@ public class BombermanDecision : MonoBehaviour, Decision {
 
     float[] findMatch(List<float> vectorObs, ref ReplayReader replayReader, ref string seqId)
     {
-        int searchAll = 0;
+        //int searchAll = 0;
         //lê linha do arquivo
         ReplayReader.ReplayStep replayStep = replayReader.readStep();
         //Debug.Log("Primeiro: " + replayStep.command);

@@ -12,7 +12,7 @@ public class Destructable : MonoBehaviour {
     private bool initialActivation;
     Vector3 initPos;
 
-    private Grid grid;
+    private MyGrid grid;
     private StateType stateType;
 
     private void Awake()
@@ -38,7 +38,7 @@ public class Destructable : MonoBehaviour {
     void Start () {
         stateType = StateType.ST_Block;
 
-        grid = transform.parent.parent.Find("GridSystem").GetComponent<Grid>();
+        grid = transform.parent.parent.Find("GridSystem").GetComponent<MyGrid>();
         scenarioId = grid.scenarioId;
 
         wasDestroy = false;
@@ -125,32 +125,6 @@ public class Destructable : MonoBehaviour {
             gameObject.SetActive(false);
             grid.disableObjectOnGrid(stateType, GetGridPosition());
             //Destroy(gameObject, 0.1f);
-        }
-    }
-
-    //Bomb code
-    public void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("Explosion"))
-        {
-            if (!wasDestroy)
-            {
-                wasDestroy = true;
-                Player bomberman = other.gameObject.GetComponent<DestroySelf>().bomberman;
-                if (bomberman != null)
-                {
-                    Player.AddRewardToAgent(bomberman, Config.REWARD_BLOCK_DESTROY, "Agente" + bomberman.playerNumber + " destruiu um bloco");
-                }
-                else
-                {
-                    ServiceLocator.getManager(scenarioId).GetLogManager().print("Bomberman nulo");
-                }
-
-                gameObject.SetActive(false);
-                grid.disableObjectOnGrid(stateType, GetGridPosition());
-                //Destroy(gameObject, 0.1f);
-            }
-
         }
     }
 }
