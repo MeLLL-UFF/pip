@@ -4,7 +4,7 @@
 [Bb]uild/
 [Bb]uilds/
 Assets/AssetStoreTools*
-Assets/ML-Agents/
+Assets/ML-Agents/Plugins
 logdir/
 
 # Visual Studio cache directory
