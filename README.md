@@ -10,7 +10,7 @@ ML-Agents 0.5v Plugin (https://github.com/icaro56/ml-agents   (fork with some ch
 It's important install the ML-Agents dependencies.
 
 # Configuration
-After we download the ML-Agents plugin for Unity3d, it's necessary copy the folder ml-agents\unity-environment\Assets\ML-Agents\Plugins to our Unity Project in .\Assets\ML-Agents. 
+After we download the ML-Agents plugin for Unity3d, it's necessary copy the folder ml-agents\UnitySDK\Assets\ML-Agents\Plugins to our Unity Project in .\Assets\ML-Agents. 
 
 Furthermore, we need change the .NetFramework to 4.6 and mark the Run Background checkbox.
 
