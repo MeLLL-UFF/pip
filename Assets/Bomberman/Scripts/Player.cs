@@ -451,7 +451,7 @@ public class Player : Agent
     public override void CollectObservations()
     {
         //Debug.Log("agent" + playerNumber + " observacoes");
-        actionIdString = "";
+        actionIdString = "empty";
         myDistanceReward.reset();
 
         myGridPosition = GetGridPosition();
@@ -540,6 +540,12 @@ public class Player : Agent
         if (grid.checkFire(myGridPosition)) //Bomb code
         {
             isInFire = true;
+
+            DestroySelf explosion = myBombManager.getExplosion((int)myGridPosition.x, (int)myGridPosition.y);
+            if (explosion != null)
+            {
+                bombermanVillain = explosion.bombermanOwner;
+            }
         }
     }
 
@@ -855,7 +861,7 @@ public class Player : Agent
 
     public bool WaitIterationActions()
     {
-        if (wasInitialized && !dead && !IsDone())
+        if (wasInitialized /*&& !dead && !IsDone()*/)
         {
             internalUpdate();
             return true;

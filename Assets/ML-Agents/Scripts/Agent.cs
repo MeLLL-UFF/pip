@@ -911,8 +911,11 @@ namespace MLAgents
         {
             // If an agent is done, then it will also 
             // request for a decision and an action
-            if (IsDone())
-            {
+
+            // requestDecision was added at this point to keep the update control flux with MapController class
+            if (requestDecision && IsDone())
+            //if (IsDone())
+                {
                 if (agentParameters.resetOnDone)
                 {
                     if (agentParameters.onDemandDecision)
@@ -935,7 +938,9 @@ namespace MLAgents
                 else
                 {
                     terminate = true;
-                    RequestDecision();
+
+                    // commented because I control the request Decision Inside My loop in MapController.
+                    // RequestDecision();
                 }
             }
         }

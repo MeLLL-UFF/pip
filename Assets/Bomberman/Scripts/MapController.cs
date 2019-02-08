@@ -95,7 +95,7 @@ public class MapController : MonoBehaviour {
             if (rStep.command == ReplayCommandLine.RCL_Episode)
                 currentReplayStep.epId = rStep.epId;
             else
-                Debug.Log("Nao e pra entrar aqui");
+                Debug.Log("Nao e pra entrar aqui. Leitura de episódio errada");
         }
 
         //Debug.Log("Criando MapController");
@@ -122,13 +122,13 @@ public class MapController : MonoBehaviour {
             if (replayStep.command == ReplayCommandLine.RCL_NumberOfAgents)
                 numberOfAgents = replayStep.numberOfAgents;
             else
-                Debug.Log("Entrei erradamente aqui");
+                Debug.Log("Entrei erradamente aqui. Na hora de recuperar número de jogadores.");
 
             replayStep = replayReader.readStep(ReplayCommandLine.RCL_InitialPositions);
             if (replayStep.command == ReplayCommandLine.RCL_InitialPositions)
                 agentInitPositionMap = replayStep.agentInitPositionMap;
             else
-                Debug.Log("Entrei erradamente aqui");
+                Debug.Log("Entrei erradamente aqui. Na hora de recuperar posições iniciais.");
         }
 
         if (saveReplay)
@@ -531,7 +531,7 @@ public class MapController : MonoBehaviour {
                 if (replayStep.command == ReplayCommandLine.RCL_Actions)
                     currentReplayStep.agentActionMap = replayStep.agentActionMap;
                 else
-                    Debug.Log("Nao eh pra entrar aqui");
+                    Debug.Log("Nao eh pra entrar aqui. Acoes");
 
                 replayStep = replayReader.readStep(ReplayCommandLine.RCL_BombPositions);
                 if (replayStep.command == ReplayCommandLine.RCL_BombPositions)
@@ -541,7 +541,7 @@ public class MapController : MonoBehaviour {
                     currentReplayStep.hasCreatedBomb = replayStep.hasCreatedBomb;
                 }
                 else
-                    Debug.Log("Nao eh pra entrar aqui");
+                    Debug.Log("Nao eh pra entrar aqui. Bombas");
             }
 
             //como request decision é assincrono, temos que testar se ultima ação do agente está vazia.

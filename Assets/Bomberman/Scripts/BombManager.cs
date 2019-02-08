@@ -88,6 +88,18 @@ public class BombManager {
         return null;
     }
 
+    public DestroySelf getExplosion(int x, int y)
+    {
+        foreach (KeyValuePair<ulong, DestroySelf> entry in explosions)
+        {
+            Vector2 pos = entry.Value.GetGridPosition();
+            if ((int)pos.x == x && (int)pos.y == y)
+                return entry.Value;
+        }
+
+        return null;
+    }
+
     public void clearBombs()
     {
         foreach (KeyValuePair<ulong, DestroySelf> entry in explosions)
