@@ -523,6 +523,8 @@ public class MapController : MonoBehaviour {
             bombManager.timeIterationUpdate();
             ServiceLocator.getManager(scenarioId).GetLogManager().globalStepPrint(playerManager.getIterationCount());
 
+            bombManager.checkExplosions(grid);
+
             blocksManager.checkBlocksAndDestroy();
 
             if (followReplayFile)
@@ -530,8 +532,8 @@ public class MapController : MonoBehaviour {
                 ReplayReader.ReplayStep replayStep = replayReader.readStep(ReplayCommandLine.RCL_Actions);
                 if (replayStep.command == ReplayCommandLine.RCL_Actions)
                     currentReplayStep.agentActionMap = replayStep.agentActionMap;
-                else
-                    Debug.Log("Nao eh pra entrar aqui. Acoes");
+                /*else
+                    Debug.Log("Nao eh pra entrar aqui. Acoes");*/
 
                 replayStep = replayReader.readStep(ReplayCommandLine.RCL_BombPositions);
                 if (replayStep.command == ReplayCommandLine.RCL_BombPositions)
@@ -540,8 +542,8 @@ public class MapController : MonoBehaviour {
                     currentReplayStep.bombIteration = replayStep.bombIteration;
                     currentReplayStep.hasCreatedBomb = replayStep.hasCreatedBomb;
                 }
-                else
-                    Debug.Log("Nao eh pra entrar aqui. Bombas");
+                /*else
+                    Debug.Log("Nao eh pra entrar aqui. Bombas");*/
             }
 
             //como request decision é assincrono, temos que testar se ultima ação do agente está vazia.

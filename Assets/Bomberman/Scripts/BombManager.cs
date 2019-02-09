@@ -124,19 +124,6 @@ public class BombManager {
 
     public void timeIterationUpdate()
     {
-        // explosões devem ser chamadas antes da atualização da bomba porque senão elas sofrem já uma atualização após a bomba explodir.
-        List<DestroySelf> listExplosions = new List<DestroySelf>();
-        foreach (KeyValuePair<ulong, DestroySelf> entry in explosions)
-        {
-            if (entry.Value.iterationUpdate())
-                listExplosions.Add(entry.Value);
-        }
-
-        for (int i = 0; i < listExplosions.Count; ++i)
-        {
-            removeExplosion(listExplosions[i].id);
-        }
-
         List<Bomb> list = new List<Bomb>();
         foreach (KeyValuePair<ulong, GameObject> entry in bombs)
         {
@@ -147,6 +134,18 @@ public class BombManager {
         for (int i = 0; i < list.Count; ++i)
         {
             removeBomb(list[i].bombId);
+        }
+
+        List<DestroySelf> listExplosions = new List<DestroySelf>();
+        foreach (KeyValuePair<ulong, DestroySelf> entry in explosions)
+        {
+            if (entry.Value.iterationUpdate())
+                listExplosions.Add(entry.Value);
+        }
+
+        for (int i = 0; i < listExplosions.Count; ++i)
+        {
+            removeExplosion(listExplosions[i].id);
         }
 
         List<Danger> listDanger = new List<Danger>();
@@ -160,6 +159,39 @@ public class BombManager {
         {
             removeDanger(listDanger[i].id);
         }
+    }
+
+    public void checkExplosions(Grid grid)
+    {
+        List<Bomb> list = new List<Bomb>();
+
+        foreach (KeyValuePair<ulong, GameObject> entry in bombs)
+        {
+            Bomb bomb = entry.Value.GetComponent<Bomb>();
+
+            if (!bomb.exploded)
+            {
+                Vector2 bombPos = bomb.GetGridPosition();
+
+                if (grid.checkFire(bombPos))
+                {
+                    if (bomb.ForceExplode())
+                    {
+                        list.Add(bomb);
+                    }
+                }
+            }
+        }
+
+        bool hasUpdate = list.Count > 0;
+
+        for (int i = 0; i < list.Count; ++i)
+        {
+            removeBomb(list[i].bombId);
+        }
+
+        if (hasUpdate)
+            checkExplosions(grid);
     }
 
     public List<Bomb> getBombs(int maxBombs)

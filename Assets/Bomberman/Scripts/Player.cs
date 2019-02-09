@@ -539,7 +539,7 @@ public class Player : Agent
     {
         if (grid.checkFire(myGridPosition)) //Bomb code
         {
-            isInFire = true;
+            isInFire = true; 
 
             DestroySelf explosion = myBombManager.getExplosion((int)myGridPosition.x, (int)myGridPosition.y);
             if (explosion != null)
@@ -559,8 +559,16 @@ public class Player : Agent
             {
                 if (bombermanVillain.playerNumber != playerNumber)
                 {
-                    AddRewardToAgent(bombermanVillain, Config.REWARD_KILL_ENEMY, "Agente" + bombermanVillain.playerNumber + " matou inimigo");
+                    AddRewardToAgent(bombermanVillain, Config.REWARD_KILL_ENEMY, "Agente" + bombermanVillain.playerNumber + " matou Agente" + playerNumber);
                 }
+                else
+                {
+                    AddRewardToAgent(bombermanVillain, Config.REWARD_SUICIDE, "Agente" + playerNumber + " se suicidou");
+                }
+            }
+            else
+            {
+                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Fase matou Agente" + playerNumber, 0.0f);
             }
 
             killAgent();
@@ -841,7 +849,6 @@ public class Player : Agent
     private void defaultKillCode()
     {
         dead = true;
-        grid.clearAgentOnGrid(this);
         playerModel.SetActive(false);
         transform.localPosition = initialPosition;
     }

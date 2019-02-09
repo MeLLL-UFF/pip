@@ -67,11 +67,11 @@ public class DestroySelf : MonoBehaviour
     {
         if (!wasDestroyed)
         {
-            discrete_timer += 1;
             if (discrete_timer >= Config.EXPLOSION_TIMER_DISCRETE)
             {
                 return myDestroy();
             }
+            discrete_timer += 1;
         }
 
         return false;

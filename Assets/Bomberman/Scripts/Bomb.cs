@@ -58,6 +58,7 @@ public class Bomb : MonoBehaviour {
     {
         //Bomb code
         GameObject explosionObject = Instantiate(explosionPrefab, pos, rotation, transform.parent);
+
         explosionObject.GetComponent<DestroySelf>().bombermanOwner = bomberman;
         explosionObject.GetComponent<DestroySelf>().grid = grid;
 
@@ -217,7 +218,7 @@ public class Bomb : MonoBehaviour {
         //yield return null;
     }
 
-    public void OnTriggerEnter(Collider other)
+    /*public void OnTriggerEnter(Collider other)
     {
         if (!exploded && other.CompareTag("Explosion"))
         {
@@ -226,5 +227,10 @@ public class Bomb : MonoBehaviour {
             if (Explode(true))
                 ServiceLocator.getManager(scenarioId).GetBombManager().removeBomb(bombId);
         }
+    }*/
+
+    public bool ForceExplode()
+    {
+        return Explode(true);
     }
 }

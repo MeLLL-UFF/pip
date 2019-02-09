@@ -11,6 +11,8 @@ public class Config {
 
     public static float REWARD_KILL_ENEMY = 1f;
 
+    public static float REWARD_SUICIDE = 0f;
+
     //public static float REWARD_GOAL = 1f;
     //public static float REWARD_GOAL = 1f;
     //public static float REWARD_TEAM_GOAL = 1f;
