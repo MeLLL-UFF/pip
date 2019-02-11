@@ -305,15 +305,16 @@ public class PlayerManager {
     }*/
 
     //chamar no momento da observação
-    public DistanceReward CalculateDistanceEnemyPositionRewards(Player agent)
+    public List<DistanceReward> CalculateDistanceEnemyPositionRewards(Player agent)
     {
-        DistanceReward distanceReward = new DistanceReward();
+        List<DistanceReward> distanceRewardList = new List<DistanceReward>();
 
         foreach (KeyValuePair<int, Player> entry in playerDict)
         {
             Player enemy = entry.Value;
-            if (!enemy.dead && enemy.getPlayerNumber() != agent.getPlayerNumber())
+            if (/*!enemy.dead &&*/ enemy.getPlayerNumber() != agent.getPlayerNumber())
             {
+                DistanceReward distanceReward = new DistanceReward();
                 float distance = Util.ManhattanDistance(agent.GetGridPosition(), enemy.GetGridPosition());
                 if (distance < distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].closestDistance)
                 {
@@ -334,10 +335,11 @@ public class PlayerManager {
                 }
 
                 distanceStructureDict[agent.getPlayerNumber()][enemy.getPlayerNumber()].previousDistance = distance;
+                distanceRewardList.Add(distanceReward);
             }
         }
 
-        return distanceReward;
+        return distanceRewardList;
     }
 
     public void createDistanceStructuresForReward()
@@ -371,6 +373,20 @@ public class PlayerManager {
     public void clearDistanceStructuresForReward()
     {
         distanceStructureDict.Clear();
+    }
+
+    public void resetLevelIfPlayerOneDie()
+    {
+        if (!lastManFound)
+        {
+            if (!containsPlayer(1))
+            {
+                foreach (KeyValuePair<int, Player> entry in playerDict)
+                {
+                    entry.Value.Done();
+                }
+            }
+        }
     }
 
     public void verifyLastMan()

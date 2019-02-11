@@ -9,6 +9,8 @@ public class MapController : MonoBehaviour {
 
     static uint countCreatedStatistics = 0;
 
+    //public bool onlyPlayerOneTrainning = false;
+
     private bool wasInitialized = false;
     private bool reseting = false;
     private int scenarioId;
@@ -324,10 +326,10 @@ public class MapController : MonoBehaviour {
 
             if (followReplayFile)
             {
-                if (stopToSendSpecialistExperienceInEpsode == playerManager.getEpisodeCount() && !stoToSendAlreadyCalled)
+                if (stopToSendSpecialistExperienceInEpsode < playerManager.getEpisodeCount()/* && !stoToSendAlreadyCalled*/)
                 {
                     playerManager.stopToSendExperienceToAllPlayers();
-                    stoToSendAlreadyCalled = true;
+                    //stoToSendAlreadyCalled = true;
                 }
             }
 
@@ -549,6 +551,10 @@ public class MapController : MonoBehaviour {
             //como request decision é assincrono, temos que testar se ultima ação do agente está vazia.
             if (saveReplayActionsStep())
                 verifyAndCreateBombs();
+
+            // usado no treinamento do BC. Se agente principal morre, reseta a fase
+            /*if (onlyPlayerOneTrainning)
+                playerManager.resetLevelIfPlayerOneDie();*/
 
             playerManager.setIsUpdating(false);
         }

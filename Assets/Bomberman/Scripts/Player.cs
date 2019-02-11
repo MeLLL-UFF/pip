@@ -57,7 +57,7 @@ public class Player : Agent
     public bool isInFire;
     public bool isInDanger;
     public bool areThereDangerAround;
-    private PlayerManager.DistanceReward myDistanceReward;
+    private List<PlayerManager.DistanceReward> myDistanceRewardList;
 
 
     public bool isReady = true;
@@ -194,7 +194,7 @@ public class Player : Agent
         isInFire = false;
         isInDanger = false;
         areThereDangerAround = false;
-        myDistanceReward = new PlayerManager.DistanceReward();
+        myDistanceRewardList = new List<PlayerManager.DistanceReward>();
         canDropBombs = true;
         isReady = true;
         lastMan = false;
@@ -452,7 +452,7 @@ public class Player : Agent
     {
         //Debug.Log("agent" + playerNumber + " observacoes");
         actionIdString = "empty";
-        myDistanceReward.reset();
+        myDistanceRewardList.Clear();
 
         myGridPosition = GetGridPosition();
 
@@ -467,9 +467,6 @@ public class Player : Agent
             verifyFire();
             verifyDanger();
 
-            if (!myGridPosition.Equals(oldGridPosition))
-                myDistanceReward = myPlayerManager.CalculateDistanceEnemyPositionRewards(this);
-
             applyRewardInFire();
 
             if (isInFire)
@@ -479,6 +476,10 @@ public class Player : Agent
             if (!dead && !IsDone())
             {
                 applyRewardInDanger();
+
+                if (!myGridPosition.Equals(oldGridPosition))
+                    myDistanceRewardList = myPlayerManager.CalculateDistanceEnemyPositionRewards(this);
+
                 applyRewardsToDistanceEnemyPositions();
             }
             ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -495,18 +496,23 @@ public class Player : Agent
 
     private void applyRewardsToDistanceEnemyPositions()
     {
-        if (myDistanceReward.applyRewardClosest)
+        for (int i = 0; i < myDistanceRewardList.Count; ++i)
         {
-            AddRewardToAgent(this, Config.REWARD_CLOSEST_DISTANCE, myDistanceReward.applyRewardClosestMessage);
-        }
+            PlayerManager.DistanceReward myDistanceReward = myDistanceRewardList[i];
 
-        if (myDistanceReward.applyRewardApproach)
-        {
-            AddRewardToAgent(this, Config.REWARD_APPROACHED_DISTANCE, myDistanceReward.applyRewardApproachMessage);
-        }
-        else if (myDistanceReward.applyRewardFar)
-        {
-            AddRewardToAgent(this, Config.REWARD_FAR_DISTANCE, myDistanceReward.applyRewardFarMessage);
+            if (myDistanceReward.applyRewardClosest)
+            {
+                AddRewardToAgent(this, Config.REWARD_CLOSEST_DISTANCE, myDistanceReward.applyRewardClosestMessage);
+            }
+
+            if (myDistanceReward.applyRewardApproach)
+            {
+                AddRewardToAgent(this, Config.REWARD_APPROACHED_DISTANCE, myDistanceReward.applyRewardApproachMessage);
+            }
+            else if (myDistanceReward.applyRewardFar)
+            {
+                AddRewardToAgent(this, Config.REWARD_FAR_DISTANCE, myDistanceReward.applyRewardFarMessage);
+            }
         }
     }
 
