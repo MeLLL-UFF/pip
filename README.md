@@ -27,5 +27,9 @@ Edit->Project Settings->Players
       Script Runtime Version
       
         set 4.6
+        
+# Experiments Settings
+
+We created a tag named bomberman_experiment both in this repository and in our ml-agent fork respository to expose which Bomberman Learning Environment version was used to run the experiments that were done in the paper.
 
 
