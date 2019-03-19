@@ -1,5 +1,5 @@
-# pip
-Player Imitation Project
+# BLE
+Bomberman Learning Environment
 
 This project uses ML-Agent plugin for Unity3D version 0.5, so the prerequisites are:
 
@@ -10,9 +10,7 @@ ML-Agents 0.5v Plugin (https://github.com/icaro56/ml-agents   (fork with some ch
 It's important install the ML-Agents dependencies.
 
 # Configuration
-After we download the ML-Agents plugin for Unity3d, it's necessary copy the folder ml-agents\UnitySDK\Assets\ML-Agents\Plugins to our Unity Project in .\Assets\ML-Agents. 
-
-Furthermore, we need change the .NetFramework to 4.6 and mark the Run Background checkbox.
+we need change the .NetFramework to 4.6 and mark the Run Background checkbox case this is not configured.
 
 Edit->Project Settings->Players
 
@@ -30,6 +28,8 @@ Edit->Project Settings->Players
         
 # Experiments Settings
 
-We created a tag named bomberman_experiment both in this repository and in our ml-agent fork respository to expose which Bomberman Learning Environment version was used to run the experiments that were done in the paper.
+We created a tag named bomberman_experiment both in this repository and in our ml-agent fork respository to expose which Bomberman Learning Environment version was used to run the experiments that were done in the paper. This tag is to PPO and LSTM trainings. The Imitation Learning uses the most up-to-date version.
+
+All statistics and all templates generated in agent training in this environment can be found in Google Drive: https://drive.google.com/file/d/15ZEPz4j3FvPfEAhPd-ZrUN5Hj5EE9ajQ/view?usp=sharing
 
 
