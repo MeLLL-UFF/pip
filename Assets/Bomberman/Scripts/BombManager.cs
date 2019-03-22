@@ -76,28 +76,82 @@ public class BombManager {
         }
     }
 
-    public Danger getDanger(int x, int y)
+    public float getDanger(int x, int y, Player player)
     {
+        Dictionary<ulong, Danger> dict = new Dictionary<ulong, Danger>();
+
+        //iterando para descobrir dangers em uma célula
         foreach (KeyValuePair<ulong, Danger> entry in dangerZone)
         {
-            Vector2 pos = entry.Value.GetGridPosition();
+            Danger danger = entry.Value;
+            Vector2 pos = danger.GetGridPosition();
             if ((int)pos.x == x && (int)pos.y == y)
-                return entry.Value;
+            {
+                if (!dict.ContainsKey((ulong)danger.bomberOwnerNumber))
+                    dict.Add((ulong)danger.bomberOwnerNumber, danger);
+            } 
         }
 
-        return null;
+        float maxDangerLevel = 0.0f;
+        int playerNumber = -1;
+
+        //iterando para descobrir qual é o danger com valor absoluto mais alto. Se empate, escolhe danger do próprio player
+        foreach(KeyValuePair<ulong, Danger> entry in dict)
+        {
+            Danger danger = entry.Value;
+            if (danger != null)
+            {
+                float dangerLevel = danger.GetDangerLevelOfPositionRaw();
+
+                if (dangerLevel == maxDangerLevel)
+                {
+                    if (danger.bomberOwnerNumber == player.getPlayerNumber())
+                    {
+                        maxDangerLevel = dangerLevel;
+                        playerNumber = player.getPlayerNumber();
+                    }
+                }
+                else if (dangerLevel > maxDangerLevel)
+                {
+                    maxDangerLevel = dangerLevel;
+                    playerNumber = danger.bomberOwnerNumber;
+                }
+                
+            }
+        }
+
+        // se houver mais de um danger numa celula, esse codigo está pegando apenas o danger de uma celula. Do primeiro danger possivelmente que foi adicionado a celula.
+        // porem Dictionary não mantem ordem. Logo, o treinamento do ICAART deveria ser realizado novamente. Mas não temos tempo.
+
+        //ICAART paper does not explain: the same grid cell can be affected by an agent bomb or an enemy bomb. In this case, there is no explanation of what to do to represent the danger level of the cell.
+
+        float penalty = 1.0f;
+        if (playerNumber != -1)
+        {
+            penalty = playerNumber == player.getPlayerNumber() ? -1.0f : 1.0f;
+        }
+
+        dict.Clear();
+
+        return maxDangerLevel * penalty;
     }
 
-    public DestroySelf getExplosion(int x, int y)
+    public Dictionary<int, DestroySelf> getExplosions(int x, int y)
     {
+        Dictionary<int, DestroySelf> dict = new Dictionary<int, DestroySelf>();
+
         foreach (KeyValuePair<ulong, DestroySelf> entry in explosions)
         {
-            Vector2 pos = entry.Value.GetGridPosition();
+            DestroySelf explosion = entry.Value;
+            Vector2 pos = explosion.GetGridPosition();
             if ((int)pos.x == x && (int)pos.y == y)
-                return entry.Value;
+            {
+                if (!dict.ContainsKey(explosion.bombermanOwnerNumber))
+                    dict.Add(explosion.bombermanOwnerNumber, explosion);
+            }
         }
 
-        return null;
+        return dict;
     }
 
     public void clearBombs()

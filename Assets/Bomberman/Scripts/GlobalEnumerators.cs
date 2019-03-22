@@ -36,9 +36,9 @@ public class ActionTypeExtension
     ST_EnemyAgent   =           1 << 3,     // 8        00001000
 
     //apenas quando há bomba
-    ST_Bomb     =               1 << 4,     // 32        
-    ST_Fire     =               1 << 5,     // 64
-    ST_Danger   =               1 << 6,     // 128     
+    ST_Bomb     =               1 << 4,     // 32       00010000 
+    ST_Fire     =               1 << 5,     // 64       00100000
+    ST_Danger   =               1 << 6,     // 128      01000000
     // -------------------------------
 
     //usamos apenas essas flags para troca de flag no momento da observação
@@ -173,7 +173,8 @@ public enum ReplayCommandLine
     RCL_InitialPositions = 3,
     RCL_BombPositions = 4,
     RCL_Actions = 5,
-    RCL_Corrupted = 6,
-    RCL_Size = 7
+    RCL_Blocks = 6,
+    RCL_Corrupted = 7,
+    RCL_Size = 8
 
 }

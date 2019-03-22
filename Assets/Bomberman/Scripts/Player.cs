@@ -89,7 +89,7 @@ public class Player : Agent
 
     public PlayerManager myPlayerManager;
     public BombManager myBombManager;
-    Player bombermanVillain;
+    List<Player> bombermanVillain = new List<Player>();
 
     int bombCount = 0;
 
@@ -212,7 +212,7 @@ public class Player : Agent
         playerModel = transform.Find("PlayerModel").gameObject;
         animator = transform.Find("PlayerModel").GetComponent<Animator>();
 
-        bombermanVillain = null;
+        bombermanVillain.Clear();
 
         actionIdString = "empty";
 
@@ -339,14 +339,8 @@ public class Player : Agent
                         dangerLevelOfPositionsCells.Add(0.0f);
                     else
                     {
-                        Danger danger = myBombManager.getDanger(x, y);
-                        if (danger != null)
-                        {
-                            float dangerLevel = danger.GetDangerLevelOfPosition(this);
-                            dangerLevelOfPositionsCells.Add(dangerLevel);
-                        }
-                        else
-                            dangerLevelOfPositionsCells.Add(0.0f);
+                        float dangerLevel = myBombManager.getDanger(x, y, this);
+                        dangerLevelOfPositionsCells.Add(dangerLevel);
                     }
                 }
             }
@@ -543,14 +537,18 @@ public class Player : Agent
 
     private void verifyFire()
     {
+        bombermanVillain.Clear();
         if (grid.checkFire(myGridPosition)) //Bomb code
         {
-            isInFire = true; 
+            isInFire = true;
 
-            DestroySelf explosion = myBombManager.getExplosion((int)myGridPosition.x, (int)myGridPosition.y);
-            if (explosion != null)
+            Dictionary<int, DestroySelf> explosions = myBombManager.getExplosions((int)myGridPosition.x, (int)myGridPosition.y);
+            if (explosions.Count > 0)
             {
-                bombermanVillain = explosion.bombermanOwner;
+                foreach (KeyValuePair<int, DestroySelf> entry in explosions)
+                {
+                    bombermanVillain.Add(entry.Value.bombermanOwner);
+                }
             }
         }
     }
@@ -561,20 +559,28 @@ public class Player : Agent
         {
             AddRewardToAgent(this, Config.REWARD_DIE, "Agente" + playerNumber + " atingido por explosao");
 
-            if (bombermanVillain != null)
+            if (bombermanVillain.Count > 0)
             {
-                if (bombermanVillain.playerNumber != playerNumber)
+                for (int i = 0; i < bombermanVillain.Count; ++i)
                 {
-                    AddRewardToAgent(bombermanVillain, Config.REWARD_KILL_ENEMY, "Agente" + bombermanVillain.playerNumber + " matou Agente" + playerNumber);
+                    Player temp = bombermanVillain[i];
+
+                    if (temp != null)
+                    {
+                        if (temp.playerNumber != playerNumber)
+                        {
+                            AddRewardToAgent(temp, Config.REWARD_KILL_ENEMY, "Agente" + temp.playerNumber + " matou Agente" + playerNumber);
+                        }
+                        else
+                        {
+                            AddRewardToAgent(temp, Config.REWARD_SUICIDE, "Agente" + playerNumber + " se suicidou");
+                        }
+                    }
+                    else
+                    {
+                        ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Fase matou Agente" + playerNumber, 0.0f);
+                    }
                 }
-                else
-                {
-                    AddRewardToAgent(bombermanVillain, Config.REWARD_SUICIDE, "Agente" + playerNumber + " se suicidou");
-                }
-            }
-            else
-            {
-                ServiceLocator.getManager(scenarioId).GetLogManager().rewardPrint("Fase matou Agente" + playerNumber, 0.0f);
             }
 
             killAgent();
@@ -841,7 +847,7 @@ public class Player : Agent
         }
     }
 
-    public void OnTriggerEnter (Collider other)
+    /*public void OnTriggerEnter (Collider other)
     {
         if (other.CompareTag ("Explosion"))
         {
@@ -850,7 +856,7 @@ public class Player : Agent
                 bombermanVillain = other.gameObject.GetComponent<DestroySelf>().bombermanOwner;
             }
         }
-    }
+    }*/
 
     private void defaultKillCode()
     {
@@ -859,7 +865,7 @@ public class Player : Agent
         transform.localPosition = initialPosition;
     }
 
-    private void killAgent()
+    public void killAgent()
     {
         defaultKillCode();
 

@@ -9,7 +9,7 @@ public class MapController : MonoBehaviour {
 
     static uint countCreatedStatistics = 0;
 
-    //public bool onlyPlayerOneTrainning = false;
+    //public bool onlyPlayerOneTrainning = true;
 
     private bool wasInitialized = false;
     private bool reseting = false;
@@ -22,6 +22,7 @@ public class MapController : MonoBehaviour {
     private float timeSinceDecision = 0;
 
     public float timeBetweenDecisionsAtInference;
+    public int maxNumberOfAgentIfNoRandom = 4;
     public List<GameObject> playerPrefabs;
     public List<Brain> brains;
     public bool randomizeNumberOfAgents = true;
@@ -49,11 +50,9 @@ public class MapController : MonoBehaviour {
     public string replayFileName;
     public ReplayReader.ReplayStep currentReplayStep;
     public int stopToSendSpecialistExperienceInEpsode = 10;
-    private bool stoToSendAlreadyCalled;
 
     // Use this for initialization
     void Start () {
-        stoToSendAlreadyCalled = false;
         currentReplayStep = new ReplayReader.ReplayStep();
 
         alreadyGenerateStatistic = false;
@@ -76,10 +75,10 @@ public class MapController : MonoBehaviour {
         //Vector3 monitorPosition = transform.position + new Vector3(-3, 4, 1); // scene sem imitação
         Vector3 monitorPosition = transform.position + new Vector3(-6.72f, 4, -4.51f);
         myMonitor = Instantiate(monitorPrefab, monitorPosition, Quaternion.identity, transform.parent);
-        Monitor.Log("Ult. Vitorioso:", "draw", myMonitor.transform);
-        Monitor.Log("Iteração:", "0 / " + maxIterationString, myMonitor.transform);
-        Monitor.Log("Episódio:", "1", myMonitor.transform);
-        Monitor.Log("Cenário:", transform.parent.gameObject.name, myMonitor.transform);
+        Monitor.Log("Last Result:", "draw", myMonitor.transform);
+        Monitor.Log("Iteration:", "0 / " + maxIterationString, myMonitor.transform);
+        Monitor.Log("Episode:", "1", myMonitor.transform);
+        Monitor.Log("Scenario:", transform.parent.gameObject.name, myMonitor.transform);
 
         iterationWhereWasCreatedBombs = 0;
         numberOfBombsByCreation = 1;
@@ -102,15 +101,35 @@ public class MapController : MonoBehaviour {
 
         //Debug.Log("Criando MapController");
         createAgents();
+        initBlocks();
 
         wasInitialized = true;
         reseting = false;
     }
 
+    private void initBlocks()
+    {
+        if (followReplayFile)
+        {
+            ReplayReader.ReplayStep replayStep = replayReader.readStep(ReplayCommandLine.RCL_Blocks);
+            if (replayStep.command == ReplayCommandLine.RCL_Blocks)
+            {
+                currentReplayStep.blockMap = replayStep.blockMap;
+
+                blocksManager.loadReplaySetup(currentReplayStep.blockMap);
+            }
+        }
+
+        if (saveReplay)
+        {
+            replayWriter.printDestructibleBlocks(blocksManager.generateBlocksStatusList());
+        }
+    }
+
     private void createAgents()
     {
         // sorteando para ver quantos agentes serão criados para o cenário
-        int numberOfAgents = 4;
+        int numberOfAgents = maxNumberOfAgentIfNoRandom;
         Dictionary<string, Vector2Int> agentInitPositionMap = new Dictionary<string, Vector2Int>();
 
         if (!followReplayFile)
@@ -286,6 +305,7 @@ public class MapController : MonoBehaviour {
 
             createAgents();
             blocksManager.resetBlocks();
+            initBlocks();
 
             // gerando informações para estatística
             if (generateStatistic == true)
@@ -319,8 +339,8 @@ public class MapController : MonoBehaviour {
             }
 
             ServiceLocator.getManager(scenarioId).GetLogManager().episodePrint(playerManager.getEpisodeCount());
-            Monitor.Log("Episódio:", playerManager.getEpisodeCount().ToString(), myMonitor.transform);
-            Monitor.Log("Ult. Vitorioso:", playerManager.lastManAgent, myMonitor.transform);
+            Monitor.Log("Episode:", playerManager.getEpisodeCount().ToString(), myMonitor.transform);
+            Monitor.Log("Last Result:", playerManager.lastManAgent, myMonitor.transform);
             iterationWhereWasCreatedBombs = 0;
             numberOfBombsByCreation = 1;
 
@@ -479,6 +499,12 @@ public class MapController : MonoBehaviour {
                 isToCreateBombsNormalFlux();
             else
                 isToCreateBombsReplayFlux();
+
+            // remover. Código para o BC. Se demorou demais finaliza episodio.
+            /*if (playerManager.getIterationCount() >= Config.MAX_STEP_PER_AGENT + 100)
+            {
+                playerManager.forceDoneAllAgents();
+            }*/
         }
         else
         {
@@ -521,7 +547,7 @@ public class MapController : MonoBehaviour {
     {
         if (playerManager.updateAgents())
         {
-            Monitor.Log("Iteração:", playerManager.getIterationCount().ToString() + " / " + maxIterationString, myMonitor.transform);
+            Monitor.Log("Iteration:", playerManager.getIterationCount().ToString() + " / " + maxIterationString, myMonitor.transform);
             bombManager.timeIterationUpdate();
             ServiceLocator.getManager(scenarioId).GetLogManager().globalStepPrint(playerManager.getIterationCount());
 

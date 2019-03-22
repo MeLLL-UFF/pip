@@ -34,6 +34,11 @@ public class ReplayWriter {
         sw.WriteLine("NA:" + numAgents);
     }
 
+    public void printDestructibleBlocks(string strBlocks)
+    {
+        sw.WriteLine("BL:" + strBlocks);
+    }
+
     public void printStep(string line)
     {
         sw.WriteLine(line);

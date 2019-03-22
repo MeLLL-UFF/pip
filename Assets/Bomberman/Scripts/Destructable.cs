@@ -18,12 +18,16 @@ public class Destructable : MonoBehaviour {
     public Player bombermanVilain;
 
     private int discreteTimerAfterExplosion;
+    private Vector2 fixedPosition;
+
+    public int myID;
+    public bool isEnable = false;
 
     private void Awake()
     {
         discreteTimerAfterExplosion = 0;
         bombermanVilain = null;
-        initialActivation = gameObject.activeSelf;
+        initialActivation = isEnable;
 
         if (randomStart)
         {
@@ -50,26 +54,34 @@ public class Destructable : MonoBehaviour {
         wasDestroy = false;
         initPos = transform.position;
         ServiceLocator.getManager(scenarioId).GetBlocksManager().addBlock(this);
-        
+
+        fixedPosition = GetGridPosition();
 
         if (randomStart)
-        {
-            gameObject.SetActive(assortedActivation);
-            if (assortedActivation)
-                grid.enableObjectOnGrid(stateType, GetGridPosition());
-            else
-                grid.disableObjectOnGrid(stateType, GetGridPosition());
-        }
+            SetVisible(assortedActivation);
         else
-        {
-            gameObject.SetActive(true);
-            grid.enableObjectOnGrid(stateType, GetGridPosition());
-        }
+            SetVisible(isEnable);
+    }
+
+    public void SetVisible(bool _visible)
+    {
+        gameObject.SetActive(_visible);
+
+        if (_visible)
+            grid.enableObjectOnGrid(stateType, fixedPosition);
+        else
+            grid.disableObjectOnGrid(stateType, fixedPosition);
+    }
+
+    public bool IsVisible()
+    {
+        return gameObject.activeSelf;
     }
 
     public Vector2 GetGridPosition()
     {
         BinaryNode n = grid.NodeFromWorldPoint(transform.localPosition);
+
         return new Vector2(n.gridX, n.gridY);
     }
 
@@ -84,57 +96,18 @@ public class Destructable : MonoBehaviour {
         {
             int randomNumber = Random.Range(0, 2);
             if (randomNumber == 0)
-            {
-                gameObject.SetActive(false);
-                grid.disableObjectOnGrid(stateType, GetGridPosition());
-            }
+                SetVisible(false);
             else
-            {
-                gameObject.SetActive(true);
-                grid.enableObjectOnGrid(stateType, GetGridPosition());
-            }
+                SetVisible(true);
         }
         else
         {
             if (randomStart)
-            {
-                gameObject.SetActive(assortedActivation);
-                if (assortedActivation)
-                    grid.enableObjectOnGrid(stateType, GetGridPosition());
-                else
-                    grid.disableObjectOnGrid(stateType, GetGridPosition());
-            }
+                SetVisible(assortedActivation);
             else
-            {
-                gameObject.SetActive(initialActivation);
-                if (initialActivation)
-                    grid.enableObjectOnGrid(stateType, GetGridPosition());
-                else
-                    grid.disableObjectOnGrid(stateType, GetGridPosition());
-            }
+                SetVisible(initialActivation);
         }
     }
-
-    /*public void attackByHammer(Player hammerman)
-    {
-        if (!wasDestroy)
-        {
-            wasDestroy = true;
-            
-            if (hammerman != null)
-            {
-                Player.AddRewardToAgent(hammerman, Config.REWARD_BLOCK_DESTROY, "Agente" + hammerman.getPlayerNumber() + " destruiu um bloco");
-            }
-            else
-            {
-                ServiceLocator.getManager(scenarioId).GetLogManager().print("hammerman nulo");
-            }
-
-            gameObject.SetActive(false);
-            grid.disableObjectOnGrid(stateType, GetGridPosition());
-            //Destroy(gameObject, 0.1f);
-        }
-    }*/
 
     //Bomb code
     public void OnTriggerEnter(Collider other)
@@ -166,8 +139,7 @@ public class Destructable : MonoBehaviour {
                 ServiceLocator.getManager(scenarioId).GetLogManager().print("Bomberman nulo");
             }
 
-            gameObject.SetActive(false);
-            grid.disableObjectOnGrid(stateType, GetGridPosition());
+            SetVisible(false);
 
             return true;
         }

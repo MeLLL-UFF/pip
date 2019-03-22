@@ -18,6 +18,7 @@ public class ReplayReader {
         public int numberOfAgents;
         public Dictionary<string, Vector2Int> agentInitPositionMap;
         public Dictionary<string, int> agentActionMap;
+        public Dictionary<int, bool> blockMap;
         public int bombIteration;
         public bool hasCreatedBomb;
         public List<Vector2Int> bombList;
@@ -28,6 +29,7 @@ public class ReplayReader {
             epId = "0";
             agentInitPositionMap = new Dictionary<string, Vector2Int>();
             agentActionMap = new Dictionary<string, int>();
+            blockMap = new Dictionary<int, bool>();
             bombList = new List<Vector2Int>();
         }
     }
@@ -119,6 +121,19 @@ public class ReplayReader {
                     replayStep.numberOfAgents = Int32.Parse(parts[1]);
 
                     //return replayStep;
+                }
+                else if (line.Substring(0, 2).Equals("BL"))
+                {
+                    replayStep.command = ReplayCommandLine.RCL_Blocks;
+
+                    string[] parts = line.Split(':');
+                    string positions = parts[1];
+                    string[] blocksPosParts = positions.Split(';');
+                    for (int i = 0; i < blocksPosParts.Length; ++i)
+                    {
+                        string[] blocks = blocksPosParts[i].Split(',');
+                        replayStep.blockMap.Add(Int32.Parse( blocks[0]), (Int32.Parse(blocks[1]) == 1 ? true : false) );
+                    }
                 }
                 else if (line.Substring(0, 2).Equals("IP"))
                 {

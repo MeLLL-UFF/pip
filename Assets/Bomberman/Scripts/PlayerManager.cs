@@ -375,7 +375,7 @@ public class PlayerManager {
         distanceStructureDict.Clear();
     }
 
-    public void resetLevelIfPlayerOneDie()
+    /*public void resetLevelIfPlayerOneDie()
     {
         if (!lastManFound)
         {
@@ -388,6 +388,14 @@ public class PlayerManager {
             }
         }
     }
+
+    public void forceDoneAllAgents()
+    {
+        foreach (KeyValuePair<int, Player> entry in playerDict)
+        {
+            entry.Value.Done();
+        }
+    }*/
 
     public void verifyLastMan()
     {

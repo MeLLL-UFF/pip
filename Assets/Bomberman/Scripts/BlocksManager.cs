@@ -7,6 +7,7 @@ public class BlocksManager {
     bool initialized = false;
 
     private List<Destructable> blocks = new List<Destructable>();
+    private Dictionary<int, Destructable> blocksMap = new Dictionary<int, Destructable>();
     private List<Destructable> blocksWillBeDestroyed = new List<Destructable>();
 
     internal BlocksManager()
@@ -20,6 +21,22 @@ public class BlocksManager {
     public void addBlock(Destructable block)
     {
         blocks.Add(block);
+
+        if (block.myID != 0)
+        {
+            blocksMap.Add(block.myID, block);
+        }
+    }
+
+    public void loadReplaySetup(Dictionary<int, bool> blockEnableMap)
+    {
+        foreach (KeyValuePair<int, bool> entry in blockEnableMap)
+        {
+            if (blocksMap.ContainsKey(entry.Key))
+            {
+                blocksMap[entry.Key].SetVisible(entry.Value);
+            }
+        }
     }
 
     public void resetBlocks()
@@ -32,9 +49,20 @@ public class BlocksManager {
         clearDestroyList();
     }
 
-    public void clear()
+    public string generateBlocksStatusList()
     {
-        blocks.Clear();
+        string result = "";
+        string suffix = ";";
+
+        for (int i = 0; i < blocks.Count; i++)
+        {
+            if (i >= blocks.Count - 1)
+                suffix = "";
+
+            result += blocks[i].myID + "," + (blocks[i].IsVisible() ? 1 : 0) + suffix;
+        }
+
+        return result;
     }
 
     public void addBlockToDestroy(Destructable block)

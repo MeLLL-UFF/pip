@@ -67,6 +67,12 @@ public class Danger : MonoBehaviour
         return dangerLevelOfPosition * penalty;
     }
 
+
+    public float GetDangerLevelOfPositionRaw()
+    {
+        return dangerLevelOfPosition;
+    }
+
     public string GetDangerLevelOfPositionToPrint()
     {
         return (dangerLevelOfPosition * -1.0f).ToString("0.000");
