@@ -1,5 +1,5 @@
-# pip
-Player Imitation Project
+# BLE
+Bomberman Learning Environment
 
 This project uses ML-Agent plugin for Unity3D version 0.5, so the prerequisites are:
 
@@ -10,9 +10,7 @@ ML-Agents 0.5v Plugin (https://github.com/icaro56/ml-agents   (fork with some ch
 It's important install the ML-Agents dependencies.
 
 # Configuration
-After we download the ML-Agents plugin for Unity3d, it's necessary copy the folder ml-agents\UnitySDK\Assets\ML-Agents\Plugins to our Unity Project in .\Assets\ML-Agents. 
-
-Furthermore, we need change the .NetFramework to 4.6 and mark the Run Background checkbox.
+we need change the .NetFramework to 4.6 and mark the Run Background checkbox case this is not configured.
 
 Edit->Project Settings->Players
 
@@ -27,5 +25,30 @@ Edit->Project Settings->Players
       Script Runtime Version
       
         set 4.6
+        
+# Experiments Settings
+
+We created a tag named bomberman_experiment both in this repository and in our ml-agent fork respository to expose which Bomberman Learning Environment version was used to run the experiments that were done in the paper. This tag is to PPO and LSTM trainings. The Imitation Learning uses the most up-to-date version.
+
+All statistics and all templates generated in agent training in this environment can be found in Google Drive: https://drive.google.com/file/d/15ZEPz4j3FvPfEAhPd-ZrUN5Hj5EE9ajQ/view?usp=sharing
+
+# Videos
+PPO Agents with Binary Flag State Representation: https://youtu.be/qM8n9tmvBdw
+
+PPO Agents with Normalized Binary Flag State Representation: https://youtu.be/_YlMBlMhHL8
+
+PPO Agents with ICAART State Representation: https://youtu.be/eIjo7Vat-aE
+
+PPO Agents with ZerOrOne State Representation: https://youtu.be/SC2vUTtlmSA
+
+PPO Agents with Hybrid State Representation: https://youtu.be/w7noFJ_w2GQ
+
+
+PPO Agents Tournament Example Hybrid x ZeroOrOne x ICAART x Normalized Binary Flag: https://youtu.be/oRKZfGiBlqs
+
+
+PPO+LSTM Agents with Hybrid State Representation: https://youtu.be/sJ79-OHrFGM
+
+PPO versus PPO+LSTM: https://youtu.be/QQ4kThziFa8
 
 
