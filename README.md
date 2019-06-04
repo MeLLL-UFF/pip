@@ -51,4 +51,4 @@ PPO+LSTM Agents with Hybrid State Representation: https://youtu.be/sJ79-OHrFGM
 
 PPO versus PPO+LSTM: https://youtu.be/QQ4kThziFa8
 
-
+BC+PPO versus PPO+LSTM: https://youtu.be/2ccxyoHbI4o
